@@ -27,9 +27,14 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
-    "pnpm": "^9.0.5"
+    "@probot/adapter-github-actions": "^4.0.0"
   },
   "devDependencies": {
-    "taze": "^0.13.6"
+    "@antfu/eslint-config": "^2.15.0",
+    "@changesets/cli": "^2.27.1",
+    "@eslint/eslintrc": "^3.0.2",
+    "eslint": "^9.1.1",
+    "taze": "^0.13.6",
+    "typescript": "^5.4.5"
   }
 }
