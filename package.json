@@ -22,8 +22,13 @@
   "bugs": {
     "url": "https://github.com/deconz-community/ddf-tools-action/issues/"
   },
-  "main": "index.js",
+  "files": [
+    "dist/index.js",
+    "dist/licenses.txt"
+  ],
+  "main": "dist/index.js",
   "scripts": {
+    "build": "tsc && ncc build --minify --license licenses.txt",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
@@ -33,7 +38,9 @@
     "@antfu/eslint-config": "^2.15.0",
     "@changesets/cli": "^2.27.1",
     "@eslint/eslintrc": "^3.0.2",
+    "@types/node": "^20.12.7",
     "eslint": "^9.1.1",
+    "probot": "^13.2.0",
     "taze": "^0.13.6",
     "typescript": "^5.4.5"
   }

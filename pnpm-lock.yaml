@@ -21,9 +21,15 @@ importers:
       '@eslint/eslintrc':
         specifier: ^3.0.2
         version: 3.0.2
+      '@types/node':
+        specifier: ^20.12.7
+        version: 20.12.7
       eslint:
         specifier: ^9.1.1
         version: 9.1.1
+      probot:
+        specifier: ^13.2.0
+        version: 13.2.0
       taze:
         specifier: ^0.13.6
         version: 0.13.6
