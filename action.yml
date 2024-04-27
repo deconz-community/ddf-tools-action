@@ -1,0 +1,75 @@
+name: "DDF Tools action"
+description: "Do stuff related to deCONZ DDF."
+author: "Zehir"
+branding:
+  icon: "check"
+  color: "green"
+inputs:
+  actions:
+    required: true
+    description: "comma seperated actions to perform (validate, bundle, upload, ci)"
+    default: "validate"
+
+  ## Common options for validate and bundle
+  source-devices-directory:
+    default: "devices"
+    description: "input directory of DDF files"
+  source-generic-directory:
+    default: "devices/generic"
+    description: 'input directory of Generic files, will look for a "generic" folder in main directory if ommited'
+  source-search-pattern:
+    description: "input search pattern"
+    default: "**/*.json"
+  source-ignore-pattern:
+    description: "ignore files that match this pattern"
+
+  ## Validate options
+  validation-no-skip:
+    description: "Validate all files even if they have the ddfvalidate option to false"
+    default: "false"
+
+  ## Bundle options
+  bundle-output-directory:
+    description: "output directory of bundled DDF files"
+    default: "bundle"
+  bundle-sign-keys:
+    description: "comma seperated list of private keys to sign the bundle with"
+  bundle-modified-method:
+    description: "Method to use to mark the files as modified (gitlog, mtime, ctime)"
+    default: "gitlog"
+
+  ## Upload options
+  upload-input-directory:
+    description: "input directory of DDF files to upload"
+    default: "bundle"
+  upload-url:
+    description: "URL to upload the DDF files to"
+  upload-token:
+    description: "Token to use for the upload"
+
+  ## CI options
+  ### PR options
+  ci-pr-validate:
+    description: "Validate the DDF files in a PR"
+    default: "true"
+  ci-pr-draft-bundle:
+    description: "Create a draft bundle for the PR"
+    default: "true"
+  ci-pr-release-bundle:
+    description: "Release the bundle when PR merged"
+    default: "true"
+  ci-pr-affected-bundle-list:
+    description: "Add a message on the PR with the list of affected DDF"
+    default: "true"
+
+  ### Push options
+  ci-push-validate:
+    description: "Validate the DDF files on push"
+    default: "true"
+  ci-push-upload:
+    description: "Upload the DDF files on push"
+    default: "true"
+
+runs:
+  using: "node16"
+  main: "dist/index.js"
