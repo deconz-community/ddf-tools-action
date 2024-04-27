@@ -9,6 +9,9 @@ async function run() {
   const inputs = getInputs()
   if (!inputs)
     return
+
+  if (inputs.actions.upload)
+    console.log('Validating', inputs.upload)
 }
 
 run()

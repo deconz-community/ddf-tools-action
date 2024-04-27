@@ -6,16 +6,49 @@ type Actions = typeof ACTIONS[number]
 const FILE_MODIFIED_METHODS = ['gitlog', 'mtime', 'ctime'] as const
 type FileModifiedMethod = typeof FILE_MODIFIED_METHODS[number]
 
-export function getInputs() {
+type ActionsType = {
+  [K in Actions]: boolean;
+}
+
+// TODO Make this types works
+
+type SourceInput = ReturnType<typeof getSourceInputs>
+type ValidationInput = ReturnType<typeof getValidationInputs>
+type BundlerInput = ReturnType<typeof getBundlerInputs>
+type UploadInput = ReturnType<typeof getUploadInputs>
+type CIInput = ReturnType<typeof getCIInputs>
+
+/*
+export type Inputs = {
+  actions: ActionsType
+}
+// & (ActionsType['validate'] extends true ? { source: SourceInput } : { source: undefined })
+// & (ActionsType['bundle'] extends true ? { source: SourceInput } : { source: undefined })
+// & (ActionsType['validate'] extends true ? { validation: ValidationInput } : { validation: undefined })
+// & (ActionsType['bundle'] extends true ? { bundler: BundlerInput } : { bundler: undefined })
+& (ActionsType['upload'] extends true ? { upload: UploadInput } : { upload: undefined })
+// & (ActionsType['ci'] extends true ? { ci: CIInput } : { ci: undefined })
+*/
+
+type Inputs<Action extends ActionsType> = {
+  actions: Action
+} // & (T['validate'] extends true ? { source: SourceInput } : { source?: never })
+// & (T['bundle'] extends true ? { source: SourceInput } : { source?: never })
+// & (T['validate'] extends true ? { validation: ValidationInput } : { validation?: never })
+// & (T['bundle'] extends true ? { bundler: BundlerInput } : { bundler?: never })
+& (Action['upload'] extends true ? { upload: UploadInput } : { upload?: never })
+// & (T['ci'] extends true ? { ci: CIInput } : { ci?: never })
+
+export function getInputs() /* : Inputs<Action> | false */ {
   try {
     const actions = getActions()
     return {
       actions,
-      source: (actions.includes('validate') || actions.includes('validate')) ? getSourceInputs() : undefined,
-      validation: actions.includes('validate') ? getValidationInputs() : undefined,
-      bundler: actions.includes('bundle') ? getBundlerInputs() : undefined,
-      upload: actions.includes('upload') ? getUploadInputs() : undefined,
-      ci: actions.includes('ci') ? getCIInputs() : undefined,
+      source: (actions.validate || actions.bundle) ? getSourceInputs() : undefined,
+      validation: actions.validate ? getValidationInputs() : undefined,
+      bundler: actions.bundle ? getBundlerInputs() : undefined,
+      upload: actions.upload ? getUploadInputs() : undefined,
+      ci: actions.ci ? getCIInputs() : undefined,
     }
   }
   catch (err) {
@@ -23,7 +56,7 @@ export function getInputs() {
   }
 }
 
-function getActions(): Actions[] {
+function getActions(): ActionsType {
   const ACTIONS = ['validate', 'bundle', 'upload', 'ci'] as const
 
   const actions = getInput('actions').split(',')
@@ -34,7 +67,10 @@ function getActions(): Actions[] {
 
   debug(`Actions : ${actions.join(',')}`)
 
-  return actions as Actions[]
+  return ACTIONS.reduce((acc, action) => {
+    acc[action] = actions.includes(action)
+    return acc
+  }, {} as Record<Actions, boolean>)
 }
 
 function getSourceInputs() {
