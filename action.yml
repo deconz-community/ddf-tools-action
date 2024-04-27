@@ -27,8 +27,7 @@ inputs:
     description: Enable bundling of DDF files
     default: 'true'
   bundler-output-path:
-    description: output path of bundled DDF files
-    default: bundles
+    description: output path of bundled DDF files if not provided will keep them in memory before uploading if enabled
   bundler-sign-keys:
     description: comma seperated list of private keys to sign the bundle with
   bundler-file-modified-method:
@@ -48,8 +47,7 @@ inputs:
     description: Enable upload of DDF bundles
     default: 'false'
   upload-input-path:
-    description: input path of DDF bundles to upload
-    default: bundles
+    description: input path of DDF bundles to upload if not provided will use the output bundles of the bundler
   upload-url:
     description: URL to upload the DDF bundles to
   upload-token:

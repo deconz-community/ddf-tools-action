@@ -33,7 +33,9 @@ export function getInputs(): InputsParams {
 const MODES = ['action', 'ci'] as const
 export type Mode = typeof MODES[number]
 function getMode(): Mode {
-  const mode = core.getInput('mode') as Mode
+  const mode = getInput('mode') as Mode | undefined
+  if (!mode)
+    throw core.setFailed('Mode must be provided')
 
   if (!MODES.includes(mode))
     throw core.setFailed(`Unknown mode : ${mode}`)
@@ -57,14 +59,19 @@ export interface SourceInputs {
 }
 
 function getSourceInputs(): SourceInputs {
-  const devices = core.getInput('source-devices-path')
-  let generic = core.getInput('source-generic-path')
+  const devices = getInput('source-devices-path')
+  if (!devices)
+    throw core.setFailed('Devices path must be provided')
 
-  if (generic.length === 0)
+  let generic = getInput('source-generic-path')
+
+  if (!generic)
     generic = `${devices}/generic`
 
-  const search = core.getInput('source-search-pattern')
-  const ignore = core.getInput('source-ignore-pattern')
+  const search = getInput('source-search-pattern')
+  if (!search)
+    throw core.setFailed('Search pattern must be provided')
+
   return {
     path: {
       devices,
@@ -72,7 +79,7 @@ function getSourceInputs(): SourceInputs {
     },
     pattern: {
       search,
-      ignore: ignore.length === 0 ? undefined : ignore,
+      ignore: getInput('source-ignore-pattern'),
     },
   }
 }
@@ -84,9 +91,7 @@ type FileModifiedMethod = typeof FILE_MODIFIED_METHODS[number]
 
 export type BundlerInputs = {
   enabled: true
-  path: {
-    output: string
-  }
+  outputPath?: string
   signKeys: string[]
   fileModifiedMethod: FileModifiedMethod
   validation: BundlerValidationInputs
@@ -95,27 +100,22 @@ export type BundlerInputs = {
 }
 
 function getBundlerInputs(): BundlerInputs {
-  const enabled = core.getBooleanInput('bundler-enabled')
+  const enabled = getBooleanInput('bundler-enabled')
 
   if (!enabled)
     return { enabled: false }
 
-  const fileModifiedMethod = core.getInput('bundle-file-modified-method') as FileModifiedMethod
+  const fileModifiedMethod = getInput('bundle-file-modified-method') as FileModifiedMethod
 
   if (!FILE_MODIFIED_METHODS.includes(fileModifiedMethod))
     throw core.setFailed(`Unknown file modified method : ${fileModifiedMethod}`)
 
-  const signKeys = core.getInput('bundle-sign-keys').length > 0
-    ? core.getInput('bundle-sign-keys').split(',')
-    : []
-
   // TODO : Check if signKeys are valid
+  const signKeys = getArrayInput('bundle-sign-keys')
 
   return {
     enabled,
-    path: {
-      output: core.getInput('bundler-output-path'),
-    },
+    outputPath: getInput('bundler-output-path'),
     signKeys,
     fileModifiedMethod,
     validation: getValidationInputs(),
@@ -132,14 +132,14 @@ export type BundlerValidationInputs = {
 }
 
 function getValidationInputs(): BundlerValidationInputs {
-  const enabled = core.getBooleanInput('bundler-validation-enabled')
+  const enabled = getBooleanInput('bundler-validation-enabled')
 
   if (!enabled)
     return { enabled: false }
 
   return {
     enabled,
-    strict: core.getBooleanInput('bundler-validation-strict'),
+    strict: getBooleanInput('bundler-validation-strict'),
   }
 }
 // #endregion
@@ -147,9 +147,7 @@ function getValidationInputs(): BundlerValidationInputs {
 // #region Upload
 export type UploadInputs = {
   enabled: true
-  path: {
-    input: string
-  }
+  inputPath?: string
   url: string
   token: string
 } | {
@@ -157,22 +155,20 @@ export type UploadInputs = {
 }
 
 function getUploadInputs(): UploadInputs {
-  const enabled = core.getBooleanInput('upload-enabled')
+  const enabled = getBooleanInput('upload-enabled')
 
   if (!enabled)
     return { enabled: false }
 
-  const url = core.getInput('upload-url')
-  const token = core.getInput('upload-token')
+  const url = getInput('upload-url')
+  const token = getInput('upload-token')
 
   if (!url || !token)
     throw core.setFailed('Both url and token must be provided for upload action')
 
   return {
     enabled,
-    path: {
-      input: core.getInput('upload-input-path'),
-    },
+    inputPath: getInput('upload-input-path'),
     url,
     token,
   }
@@ -184,21 +180,42 @@ export type CIInputs = ReturnType<typeof getCIInputs>
 function getCIInputs() {
   return {
     pr: {
-      validate: core.getBooleanInput('ci-pr-validate'),
-      draftBundle: core.getBooleanInput('ci-pr-draft-bundle'),
-      releaseBundle: core.getBooleanInput('ci-pr-release-bundle'),
-      affectedBundleList: core.getBooleanInput('ci-pr-affected-bundle-list'),
+      validate: getBooleanInput('ci-pr-validate'),
+      draftBundle: getBooleanInput('ci-pr-draft-bundle'),
+      releaseBundle: getBooleanInput('ci-pr-release-bundle'),
+      affectedBundleList: getBooleanInput('ci-pr-affected-bundle-list'),
     },
     push: {
-      validate: core.getBooleanInput('ci-push-validate'),
-      releaseBundle: core.getBooleanInput('ci-push-release-bundle'),
+      validate: getBooleanInput('ci-push-validate'),
+      releaseBundle: getBooleanInput('ci-push-release-bundle'),
     },
   }
 }
 // #endregion
 
 // #region Utils
+function getInput(name: string): string | undefined {
+  const value = core.getInput(name)
+  if (value.length === 0)
+    return undefined
+  return value
+}
+
+function getBooleanInput(name: string): boolean {
+  return core.getBooleanInput(name)
+}
+
+function getArrayInput(name: string): string[] {
+  const data = getInput(name)
+  if (!data)
+    return []
+  return data.split(',')
+}
+
 export function assertInputs(params: InputsParams) {
+  if (params.upload.enabled && (!params.upload.url || !params.upload.token))
+    throw core.setFailed('Both url and token must be provided for upload action')
+
   if (params.mode === 'ci') {
     if (!params.bundler?.enabled)
       throw core.setFailed('Bundler must be enabled in CI mode')
