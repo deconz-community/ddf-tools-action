@@ -66,8 +66,8 @@ inputs:
   ci-push-validate:
     description: Validate the DDF files on push
     default: 'true'
-  ci-push-upload:
-    description: Upload the DDF files on push
+  ci-push-release-bundle:
+    description: Release the bundle when PR merged
     default: 'true'
 
 runs:

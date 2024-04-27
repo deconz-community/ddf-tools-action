@@ -96,7 +96,7 @@ function getCIInputs() {
     },
     push: {
       validate: getBooleanInput('ci-push-validate'),
-      upload: getBooleanInput('ci-push-upload'),
+      releaseBundle: getBooleanInput('ci-push-release-bundle'),
     },
   }
 }
