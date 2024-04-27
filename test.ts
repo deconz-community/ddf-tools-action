@@ -1,4 +1,3 @@
-
 import { Octokit } from "@octokit/action";
 import * as github from "@actions/github";
 
