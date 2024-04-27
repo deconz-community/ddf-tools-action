@@ -34,7 +34,9 @@
   },
   "dependencies": {
     "@actions/github": "^6.0.0",
+    "@deconz-community/ddf-bundler": "^0.16.0",
     "@deconz-community/ddf-validator": "^2.27.0",
+    "@directus/sdk": "^15.1.0",
     "@octokit/action": "^6.1.0",
     "glob": "^10.3.12",
     "jsonc-parser": "^3.2.1",
