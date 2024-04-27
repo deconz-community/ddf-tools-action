@@ -29,3 +29,7 @@ WIP
 
 ### Quick edits
 - Issue template to add a model ID on a existing DDF that generate PR
+
+## Dev notes
+
+If we both bundle and validate, should we validate first or bundle first and validate the bundle?

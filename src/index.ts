@@ -13,7 +13,7 @@ async function run() {
 
   if (inputs.actions.validate === true) {
     const validationResult = await validate(inputs)
-    if (validationResult === false)
+    if (validationResult.length > 0)
       core.setFailed('Validation failed')
   }
 

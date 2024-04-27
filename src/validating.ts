@@ -2,70 +2,21 @@ import { readFile } from 'node:fs/promises'
 import * as core from '@actions/core'
 import { glob } from 'glob'
 import { createValidator } from '@deconz-community/ddf-validator'
-import { ZodError } from 'zod'
-import { visit } from 'jsonc-parser'
+
 import { version } from '../package.json'
 import type { InputsParams } from './inputs.js'
+import type { AnyError } from './errors.js'
+import { handleError } from './errors.js'
 
-function handleError(error: ZodError | Error | unknown, file: string, data: string) {
-  if (error instanceof ZodError) {
-    // Build error list by path
-    const errors: Record<string, string[]> = {}
-    error.issues.forEach((issue) => {
-      const path = issue.path.join('/')
-      if (Array.isArray(errors[path]))
-        errors[path].push(issue.message)
-      else
-        errors[path] = [issue.message]
-    })
-
-    const paths = Object.keys(errors)
-
-    visit(data, {
-      onLiteralValue: (value: any, offset: number, length: number, startLine: number, startCharacter: number, pathSupplier) => {
-        const path = pathSupplier().join('/')
-        const index = paths.indexOf(path)
-        if (index > -1) {
-          core.error(`${errors[path].length} validation error${errors[path].length > 1 ? 's' : ''} in file ${file} at ${path}`)
-          errors[path].forEach((message) => {
-            core.error(message, {
-              file,
-              startLine,
-              startColumn: startCharacter,
-            })
-          })
-          paths.splice(index, 1)
-        }
-      },
-    })
-
-    if (paths.length > 0) {
-      paths.forEach((path) => {
-        core.error(`${errors[path].length} validation error${errors[path].length > 1 ? 's' : ''} in file ${file} at ${path}`)
-        errors[path].forEach((message) => {
-          core.error(message, {
-            file,
-          })
-        })
-      })
-    }
-  }
-  else if (error instanceof Error) {
-    core.error(error.message, {
-      file,
-    })
-  }
-  else {
-    core.error('Unknown Error')
-  }
-}
-
-export async function validate({ source, validation }: InputsParams) {
+export async function validate({ source, validation }: InputsParams): Promise<AnyError[]> {
   if (!source || !validation)
     throw new Error('Missing source or validation inputs')
 
+  const errors: AnyError[] = []
+
   try {
     const validator = createValidator()
+    const skip = !validation.noSkip
 
     core.info(`Validatig DDF using GitHub action v${version} and validator v${validator.version}.`)
 
@@ -73,22 +24,15 @@ export async function validate({ source, validation }: InputsParams) {
     let genericErrorCount = 0
 
     const genericDirectory = `${source.path.generic}/${source.pattern.search}`
-
-    const skip = !validation.noSkip
-
     core.info(`Loading generic files from ${genericDirectory}`)
-
-    if (validation.noSkip)
-      core.info(`Validating files with ddfvalidate set to false.`)
-
     const genericFilePaths = await glob(genericDirectory)
 
     if (genericFilePaths.length === 0)
-      throw new Error('No generic files found. Please check the settings.')
+      core.warning('No generic files found. Please check the settings.')
+    else
+      core.info(`Found ${genericFilePaths.length} generic files.`)
 
-    core.debug(`Found ${genericFilePaths.length} files.`)
-
-    // Load and sort files by schema
+    // Load and sort generic files by schema
     const genericfiles: Record<string, { path: string, raw: string, data: unknown }[]> = {
       'constants1.schema.json': [],
       'constants2.schema.json': [],
@@ -189,4 +133,6 @@ export async function validate({ source, validation }: InputsParams) {
     if (error instanceof Error)
       core.setFailed(error.message)
   }
+
+  return errors
 }
