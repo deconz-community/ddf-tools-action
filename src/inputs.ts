@@ -213,9 +213,6 @@ function getArrayInput(name: string): string[] {
 }
 
 export function assertInputs(params: InputsParams) {
-  if (params.upload.enabled && (!params.upload.url || !params.upload.token))
-    throw core.setFailed('Both url and token must be provided for upload action')
-
   if (params.mode === 'ci') {
     if (!params.bundler?.enabled)
       throw core.setFailed('Bundler must be enabled in CI mode')
