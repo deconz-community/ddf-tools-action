@@ -1,10 +1,10 @@
 {
   "name": "@deconz-community/ddf-tools-action",
-  "description": "",
-  "private": true,
-  "version": "0.0.1",
   "type": "module",
+  "version": "0.0.1",
+  "private": true,
   "packageManager": "pnpm@9.0.5",
+  "description": "",
   "author": {
     "name": "Zehir",
     "email": "zehir@zorim.fr",
@@ -23,16 +23,17 @@
   "bugs": {
     "url": "https://github.com/deconz-community/ddf-tools-action/issues/"
   },
+  "main": "dist/index.js",
   "files": [
     "dist/index.js",
     "dist/licenses.txt"
   ],
-  "main": "dist/index.js",
   "scripts": {
     "build": "tsc && ncc build --minify --license licenses.txt",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
+    "@actions/core": "^1.10.1",
     "@actions/github": "^6.0.0",
     "@deconz-community/ddf-bundler": "^0.16.0",
     "@deconz-community/ddf-validator": "^2.27.0",

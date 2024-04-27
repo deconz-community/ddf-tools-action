@@ -27,8 +27,6 @@ export default await antfu(
   },
   // Legacy config
   ...compat.config({
-    extends: [
-      // 'plugin:xstate/all',
-    ],
+    extends: [],
   }),
 )
