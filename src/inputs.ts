@@ -3,7 +3,7 @@ import * as core from '@actions/core'
 interface CommonInputs {
   source: SourceInputs
   bundler: BundlerInputs
-  validation: ValidationInputs
+  validation: BundlerValidationInputs
   upload: UploadInputs
 }
 export type InputsParams = CommonInputs & ({
@@ -18,7 +18,6 @@ export function getInputs(): InputsParams {
     mode: getMode(),
     source: getSourceInputs(),
     bundler: getBundlerInputs(),
-    validation: getValidationInputs(),
     upload: getUploadInputs(),
   }
 
@@ -90,6 +89,7 @@ export type BundlerInputs = {
   }
   signKeys: string[]
   fileModifiedMethod: FileModifiedMethod
+  validation: BundlerValidationInputs
 } | {
   enabled: false
 }
@@ -118,27 +118,28 @@ function getBundlerInputs(): BundlerInputs {
     },
     signKeys,
     fileModifiedMethod,
+    validation: getValidationInputs(),
   }
 }
 // #endregion
 
-// #region Validation
-export type ValidationInputs = {
+// #region Bundler Validation
+export type BundlerValidationInputs = {
   enabled: true
   strict: boolean
 } | {
   enabled: false
 }
 
-function getValidationInputs(): ValidationInputs {
-  const enabled = core.getBooleanInput('validation-enabled')
+function getValidationInputs(): BundlerValidationInputs {
+  const enabled = core.getBooleanInput('bundler-validation-enabled')
 
   if (!enabled)
     return { enabled: false }
 
   return {
     enabled,
-    strict: core.getBooleanInput('validation-strict'),
+    strict: core.getBooleanInput('bundler-validation-strict'),
   }
 }
 // #endregion
@@ -198,9 +199,6 @@ function getCIInputs() {
 
 // #region Utils
 export function assertInputs(params: InputsParams) {
-  if (params.validation.enabled && !params.bundler.enabled)
-    throw core.setFailed('Bundler must be enabled for validation')
-
   if (params.mode === 'ci') {
     if (!params.bundler?.enabled)
       throw core.setFailed('Bundler must be enabled in CI mode')

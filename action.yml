@@ -35,11 +35,11 @@ inputs:
     description: 'Method to use to mark the files as modified (gitlog, mtime, ctime)'
     default: gitlog
 
-  # # Validation options
-  validation-enabled:
+  # # Bundler Validation options
+  bundler-validation-enabled:
     description: Enable validation of DDF files
     default: 'true'
-  validation-strict:
+  bundler-validation-strict:
     description: Validate all files even if they have the ddfvalidate option to false
     default: 'false'
 
