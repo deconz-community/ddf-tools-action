@@ -1,43 +1,63 @@
 import * as core from '@actions/core'
 
-export type InputsParams = Exclude<ReturnType<typeof getInputs>, false>
+interface CommonInputs {
+  source: SourceInputs
+  bundler: BundlerInputs
+  validation: ValidationInputs
+  upload: UploadInputs
+}
+export type InputsParams = CommonInputs & ({
+  mode: 'action'
+} | {
+  mode: 'ci'
+  ci: CIInputs
+})
 
-export function getInputs() {
-  try {
-    const actions = getActions()
-    return {
-      actions,
-      source: (actions.validate || actions.bundle) ? getSourceInputs() : undefined,
-      validation: actions.validate ? getValidationInputs() : undefined,
-      bundler: actions.bundle ? getBundlerInputs() : undefined,
-      upload: actions.upload ? getUploadInputs() : undefined,
-      ci: actions.ci ? getCIInputs() : undefined,
-    }
+export function getInputs(): InputsParams {
+  const params: Partial<InputsParams> = {
+    mode: getMode(),
+    source: getSourceInputs(),
+    bundler: getBundlerInputs(),
+    validation: getValidationInputs(),
+    upload: getUploadInputs(),
   }
-  catch (err) {
-    return false
+
+  if (params.mode === 'ci')
+    params.ci = getCIInputs()
+
+  assertInputs(params as InputsParams)
+
+  return params as InputsParams
+}
+
+// #region Mode
+const MODES = ['action', 'ci'] as const
+export type Mode = typeof MODES[number]
+function getMode(): Mode {
+  const mode = core.getInput('mode') as Mode
+
+  if (!MODES.includes(mode))
+    throw core.setFailed(`Unknown mode : ${mode}`)
+  else
+    core.debug(`Mode : ${mode}`)
+
+  return mode
+}
+// #endregion
+
+// #region Source
+export interface SourceInputs {
+  path: {
+    devices: string
+    generic: string
+  }
+  pattern: {
+    search: string
+    ignore?: string
   }
 }
 
-function getActions() {
-  const ACTIONS = ['validate', 'bundle', 'upload', 'ci'] as const
-  type Actions = typeof ACTIONS[number]
-
-  const actions = core.getInput('actions').split(',')
-
-  const unknownActions = actions.filter(action => !ACTIONS.includes(action as Actions))
-  if (unknownActions.length > 0)
-    throw core.setFailed(`Unknown action : ${unknownActions.join(',')}`)
-
-  core.debug(`Actions : ${actions.join(',')}`)
-
-  return ACTIONS.reduce((acc, action) => {
-    acc[action] = actions.includes(action)
-    return acc
-  }, {} as Record<Actions, boolean>)
-}
-
-function getSourceInputs() {
+function getSourceInputs(): SourceInputs {
   const devices = core.getInput('source-devices-path')
   let generic = core.getInput('source-generic-path')
 
@@ -47,37 +67,100 @@ function getSourceInputs() {
   const search = core.getInput('source-search-pattern')
   const ignore = core.getInput('source-ignore-pattern')
   return {
-    path: { devices, generic },
-    pattern: { search, ignore },
+    path: {
+      devices,
+      generic,
+    },
+    pattern: {
+      search,
+      ignore: ignore.length === 0 ? undefined : ignore,
+    },
   }
 }
+// #endregion
 
-function getValidationInputs() {
-  const noSkip = core.getBooleanInput('validation-no-skip')
-  return {
-    noSkip,
+// #region Bundler
+const FILE_MODIFIED_METHODS = ['gitlog', 'mtime', 'ctime'] as const
+type FileModifiedMethod = typeof FILE_MODIFIED_METHODS[number]
+
+export type BundlerInputs = {
+  enabled: true
+  path: {
+    output: string
   }
+  signKeys: string[]
+  fileModifiedMethod: FileModifiedMethod
+} | {
+  enabled: false
 }
 
-function getBundlerInputs() {
-  const FILE_MODIFIED_METHODS = ['gitlog', 'mtime', 'ctime'] as const
-  type FileModifiedMethod = typeof FILE_MODIFIED_METHODS[number]
+function getBundlerInputs(): BundlerInputs {
+  const enabled = core.getBooleanInput('bundler-enabled')
 
-  const fileModifiedMethod = core.getInput('bundle-file-modified-method')
+  if (!enabled)
+    return { enabled: false }
 
-  if (!FILE_MODIFIED_METHODS.includes(fileModifiedMethod as FileModifiedMethod))
+  const fileModifiedMethod = core.getInput('bundle-file-modified-method') as FileModifiedMethod
+
+  if (!FILE_MODIFIED_METHODS.includes(fileModifiedMethod))
     throw core.setFailed(`Unknown file modified method : ${fileModifiedMethod}`)
 
+  const signKeys = core.getInput('bundle-sign-keys').length > 0
+    ? core.getInput('bundle-sign-keys').split(',')
+    : []
+
+  // TODO : Check if signKeys are valid
+
   return {
+    enabled,
     path: {
       output: core.getInput('bundler-output-path'),
     },
-    keys: core.getInput('bundle-sign-keys').split(','),
+    signKeys,
     fileModifiedMethod,
   }
 }
+// #endregion
 
-function getUploadInputs() {
+// #region Validation
+export type ValidationInputs = {
+  enabled: true
+  strict: boolean
+} | {
+  enabled: false
+}
+
+function getValidationInputs(): ValidationInputs {
+  const enabled = core.getBooleanInput('validation-enabled')
+
+  if (!enabled)
+    return { enabled: false }
+
+  return {
+    enabled,
+    strict: core.getBooleanInput('validation-strict'),
+  }
+}
+// #endregion
+
+// #region Upload
+export type UploadInputs = {
+  enabled: true
+  path: {
+    input: string
+  }
+  url: string
+  token: string
+} | {
+  enabled: false
+}
+
+function getUploadInputs(): UploadInputs {
+  const enabled = core.getBooleanInput('upload-enabled')
+
+  if (!enabled)
+    return { enabled: false }
+
   const url = core.getInput('upload-url')
   const token = core.getInput('upload-token')
 
@@ -85,6 +168,7 @@ function getUploadInputs() {
     throw core.setFailed('Both url and token must be provided for upload action')
 
   return {
+    enabled,
     path: {
       input: core.getInput('upload-input-path'),
     },
@@ -92,7 +176,10 @@ function getUploadInputs() {
     token,
   }
 }
+// #endregion
 
+// #region CI
+export type CIInputs = ReturnType<typeof getCIInputs>
 function getCIInputs() {
   return {
     pr: {
@@ -107,3 +194,18 @@ function getCIInputs() {
     },
   }
 }
+// #endregion
+
+// #region Utils
+export function assertInputs(params: InputsParams) {
+  if (params.validation.enabled && !params.bundler.enabled)
+    throw core.setFailed('Bundler must be enabled for validation')
+
+  if (params.mode === 'ci') {
+    if (!params.bundler?.enabled)
+      throw core.setFailed('Bundler must be enabled in CI mode')
+    if (!params.validation?.enabled)
+      throw core.setFailed('Validator must be enabled in CI mode')
+  }
+}
+// #endregion

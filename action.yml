@@ -5,10 +5,9 @@ branding:
   icon: check
   color: green
 inputs:
-  actions:
-    required: true
-    description: 'comma seperated actions to perform (validate, bundle, upload, ci)'
-    default: validate
+  mode:
+    default: action
+    description: 'Mode to run the action in (action, ci-pr, ci-push)'
 
   # # Common options for validate and bundle
   source-devices-path:
@@ -23,27 +22,36 @@ inputs:
   source-ignore-pattern:
     description: ignore files that match this pattern
 
-  # # Validate options
-  validation-no-skip:
-    description: Validate all files even if they have the ddfvalidate option to false
-    default: 'false'
-
-  # # Bundle options
-  bundle-output-path:
+  # # Bundler options
+  bundler-enabled:
+    description: Enable bundling of DDF files
+    default: 'true'
+  bundler-output-path:
     description: output path of bundled DDF files
-    default: bundle
-  bundle-sign-keys:
+    default: bundles
+  bundler-sign-keys:
     description: comma seperated list of private keys to sign the bundle with
-  bundle-file-modified-method:
+  bundler-file-modified-method:
     description: 'Method to use to mark the files as modified (gitlog, mtime, ctime)'
     default: gitlog
 
+  # # Validation options
+  validation-enabled:
+    description: Enable validation of DDF files
+    default: 'true'
+  validation-strict:
+    description: Validate all files even if they have the ddfvalidate option to false
+    default: 'false'
+
   # # Upload options
+  upload-enabled:
+    description: Enable upload of DDF bundles
+    default: 'false'
   upload-input-path:
-    description: input path of DDF files to upload
-    default: bundle
+    description: input path of DDF bundles to upload
+    default: bundles
   upload-url:
-    description: URL to upload the DDF files to
+    description: URL to upload the DDF bundles to
   upload-token:
     description: Token to use for the upload
 
