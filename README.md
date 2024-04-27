@@ -29,4 +29,3 @@ WIP
 
 ### Quick edits
 - Issue template to add a model ID on a existing DDF that generate PR
-
