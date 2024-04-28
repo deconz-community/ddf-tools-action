@@ -1,8 +1,6 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
-import type { DDF } from '@deconz-community/ddf-validator'
 import glob from 'fast-glob'
-import * as core from '@actions/core'
 import type { InputsParams } from './input.js'
 
 export interface Source {
