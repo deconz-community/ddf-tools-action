@@ -2,7 +2,8 @@
   "schema": "constants1.schema.json",
   "$schema": "https://unpkg.com/@deconz-community/ddf-validator/dist/ddf-schema.json",
   "manufacturers": {
-    "$MF_DE": "dresden elektronik"
+    "$MF_DE": "dresden elektronik",
+    "$MF_IKEA": "Is it loaded ?"
   },
   "device-types": {
     "$TYPE_DIMMABLE_LIGHT": "Dimmable light",
