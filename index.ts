@@ -10,10 +10,12 @@ async function run() {
   if (!inputs)
     return
 
+  core.info(`Hello World, is this working ?`)
+
   const sources = await getSources(inputs)
 
   sources.getDDFPaths().forEach(async (ddfPath) => {
-    core.debug(`Found DDF ${ddfPath}`)
+    core.info(`Found DDF ${ddfPath}`)
   })
 }
 
