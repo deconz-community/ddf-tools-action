@@ -38,7 +38,7 @@ jobs:
         uses: ./
         with:
           source-devices-path: tests
-          source-ignore-pattern: '**/*(invalid|unused).(json|md)'
+          source-ignore-pattern: '**/*([a-z_])(invalid|unused).(json|md)'
           bundler-output-path: bundled
           bundler-output-artifact-enabled: false
           bundler-output-artifact-retention-days: 1
