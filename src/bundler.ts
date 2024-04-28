@@ -11,7 +11,7 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
 
   const bundles: ReturnType<typeof Bundle>[] = []
 
-  Promise.all(sources.getDDFPaths().map(async (ddfPath) => {
+  await Promise.all(sources.getDDFPaths().map(async (ddfPath) => {
     core.info(`Found DDF ${ddfPath}`)
 
     try {
