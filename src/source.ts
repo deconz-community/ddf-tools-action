@@ -90,7 +90,7 @@ export async function getSources(params: InputsParams) {
       switch (params.bundler.fileModifiedMethod) {
         case 'gitlog': {
           // TODO: Implement gitlog
-          source.last_modified = new Date()
+          source.last_modified = new Date(1714319023000)
           break
         }
         case 'mtime': {

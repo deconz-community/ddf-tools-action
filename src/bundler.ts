@@ -1,6 +1,6 @@
 import * as core from '@actions/core'
 import type { Bundle } from '@deconz-community/ddf-bundler'
-import { buildFromFiles } from '@deconz-community/ddf-bundler'
+import { buildFromFiles, generateHash } from '@deconz-community/ddf-bundler'
 import type { InputsParams } from './input'
 import type { Sources } from './source'
 import { handleError, logsErrors } from './errors'
@@ -21,11 +21,16 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
         `file://${params.source.path.generic}`,
         `file://${ddfPath}`,
         path => sources.getFile(path.replace('file://', '')),
+        path => sources.getLastModified(path.replace('file://', '')),
       )
 
-      bundler.signKeys.forEach((key) => {
-        core.info(`Signing with key ${key}`)
-      })
+      if (bundler.signKeys.length > 0) {
+        const hash = generateHash(bundle.data)
+        core.info(`Bundle hash: ${hash}`)
+        bundler.signKeys.forEach((key) => {
+          core.info(`Signing with key ${key}`)
+        })
+      }
 
       bundles.push(bundle)
     }

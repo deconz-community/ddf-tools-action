@@ -34,7 +34,7 @@
   "dependencies": {
     "@actions/core": "^1.10.1",
     "@actions/github": "^6.0.0",
-    "@deconz-community/ddf-bundler": "^0.17.0",
+    "@deconz-community/ddf-bundler": "^0.18.0",
     "@deconz-community/ddf-validator": "^2.27.1",
     "@directus/sdk": "^15.1.0",
     "@octokit/action": "^6.1.0",
