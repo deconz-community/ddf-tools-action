@@ -32,5 +32,7 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
     }
   }))
 
+  core.info(`Bundler finished: ${bundles.length}`)
+
   return bundles
 }

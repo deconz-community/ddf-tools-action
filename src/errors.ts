@@ -40,7 +40,6 @@ export function handleError(error: ZodError | Error | unknown, file: string, fil
         const path = pathSupplier().join('/')
         const index = paths.indexOf(path)
         if (index > -1) {
-          // core.error(`${errors[path].length} validation error${errors[path].length > 1 ? 's' : ''} in file ${filePath} at ${path}`)
           errors[path].forEach((message) => {
             errorsList.push({
               type: 'validation',
@@ -49,13 +48,6 @@ export function handleError(error: ZodError | Error | unknown, file: string, fil
               startLine,
               startColumn,
             })
-            /*
-            core.error(message, {
-              file,
-              startLine,
-              startColumn,
-            })
-            */
           })
           paths.splice(index, 1)
         }
