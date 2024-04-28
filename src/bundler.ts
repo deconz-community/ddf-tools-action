@@ -185,6 +185,13 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
         }
       }))
 
+      // Re validate constants file because he was chopped before
+      const constantsPath = path.join(params.source.path.generic, 'constants.json')
+      genericFiles.push({
+        path: constantsPath,
+        data: JSON.parse(await (await sources.getFile(constantsPath)).text()),
+      })
+
       // Load used generic files
       await Promise.all(sources
         .getGenericPaths()
