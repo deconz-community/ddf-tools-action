@@ -2,13 +2,15 @@ import fs from 'node:fs/promises'
 import path from 'node:path'
 import type { DDF } from '@deconz-community/ddf-validator'
 import glob from 'fast-glob'
-import type { InputsParams } from './inputs.js'
+import type { InputsParams } from './input.js'
 
 export interface Source {
   data: Blob
   useCount: number
   last_modified?: Date
 }
+
+export type Sources = Awaited<ReturnType<typeof getSources>>
 
 export async function getSources(params: InputsParams) {
   const ddf: Map<string, Source> = new Map()

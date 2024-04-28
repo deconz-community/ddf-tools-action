@@ -4,7 +4,7 @@ import { glob } from 'glob'
 import { createValidator } from '@deconz-community/ddf-validator'
 
 import { version } from '../package.json'
-import type { InputsParams } from './inputs.js'
+import type { InputsParams } from './input.js'
 import type { AnyError } from './errors.js'
 import { handleError } from './errors.js'
 

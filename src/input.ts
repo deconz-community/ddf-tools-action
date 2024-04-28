@@ -15,7 +15,7 @@ export type InputsParams = CommonInputs & ({
   ci: CIInputs
 })
 
-export async function getInputs(): Promise<InputsParams> {
+export async function getParams(): Promise<InputsParams> {
   const params: Partial<InputsParams> = {
     mode: getMode(),
     source: await getSourceInputs(),
@@ -27,10 +27,6 @@ export async function getInputs(): Promise<InputsParams> {
     params.ci = getCIInputs()
 
   assertInputs(params as InputsParams)
-
-  core.startGroup('Inputs params')
-  core.info(JSON.stringify(params, null, 2))
-  core.endGroup()
 
   return params as InputsParams
 }

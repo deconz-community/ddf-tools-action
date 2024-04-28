@@ -1,24 +1,26 @@
 // import { Octokit } from '@octokit/action'
 import * as core from '@actions/core'
-import { getInputs } from './src/inputs.js'
+import { getParams } from './src/input.js'
 import { getSources } from './src/source.js'
+import { runBundler } from './src/bundler.js'
 
 // const octokit = new Octokit()
 
 async function run() {
-  const inputs = await getInputs()
-  if (!inputs)
+  const params = await getParams()
+  if (!params)
     return
 
-  core.info(`Current mode : ${inputs.mode}`)
-  core.debug('Debug Info')
-  core.info('Debug info above ?')
+  core.startGroup(`Current mode : ${params.mode}`)
+  core.info(JSON.stringify(params, null, 2))
+  core.endGroup()
 
-  const sources = await getSources(inputs)
+  const sources = await getSources(params)
 
-  sources.getDDFPaths().forEach(async (ddfPath) => {
-    core.info(`Found DDF ${ddfPath}`)
-  })
+  if (params.bundler.enabled) {
+    core.info('Bundler is enabled')
+    runBundler(params, sources)
+  }
 }
 
 run()

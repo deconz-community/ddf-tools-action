@@ -64,5 +64,8 @@
         "yaml"
     ],
     "editor.tabSize": 2,
-    "editor.detectIndentation": false
+    "editor.detectIndentation": false,
+    "github-actions.workflows.pinned.workflows": [
+      ".github/workflows/ci.yml"
+    ]
 }
