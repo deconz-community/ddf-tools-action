@@ -10,7 +10,7 @@ async function run() {
   if (!inputs)
     return
 
-  core.info(`Hello World, is this working ?`)
+  core.info(`Current mode : ${inputs.mode}`)
 
   const sources = await getSources(inputs)
 
