@@ -13,10 +13,10 @@ export async function runBundler(params: InputsParams, sources: Sources) {
     const bundle = await buildFromFiles(
       `file://${params.source.path.generic}`,
       `file://${ddfPath}`,
-      (path) => {
+      async (path) => {
         const newPath = path.replace('file://', '')
         core.info(`Need file ${newPath}`)
-        return sources.getFile(newPath)
+        return await sources.getFile(newPath)
       },
     )
 
