@@ -19,7 +19,11 @@ async function run() {
 
   if (params.bundler.enabled) {
     core.info('Bundler is enabled')
-    runBundler(params, sources)
+    const bundles = await runBundler(params, sources)
+
+    bundles.forEach((bundle) => {
+      core.info(`Bundle ${bundle.data.desc} created`)
+    })
   }
 }
 

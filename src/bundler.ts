@@ -18,11 +18,7 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
       const bundle = await buildFromFiles(
         `file://${params.source.path.generic}`,
         `file://${ddfPath}`,
-        async (path) => {
-          const newPath = path.replace('file://', '')
-          core.info(`Need file ${newPath}`)
-          return await sources.getFile(newPath)
-        },
+        path => sources.getFile(path.replace('file://', '')),
       )
 
       bundles.push(bundle)
