@@ -1,10 +1,8 @@
 import path from 'node:path'
 import fs from 'node:fs/promises'
-import { createWriteStream } from 'node:fs'
 import * as core from '@actions/core'
 import type { Bundle } from '@deconz-community/ddf-bundler'
 import { buildFromFiles, createSignature, encode, generateHash } from '@deconz-community/ddf-bundler'
-import { bytesToHex, hexToBytes } from '@noble/hashes/utils'
 import type { InputsParams } from './input'
 import type { Sources } from './source'
 import { handleError, logsErrors } from './errors'
@@ -44,15 +42,7 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
         const outputPath = path.resolve(path.join(bundler.outputPath, path.format(parsedPath)))
 
         const encoded = encode(bundle)
-        const stream = createWriteStream(outputPath)
-        if (stream.write(await encoded.arrayBuffer())) {
-          stream.end()
-          core.info(`[bundler] Writing bundle to ${outputPath} OK`)
-        }
-        else {
-          core.info(`[bundler] Writing bundle to ${outputPath} Failed`)
-        }
-        stream.close()
+        await fs.writeFile(outputPath, await encoded.arrayBuffer() as any)
       }
 
       bundles.push(bundle)
