@@ -11,9 +11,13 @@ export async function runBundler(params: InputsParams, sources: Sources) {
     core.info(`Found DDF ${ddfPath}`)
 
     const bundle = await buildFromFiles(
-      params.source.path.generic,
-      ddfPath,
-      sources.getFile,
+      `file://${params.source.path.generic}`,
+      `file://${ddfPath}`,
+      (path) => {
+        const newPath = path.replace('file://', '')
+        core.info(`Need file ${newPath}`)
+        return sources.getFile(newPath)
+      },
     )
 
     core.info(`Bundle ${ddfPath} created`)
