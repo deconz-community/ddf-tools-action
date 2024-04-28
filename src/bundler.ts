@@ -4,9 +4,12 @@ import { Buffer } from 'node:buffer'
 import * as core from '@actions/core'
 import type { Bundle } from '@deconz-community/ddf-bundler'
 import { buildFromFiles, createSignature, encode, generateHash } from '@deconz-community/ddf-bundler'
+import { DefaultArtifactClient } from '@actions/artifact'
 import type { InputsParams } from './input'
 import type { Sources } from './source'
 import { handleError, logsErrors } from './errors'
+
+const artifact = new DefaultArtifactClient()
 
 export async function runBundler(params: InputsParams, sources: Sources): Promise<ReturnType<typeof Bundle>[]> {
   const { bundler } = params
@@ -46,6 +49,15 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
         const data = Buffer.from(await encoded.arrayBuffer())
         fs.mkdir(path.dirname(outputPath), { recursive: true })
         await fs.writeFile(outputPath, data)
+
+        artifact.uploadArtifact(
+          'Bundles',
+          [outputPath],
+          '/bundled',
+          {
+            retentionDays: 1,
+          },
+        )
       }
 
       bundles.push(bundle)
