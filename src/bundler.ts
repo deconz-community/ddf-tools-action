@@ -23,7 +23,7 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
 
       bundles.push(bundle)
 
-      core.info(`Bundle ${ddfPath} created`)
+      core.info(`Bundle ${ddfPath.replace(params.source.path.devices, '')}.ddf created`)
     }
     catch (err) {
       core.error(`Error while creating bundle ${ddfPath}`)

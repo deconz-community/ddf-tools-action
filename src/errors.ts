@@ -1,5 +1,6 @@
 import { ZodError } from 'zod'
 import { visit } from 'jsonc-parser'
+import * as core from '@actions/core'
 
 export type AnyError = SimpleError | ValidationError
 
@@ -102,10 +103,10 @@ export function isValidationError(error: AnyError): error is ValidationError {
 export function logsErrors(errors: AnyError[]) {
   errors.forEach((error) => {
     if (isSimpleError(error)) {
-      console.error(error.message)
+      core.error(error.message)
     }
     else if (isValidationError(error)) {
-      console.error(error.message, {
+      core.error(error.message, {
         file: error.file,
         startLine: error.startLine,
         startColumn: error.startColumn,
