@@ -4,5 +4,7 @@
   "manufacturers": {
     "$MF_DE": "dresden elektronik"
   },
-  "device-types": {}
+  "device-types": {
+    "$TYPE_DIMMABLE_LIGHT": "Dimmable light"
+  }
 }
