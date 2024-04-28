@@ -44,6 +44,7 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
 
         const encoded = encode(bundle)
         const data = Buffer.from(await encoded.arrayBuffer())
+        fs.mkdir(path.dirname(outputPath), { recursive: true })
         await fs.writeFile(outputPath, data)
       }
 
