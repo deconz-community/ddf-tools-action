@@ -12,7 +12,15 @@ async function run() {
     return
 
   core.startGroup(`Current mode : ${params.mode}`)
-  core.info(JSON.stringify(params, null, 2))
+  const cloneParam = structuredClone(params)
+  if (cloneParam.bundler.enabled)
+    cloneParam.bundler.signKeys = Array(cloneParam.bundler.signKeys.length).fill('***')
+
+  if (cloneParam.upload.enabled) {
+    cloneParam.upload.url = '***'
+    cloneParam.upload.token = '***'
+  }
+  core.info(JSON.stringify(cloneParam, null, 2))
   core.endGroup()
 
   const sources = await getSources(params)
