@@ -28,11 +28,11 @@ export async function getInputs(): Promise<InputsParams> {
 
   assertInputs(params as InputsParams)
 
-  if (core.isDebug()) {
-    core.debug(`::group::Inputs params`)
-    core.debug(JSON.stringify(params, null, 2))
-    core.debug(`::endgroup::`)
-  }
+  // if (core.isDebug()) {
+  core.info(`::group::Inputs params`)
+  core.info(JSON.stringify(params, null, 2))
+  core.info(`::endgroup::`)
+  // }
 
   return params as InputsParams
 }
