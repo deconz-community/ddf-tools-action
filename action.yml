@@ -15,7 +15,8 @@ inputs:
     description: input path of DDF files
   source-search-pattern:
     description: input search pattern
-    default: '**/*.json'
+    default: '**/*'
+    # default: '**/*.(json|js|md)'
   source-ignore-pattern:
     description: ignore files that match this pattern
 

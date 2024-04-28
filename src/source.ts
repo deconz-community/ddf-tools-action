@@ -29,29 +29,23 @@ export async function getSources(params: InputsParams) {
     },
   )
 
+  const getSourceMap = (filePath: string) => {
+    if (!filePath.endsWith('.json'))
+      return misc
+
+    if (filePath.startsWith(params.source.path.generic))
+      return generic
+
+    return ddf
+  }
+
   await Promise.all(sourcePaths.map(async (sourcePath) => {
     const inputFilePath = path.resolve(sourcePath)
-    if (inputFilePath.startsWith(params.source.path.generic)) {
-      generic.set(inputFilePath, {
-        data: new Blob([await fs.readFile(inputFilePath)]),
-        useCount: 0,
-      })
-    }
-    else {
-      ddf.set(inputFilePath, {
-        data: new Blob([await fs.readFile(inputFilePath)]),
-        useCount: 0,
-      })
-    }
+    getSourceMap(inputFilePath).set(inputFilePath, {
+      data: new Blob([await fs.readFile(inputFilePath)]),
+      useCount: 0,
+    })
   }))
-
-  const getSourceMap = (filePath: string) => {
-    if (ddf.has(filePath))
-      return ddf
-    if (generic.has(filePath))
-      return generic
-    return misc
-  }
 
   return {
     getDDFPaths: () => Array.from(ddf.keys()),
