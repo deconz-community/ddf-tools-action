@@ -6,7 +6,9 @@ import type { Sources } from './source'
 import { handleError, logsErrors } from './errors'
 
 export async function runBundler(params: InputsParams, sources: Sources): Promise<ReturnType<typeof Bundle>[]> {
-  if (!params.bundler.enabled)
+  const { bundler } = params
+
+  if (!bundler.enabled)
     throw new Error('Can\'t run bundler because he is not enabled')
 
   const bundles: ReturnType<typeof Bundle>[] = []
@@ -21,9 +23,11 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
         path => sources.getFile(path.replace('file://', '')),
       )
 
-      bundles.push(bundle)
+      bundler.signKeys.forEach((key) => {
+        core.info(`Signing with key ${key}`)
+      })
 
-      core.info(`Bundle ${ddfPath.replace(params.source.path.devices, '')}.ddf created`)
+      bundles.push(bundle)
     }
     catch (err) {
       core.error(`Error while creating bundle ${ddfPath}`)
