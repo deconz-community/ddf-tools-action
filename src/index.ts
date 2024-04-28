@@ -1,30 +1,20 @@
 import { Octokit } from '@octokit/action'
-import * as github from '@actions/github'
 import * as core from '@actions/core'
 import { getInputs } from './inputs.js'
-import { validate } from './validating.js'
+import { getSources } from './source.js'
 
 const octokit = new Octokit()
 
 async function run() {
-  const inputs = getInputs()
+  const inputs = await getInputs()
   if (!inputs)
     return
 
-  if (inputs.actions.validate === true) {
-    const validationResult = await validate(inputs)
-    if (validationResult.length > 0)
-      core.setFailed('Validation failed')
-  }
+  const sources = await getSources(inputs)
 
-  if (inputs.actions.upload === true) {
-    console.log('Validating', inputs.actions.upload)
-    console.log('Validating', inputs.upload)
-  }
-  else {
-    console.log('Validating', inputs.actions.upload)
-    console.log('Validating', inputs.upload)
-  }
+  sources.getDDFPaths().forEach(async (ddfPath) => {
+    core.debug(`Found DDF ${ddfPath}`)
+  })
 }
 
 run()

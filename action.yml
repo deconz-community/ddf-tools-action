@@ -13,9 +13,6 @@ inputs:
   source-devices-path:
     default: devices
     description: input path of DDF files
-  source-generic-path:
-    default: devices/generic
-    description: 'input path of Generic files, will look for a "generic" folder in main path if ommited'
   source-search-pattern:
     description: input search pattern
     default: '**/*.json'

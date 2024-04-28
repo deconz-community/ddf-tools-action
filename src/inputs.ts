@@ -1,3 +1,5 @@
+import path from 'node:path'
+import fs from 'node:fs/promises'
 import * as core from '@actions/core'
 
 interface CommonInputs {
@@ -13,12 +15,12 @@ export type InputsParams = CommonInputs & ({
   ci: CIInputs
 })
 
-export function getInputs(): InputsParams {
+export async function getInputs(): Promise<InputsParams> {
   const params: Partial<InputsParams> = {
     mode: getMode(),
-    source: getSourceInputs(),
-    bundler: getBundlerInputs(),
-    upload: getUploadInputs(),
+    source: await getSourceInputs(),
+    bundler: await getBundlerInputs(),
+    upload: await getUploadInputs(),
   }
 
   if (params.mode === 'ci')
@@ -58,15 +60,10 @@ export interface SourceInputs {
   }
 }
 
-function getSourceInputs(): SourceInputs {
-  const devices = getInput('source-devices-path')
-  if (!devices)
-    throw core.setFailed('Devices path must be provided')
-
-  let generic = getInput('source-generic-path')
-
-  if (!generic)
-    generic = `${devices}/generic`
+async function getSourceInputs(): Promise<SourceInputs> {
+  const devices = await getDirectoryInput('source-devices-path')
+  const generic = await getDirectoryInput('source-generic-path', true)
+    ?? await getDirectory(`${devices}/generic`, 'source-generic-path')
 
   const search = getInput('source-search-pattern')
   if (!search)
@@ -99,23 +96,25 @@ export type BundlerInputs = {
   enabled: false
 }
 
-function getBundlerInputs(): BundlerInputs {
+async function getBundlerInputs(): Promise<BundlerInputs> {
   const enabled = getBooleanInput('bundler-enabled')
 
   if (!enabled)
     return { enabled: false }
 
-  const fileModifiedMethod = getInput('bundle-file-modified-method') as FileModifiedMethod
+  const fileModifiedMethod = getInput('bundler-file-modified-method') as FileModifiedMethod
 
   if (!FILE_MODIFIED_METHODS.includes(fileModifiedMethod))
     throw core.setFailed(`Unknown file modified method : ${fileModifiedMethod}`)
 
   // TODO : Check if signKeys are valid
-  const signKeys = getArrayInput('bundle-sign-keys')
+  const signKeys = getArrayInput('bundler-sign-keys')
+
+  const outputPath = await getDirectoryInput('bundler-output-path', true)
 
   return {
     enabled,
-    outputPath: getInput('bundler-output-path'),
+    outputPath,
     signKeys,
     fileModifiedMethod,
     validation: getValidationInputs(),
@@ -156,7 +155,7 @@ export type UploadInputs = {
   enabled: false
 }
 
-function getUploadInputs(): UploadInputs {
+async function getUploadInputs(): Promise<UploadInputs> {
   const enabled = getBooleanInput('upload-enabled')
 
   if (!enabled)
@@ -170,7 +169,7 @@ function getUploadInputs(): UploadInputs {
 
   return {
     enabled,
-    inputPath: getInput('upload-input-path'),
+    inputPath: await getDirectoryInput('upload-input-path'),
     url,
     token,
   }
@@ -212,6 +211,44 @@ function getArrayInput(name: string): string[] {
   if (!data)
     return []
   return data.split(',')
+}
+
+async function getDirectoryInput<Optional extends boolean = false>(
+  name: string,
+  optional: Optional = false as Optional,
+  autoCreate = false,
+): Promise<Optional extends true ? (string | undefined) : string > {
+  const inputPath = getInput(name)
+  return getDirectory(inputPath, name, optional, autoCreate)
+}
+
+export async function getDirectory<Optional extends boolean = false>(
+  inputPath: string | undefined,
+  name: string,
+  optional: Optional = false as Optional,
+  autoCreate = false,
+): Promise<Optional extends true ? (string | undefined) : string > {
+  if (!inputPath) {
+    if (optional === true)
+      return undefined as any
+    throw core.setFailed(`The option '${name}' must be defined`)
+  }
+
+  const directoryPath = path.resolve(inputPath)
+
+  try {
+    const directoryStat = await fs.stat(directoryPath)
+    if (!directoryStat.isDirectory())
+      throw core.setFailed(`The option '${name}' must be valid directory path`)
+  }
+  catch (err) {
+    if (autoCreate && typeof err === 'object' && err !== null && 'code' in err && err.code === 'ENOENT')
+      await fs.mkdir(directoryPath, { recursive: true })
+    else
+      throw err
+  }
+
+  return directoryPath
 }
 
 export function assertInputs(params: InputsParams) {
