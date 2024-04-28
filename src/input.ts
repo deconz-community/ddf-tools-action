@@ -132,6 +132,7 @@ export type BundlerValidationInputs = {
   enabled: true
   strict: boolean
   enforceUUID: boolean
+  warnUnusedFiles: boolean
 } | {
   enabled: false
 }
@@ -146,6 +147,7 @@ function getValidationInputs(): BundlerValidationInputs {
     enabled,
     strict: getBooleanInput('bundler-validation-strict'),
     enforceUUID: getBooleanInput('bundler-validation-enforce-uuid'),
+    warnUnusedFiles: getBooleanInput('bundler-validation-warn-unused-files'),
   }
 }
 // #endregion

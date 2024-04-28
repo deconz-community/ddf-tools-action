@@ -48,6 +48,9 @@ inputs:
   bundler-validation-enforce-uuid:
     description: Enforce unique IDs in the DDF files
     default: 'true'
+  bundler-validation-warn-unused-files:
+    description: Send a warning if a file is not used in any bundle
+    default: 'true'
 
   # # Upload options
   upload-enabled:

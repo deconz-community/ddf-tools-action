@@ -2,23 +2,10 @@ import { ZodError } from 'zod'
 import { visit } from 'jsonc-parser'
 import * as core from '@actions/core'
 
-export type AnyError = SimpleError | ValidationError
+import type { ValidationError } from '@deconz-community/ddf-bundler'
 
-export interface SimpleError {
-  type: 'simple'
-  message: string
-}
-
-export interface ValidationError {
-  type: 'validation'
-  message: string
-  file: string
-  startLine?: number
-  startColumn?: number
-}
-
-export function handleError(error: ZodError | Error | unknown, file: string, fileContent: string): AnyError[] {
-  const errorsList: AnyError[] = []
+export function handleError(error: ZodError | Error | unknown, file: string, fileContent: string): ValidationError[] {
+  const errorsList: ValidationError[] = []
 
   if (error instanceof ZodError) {
     // Build error list by json path
@@ -37,17 +24,19 @@ export function handleError(error: ZodError | Error | unknown, file: string, fil
 
     // Read the JSON file to find the line and column of the error
     visit(fileContent, {
-      onLiteralValue: (value: any, offset: number, length: number, startLine: number, startColumn: number, pathSupplier) => {
-        const path = pathSupplier().join('/')
+      onLiteralValue: (value: any, offset: number, length: number, line: number, column: number, pathSupplier) => {
+        const pathPart = pathSupplier()
+        const path = pathPart.join('/')
         const index = paths.indexOf(path)
         if (index > -1) {
           errors[path].forEach((message) => {
             errorsList.push({
-              type: 'validation',
+              type: 'code',
               message,
               file,
-              startLine,
-              startColumn,
+              path: pathPart,
+              line,
+              column,
             })
           })
           paths.splice(index, 1)
@@ -59,7 +48,7 @@ export function handleError(error: ZodError | Error | unknown, file: string, fil
       paths.forEach((path) => {
         errors[path].forEach((message) => {
           errorsList.push({
-            type: 'validation',
+            type: 'simple',
             message,
             file,
           })
@@ -69,21 +58,21 @@ export function handleError(error: ZodError | Error | unknown, file: string, fil
   }
   else if (error instanceof Error) {
     errorsList.push({
-      type: 'validation',
+      type: 'simple',
       message: error.message,
       file,
     })
   }
   else if (typeof error === 'string') {
     errorsList.push({
-      type: 'validation',
+      type: 'simple',
       message: error,
       file,
     })
   }
   else {
     errorsList.push({
-      type: 'validation',
+      type: 'simple',
       message: 'Unknown Error',
       file,
     })
@@ -92,24 +81,16 @@ export function handleError(error: ZodError | Error | unknown, file: string, fil
   return errorsList
 }
 
-export function isSimpleError(error: AnyError): error is SimpleError {
-  return error.type === 'simple'
-}
-
-export function isValidationError(error: AnyError): error is ValidationError {
-  return error.type === 'validation'
-}
-
-export function logsErrors(errors: AnyError[]) {
+export function logsErrors(errors: ValidationError[]) {
   errors.forEach((error) => {
-    if (isSimpleError(error)) {
+    if (error.type === 'simple') {
       core.error(error.message)
     }
-    else if (isValidationError(error)) {
+    else if (error.type === 'code') {
       core.error(error.message, {
         file: error.file,
-        startLine: error.startLine,
-        startColumn: error.startColumn,
+        startLine: error.line,
+        startColumn: error.column,
       })
     }
   })

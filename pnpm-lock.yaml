@@ -18,8 +18,8 @@ importers:
         specifier: ^6.0.0
         version: 6.0.0
       '@deconz-community/ddf-bundler':
-        specifier: ^0.18.1
-        version: 0.18.1
+        specifier: ^0.19.0
+        version: 0.19.0
       '@deconz-community/ddf-validator':
         specifier: ^2.27.2
         version: 2.27.2
@@ -288,8 +288,8 @@ packages:
     bundledDependencies:
       - is-unicode-supported
 
-  '@deconz-community/ddf-bundler@0.18.1':
-    resolution: {integrity: sha512-+6xpUj6ktB356MLWohzMO/YKC6kYuyNPPoFWrxEi8UGNUPYV660ELqljNDel4S/8gp7BTUCRWcEAaeCv+v1/7w==}
+  '@deconz-community/ddf-bundler@0.19.0':
+    resolution: {integrity: sha512-IynM5JI1aInNVjb8RRyXDL/lLjbmHrT+QHMWJeMbfaYiH20IE4kPlC5L4g5yx85Ng//RfSGgFoc1WYCEJDL7Lw==}
 
   '@deconz-community/ddf-validator@2.27.2':
     resolution: {integrity: sha512-MuTy6rYHaQp/nkbve/UXvG1mg1rqSW2eDtaDx9ar+daZk6R/K43ACWnuR96My0911t4g8wwXgCiKCFsVXe8eTQ==}
@@ -3748,7 +3748,7 @@ snapshots:
       picocolors: 1.0.0
       sisteransi: 1.0.5
 
-  '@deconz-community/ddf-bundler@0.18.1':
+  '@deconz-community/ddf-bundler@0.19.0':
     dependencies:
       '@noble/curves': 1.4.0
       pako: 2.1.0
