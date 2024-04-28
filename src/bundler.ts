@@ -164,7 +164,6 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
       writtenFilesPath,
       bundlerOutputPath,
       {
-        compressionLevel: 9,
         retentionDays: bundler.artifactRetentionDays,
       },
     )
