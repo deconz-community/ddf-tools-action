@@ -1,6 +1,7 @@
 import path from 'node:path'
 import fs from 'node:fs/promises'
 import * as core from '@actions/core'
+import { hexToBytes } from '@noble/hashes/utils'
 
 interface CommonInputs {
   source: SourceInputs
@@ -89,7 +90,7 @@ type FileModifiedMethod = typeof FILE_MODIFIED_METHODS[number]
 export type BundlerInputs = {
   enabled: true
   outputPath?: string
-  signKeys: string[]
+  signKeys: Uint8Array[]
   fileModifiedMethod: FileModifiedMethod
   validation: BundlerValidationInputs
 } | {
@@ -108,7 +109,7 @@ async function getBundlerInputs(): Promise<BundlerInputs> {
     throw core.setFailed(`Unknown file modified method : ${fileModifiedMethod}`)
 
   // TODO : Check if signKeys are valid
-  const signKeys = getArrayInput('bundler-sign-keys')
+  const signKeys = getArrayInput('bundler-sign-keys').map(hexToBytes)
 
   const outputPath = await getDirectoryInput('bundler-output-path', true)
 

@@ -1,6 +1,8 @@
+import path from 'node:path'
 import * as core from '@actions/core'
 import type { Bundle } from '@deconz-community/ddf-bundler'
-import { buildFromFiles, generateHash } from '@deconz-community/ddf-bundler'
+import { buildFromFiles, createSignature, generateHash } from '@deconz-community/ddf-bundler'
+import { bytesToHex, hexToBytes } from '@noble/hashes/utils'
 import type { InputsParams } from './input'
 import type { Sources } from './source'
 import { handleError, logsErrors } from './errors'
@@ -14,8 +16,7 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
   const bundles: ReturnType<typeof Bundle>[] = []
 
   await Promise.all(sources.getDDFPaths().map(async (ddfPath) => {
-    core.info(`Found DDF ${ddfPath}`)
-
+    core.debug(`[bundler] Bundling DDF ${ddfPath}`)
     try {
       const bundle = await buildFromFiles(
         `file://${params.source.path.generic}`,
@@ -24,12 +25,21 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
         path => sources.getLastModified(path.replace('file://', '')),
       )
 
-      if (bundler.signKeys.length > 0) {
-        const hash = await generateHash(bundle.data)
-        core.info(`Bundle hash: ${hash}`)
-        bundler.signKeys.forEach((key) => {
-          // core.info(`Signing with key ${key}`)
+      bundle.data.hash = await generateHash(bundle.data)
+
+      bundler.signKeys.forEach((key) => {
+        bundle.data.signatures.push({
+          key,
+          signature: createSignature(bundle.data.hash!, key),
         })
+      })
+
+      if (bundler.outputPath) {
+        const parsedPath = path.parse(ddfPath)
+        parsedPath.ext = '.ddf'
+        parsedPath.dir = parsedPath.dir.replace(params.source.path.devices, '')
+        const newPath = path.resolve(bundler.outputPath, path.format(parsedPath))
+        core.info(`[bundler] Writing bundle to ${newPath}`)
       }
 
       bundles.push(bundle)
