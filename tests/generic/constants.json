@@ -6,6 +6,6 @@
   },
   "device-types": {
     "$TYPE_DIMMABLE_LIGHT": "Dimmable light",
-    "$TYPE_DIMMABLE_LIGHT_COPY": "Dimmable light copy"
+    "$TYPE_DIMMABLE_LIGHT_UNUSED": "Dimmable light unused"
   }
 }
