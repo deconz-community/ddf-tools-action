@@ -25,10 +25,10 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
       )
 
       if (bundler.signKeys.length > 0) {
-        const hash = generateHash(bundle.data)
+        const hash = await generateHash(bundle.data)
         core.info(`Bundle hash: ${hash}`)
         bundler.signKeys.forEach((key) => {
-          core.info(`Signing with key ${key}`)
+          // core.info(`Signing with key ${key}`)
         })
       }
 
