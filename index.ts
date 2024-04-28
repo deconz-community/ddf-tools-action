@@ -28,6 +28,9 @@ async function run() {
 
     core.info('Bundler action finished')
   }
+
+  const unused = sources.getUnusedFiles()
+  core.info(`Unused files:${JSON.stringify(unused, null, 2)}`)
 }
 
 run()

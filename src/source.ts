@@ -57,19 +57,41 @@ export async function getSources(params: InputsParams) {
     getDDFPaths: () => Array.from(ddf.keys()),
     getGenericPaths: () => Array.from(generic.keys()),
     getMiscFilesPaths: () => Array.from(misc.keys()),
-    getFile: async (filePath: string): Promise<Blob> => {
+    getUnusedFiles: () => {
+      const unused: Record<string, string[]> = {
+        ddf: [],
+        generic: [],
+        misc: [],
+      }
+      ddf.forEach((source, filePath) => {
+        if (source.useCount === 0)
+          unused.ddf.push(filePath)
+      })
+      generic.forEach((source, filePath) => {
+        if (source.useCount === 0)
+          unused.generic.push(filePath)
+      })
+      misc.forEach((source, filePath) => {
+        if (source.useCount === 0)
+          unused.misc.push(filePath)
+      })
+
+      return unused
+    },
+    getFile: async (filePath: string, updateCount = true): Promise<Blob> => {
       const sourceMap = getSourceMap(filePath)
 
       const source = sourceMap.get(filePath)
       if (source) {
-        source.useCount++
+        if (updateCount)
+          source.useCount++
         return source.data
       }
       else {
         const data = new Blob([await fs.readFile(filePath)])
         sourceMap.set(filePath, {
           data,
-          useCount: 1,
+          useCount: updateCount ? 1 : 0,
         })
         return data
       }
