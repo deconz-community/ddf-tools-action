@@ -72,6 +72,7 @@ export async function getSources(params: InputsParams) {
 
       return unused
     },
+    // TODO: Add format text and json to cache the conversions
     getFile: async (filePath: string, updateCount = true): Promise<Blob> => {
       const sourceMap = getSourceMap(filePath)
 
