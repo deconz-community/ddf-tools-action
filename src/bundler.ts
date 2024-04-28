@@ -3,7 +3,7 @@ import type { Bundle } from '@deconz-community/ddf-bundler'
 import { buildFromFiles } from '@deconz-community/ddf-bundler'
 import type { InputsParams } from './input'
 import type { Sources } from './source'
-import { handleError } from './errors'
+import { handleError, logsErrors } from './errors'
 
 export async function runBundler(params: InputsParams, sources: Sources): Promise<ReturnType<typeof Bundle>[]> {
   if (!params.bundler.enabled)
@@ -28,7 +28,7 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
     catch (err) {
       core.error(`Error while creating bundle ${ddfPath}`)
       const file = await sources.getFile(ddfPath)
-      handleError(err, ddfPath, await file.text())
+      logsErrors(handleError(err, ddfPath, await file.text()))
     }
   }))
 

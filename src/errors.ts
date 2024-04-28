@@ -4,10 +4,13 @@ import { visit } from 'jsonc-parser'
 export type AnyError = SimpleError | ValidationError
 
 export interface SimpleError {
+  type: 'simple'
   message: string
 }
 
-export type ValidationError = SimpleError & {
+export interface ValidationError {
+  type: 'validation'
+  message: string
   file: string
   startLine?: number
   startColumn?: number
@@ -89,4 +92,27 @@ export function handleError(error: ZodError | Error | unknown, file: string, fil
   }
 
   return errorsList
+}
+
+export function isSimpleError(error: AnyError): error is SimpleError {
+  return error.type === 'simple'
+}
+
+export function isValidationError(error: AnyError): error is ValidationError {
+  return error.type === 'validation'
+}
+
+export function logsErrors(errors: AnyError[]) {
+  errors.forEach((error) => {
+    if (isSimpleError(error)) {
+      console.error(error.message)
+    }
+    else if (isValidationError(error)) {
+      console.error(error.message, {
+        file: error.file,
+        startLine: error.startLine,
+        startColumn: error.startColumn,
+      })
+    }
+  })
 }
