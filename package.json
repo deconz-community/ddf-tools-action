@@ -1,6 +1,5 @@
 {
   "name": "@deconz-community/ddf-tools-action",
-  "type": "module",
   "version": "0.0.1",
   "private": true,
   "packageManager": "pnpm@9.0.6",
