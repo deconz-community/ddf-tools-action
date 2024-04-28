@@ -17,6 +17,8 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
     throw new Error('Can\'t run bundler because he is not enabled')
 
   // #region Bundle creation
+  core.info('Creating bundles')
+
   const bundles: ReturnType<typeof Bundle>[] = []
   const validator = createValidator()
 
@@ -141,6 +143,8 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
 
   // #region Upload bundle as artifacts
   if (bundler.artifactEnabled && bundles.length > 0) {
+    core.startGroup('Upload bundles as artifact')
+
     if (!bundlerOutputPath)
       throw new Error('Can\'t upload bundles as artifact because outputPath is not defined')
 
@@ -154,6 +158,8 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
         retentionDays: bundler.artifactRetentionDays,
       },
     )
+    core.endGroup()
+
     core.info(`Created artifact with id: ${id} (bytes: ${size}) with a duration of ${bundler.artifactRetentionDays} days`)
   }
   // #endregion
@@ -162,6 +168,8 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
   // Anonymous function to use return and parent scope
   await (async () => {
     if (bundler.validation.enabled) {
+      core.info('Validating unused files')
+
       const unused = sources.getUnusedFiles()
 
       // TODO: Optimise this, it's loading the files twice
@@ -173,27 +181,6 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
           data: JSON.parse(await fileContent.text()),
         }
       }))
-
-      // Use parent validator
-      /*
-      const validator = createValidator()
-
-      // Load used generic files
-      await Promise.all(sources
-        .getGenericPaths()
-        .filter(path => !unused.generic.includes(path))
-        .map(async (path) => {
-          try {
-            const file = await sources.getFile(path)
-            const data = JSON.parse(await file.text())
-            validator.loadGeneric(data)
-          }
-          catch (err) {
-            // Ignore errors because they already have been validated before
-          }
-        }),
-      )
-      */
 
       const validationResult = validator.bulkValidate(genericFiles, [])
 
