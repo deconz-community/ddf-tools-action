@@ -18,6 +18,7 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
 
   // #region Bundle creation
   const bundles: ReturnType<typeof Bundle>[] = []
+  const validator = createValidator()
 
   const bundlerOutputPath = bundler.outputPath
     ?? (bundler.artifactEnabled
@@ -40,8 +41,6 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
       // Anonymous function to use return and parent scope
       await (async () => {
         if (bundler.validation.enabled) {
-          const validator = createValidator()
-
           const ddfc = JSON.parse(bundle.data.ddfc)
           if (typeof ddfc !== 'object' || ddfc === null)
             throw new Error('Something went wrong while parsing the DDFC file')
@@ -160,43 +159,66 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
   // #endregion
 
   // #region Validation of unused files
-  if (bundler.validation.enabled) {
-    const unused = sources.getUnusedFiles()
+  // Anonymous function to use return and parent scope
+  await (async () => {
+    if (bundler.validation.enabled) {
+      const unused = sources.getUnusedFiles()
 
-    const validator = createValidator()
+      // TODO: Optimise this, it's loading the files twice
 
-    // TODO: Optimise this, it's loading the files twice
+      const genericFiles = await Promise.all(unused.generic.map(async (path) => {
+        const fileContent = await sources.getFile(path)
+        return {
+          path,
+          data: JSON.parse(await fileContent.text()),
+        }
+      }))
 
-    const genericFiles = await Promise.all(unused.generic.map(async (path) => {
-      const fileContent = await sources.getFile(path)
-      return {
-        path,
-        data: JSON.parse(await fileContent.text()),
-      }
-    }))
+      // Use parent validator
+      /*
+      const validator = createValidator()
 
-    const validationResult = validator.bulkValidate(genericFiles, [])
+      // Load used generic files
+      await Promise.all(sources
+        .getGenericPaths()
+        .filter(path => !unused.generic.includes(path))
+        .map(async (path) => {
+          try {
+            const file = await sources.getFile(path)
+            const data = JSON.parse(await file.text())
+            validator.loadGeneric(data)
+          }
+          catch (err) {
+            // Ignore errors because they already have been validated before
+          }
+        }),
+      )
+      */
 
-    await Promise.all(validationResult.map(async (error) => {
-      const file = await sources.getFile(error.path)
-      logsErrors(handleError(error.error, error.path, await file.text()))
-    }))
+      const validationResult = validator.bulkValidate(genericFiles, [])
 
-    if (bundler.validation.warnUnusedFiles) {
-      const messagesMap = {
-        ddf: 'Unused DDF files',
-        generic: 'Unused generic files',
-        misc: 'Unused misc files',
-      }
-      core.startGroup('Unused files')
-      Object.entries(messagesMap).forEach(([key, message]) => {
-        unused[key].forEach((file) => {
-          core.warning(`${message}:${file}`, { file })
+      await Promise.all(validationResult.map(async (error) => {
+        const file = await sources.getFile(error.path)
+        logsErrors(handleError(error.error, error.path, await file.text()))
+      }))
+
+      if (bundler.validation.warnUnusedFiles) {
+        const messagesMap = {
+          ddf: 'Unused DDF file',
+          generic: 'Unused generic file',
+          misc: 'Unused misc file',
+        }
+        core.startGroup('Unused files')
+        Object.entries(messagesMap).forEach(([key, message]) => {
+          unused[key].forEach((file) => {
+            core.warning(`${message}:${file}`, { file })
+          })
         })
-      })
-      core.endGroup()
+        core.endGroup()
+      }
     }
-  }
+  })()
+
   // #endregion
 
   core.info(`Bundler finished: ${bundles.length}`)
