@@ -15,7 +15,9 @@ jobs:
   ci:
     name: Continuous integration
     runs-on: ubuntu-latest
-    
+    env:
+      ACTIONS_STEP_DEBUG: true
+      
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4
@@ -39,8 +41,6 @@ jobs:
         with:
           source-devices-path: tests
           source-ignore-pattern: '**/invalid.json'
-        env:
-          ACTIONS_STEP_DEBUG: true
 
 #      - name: Create Release Pull Request or Publish
 #        id: changesets
