@@ -182,6 +182,8 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
         }
       }))
 
+      core.info(`Validator Data = ${JSON.stringify(genericFiles, null, 2)}`)
+
       const validationResult = validator.bulkValidate(genericFiles, [])
 
       await Promise.all(validationResult.map(async (error) => {
