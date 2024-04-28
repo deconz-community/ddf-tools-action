@@ -11,6 +11,8 @@ async function run() {
     return
 
   core.info(`Current mode : ${inputs.mode}`)
+  core.debug('Debug Info')
+  core.info('Debug info above ?')
 
   const sources = await getSources(inputs)
 
