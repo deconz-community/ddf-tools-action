@@ -19,6 +19,13 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
 
   const bundles: ReturnType<typeof Bundle>[] = []
 
+  const bundlerOutputPath = bundler.outputPath
+    ?? bundler.artifactEnabled
+    ? await fs.mkdtemp('ddf-bundler')
+    : undefined
+
+  const writtenFilesPath: string[] = []
+
   await Promise.all(sources.getDDFPaths().map(async (ddfPath) => {
     core.debug(`[bundler] Bundling DDF ${ddfPath}`)
     try {
@@ -38,28 +45,18 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
         })
       })
 
-      if (bundler.outputPath) {
+      if (bundlerOutputPath) {
         const parsedPath = path.parse(ddfPath)
         parsedPath.dir = parsedPath.dir.replace(params.source.path.devices, '')
         parsedPath.ext = '.ddf'
         parsedPath.base = `${parsedPath.name}${parsedPath.ext}`
-        const outputPath = path.resolve(path.join(bundler.outputPath, path.format(parsedPath)))
+        const outputPath = path.resolve(path.join(bundlerOutputPath, path.format(parsedPath)))
 
         const encoded = encode(bundle)
         const data = Buffer.from(await encoded.arrayBuffer())
         fs.mkdir(path.dirname(outputPath), { recursive: true })
         await fs.writeFile(outputPath, data)
-
-        const { id, size } = await artifact.uploadArtifact(
-          'Bundles',
-          [outputPath],
-          bundler.outputPath,
-          {
-            retentionDays: 1,
-          },
-        )
-
-        core.info(`Created artifact with id: ${id} (bytes: ${size}`)
+        writtenFilesPath.push(outputPath)
       }
 
       bundles.push(bundle)
@@ -70,6 +67,21 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
       logsErrors(handleError(err, ddfPath, await file.text()))
     }
   }))
+
+  if (bundler.artifactEnabled) {
+    if (!bundlerOutputPath)
+      throw new Error('Can\'t upload bundles as artifact because outputPath is not defined')
+
+    const { id, size } = await artifact.uploadArtifact(
+      'Bundles',
+      writtenFilesPath,
+      bundlerOutputPath,
+      {
+        retentionDays: bundler.artifactRetentionDays,
+      },
+    )
+    core.info(`Created artifact with id: ${id} (bytes: ${size}) with a duration of ${bundler.artifactRetentionDays} days`)
+  }
 
   core.info(`Bundler finished: ${bundles.length}`)
 

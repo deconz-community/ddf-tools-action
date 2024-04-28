@@ -90,6 +90,8 @@ type FileModifiedMethod = typeof FILE_MODIFIED_METHODS[number]
 export type BundlerInputs = {
   enabled: true
   outputPath?: string
+  artifactEnabled: boolean
+  artifactRetentionDays: number
   signKeys: Uint8Array[]
   fileModifiedMethod: FileModifiedMethod
   validation: BundlerValidationInputs
@@ -116,6 +118,8 @@ async function getBundlerInputs(): Promise<BundlerInputs> {
   return {
     enabled,
     outputPath,
+    artifactEnabled: getBooleanInput('bundler-output-artifact-enabled'),
+    artifactRetentionDays: Number(getInput('bundler-output-artifact-retention-days')),
     signKeys,
     fileModifiedMethod,
     validation: getValidationInputs(),

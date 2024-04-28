@@ -40,6 +40,8 @@ jobs:
           source-devices-path: tests
           source-ignore-pattern: '**/invalid.json'
           bundler-output-path: bundled
+          bundler-output-artifact-enabled: true
+          bundler-output-artifact-retention-days: 7
           bundler-sign-keys: ${{ secrets.BUNDLER_SIGN_KEYS }}
 
 #      - name: Create Release Pull Request or Publish

@@ -25,6 +25,12 @@ inputs:
     default: 'true'
   bundler-output-path:
     description: output path of bundled DDF files if not provided will keep them in memory before uploading if enabled
+  bundler-output-artifact-enabled:
+    description: Upload the output path as an artifact
+    default: 'false'
+  bundler-output-artifact-retention-days:
+    description: Duration of the artifact in days
+    default: '3'
   bundler-sign-keys:
     description: comma seperated list of private keys to sign the bundle with
   bundler-file-modified-method:
