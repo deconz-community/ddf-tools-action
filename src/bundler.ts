@@ -20,7 +20,6 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
   core.info('Creating bundles')
 
   const bundles: ReturnType<typeof Bundle>[] = []
-  const validator = createValidator()
 
   const bundlerOutputPath = bundler.outputPath
     ?? (bundler.artifactEnabled
@@ -43,6 +42,8 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
       // Anonymous function to use return and parent scope
       await (async () => {
         if (bundler.validation.enabled) {
+          const validator = createValidator()
+
           const ddfc = JSON.parse(bundle.data.ddfc)
           if (typeof ddfc !== 'object' || ddfc === null)
             throw new Error('Something went wrong while parsing the DDFC file')
@@ -172,6 +173,8 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
 
       const unused = sources.getUnusedFiles()
 
+      const validator = createValidator()
+
       // TODO: Optimise this, it's loading the files twice
 
       const genericFiles = await Promise.all(unused.generic.map(async (path) => {
@@ -182,8 +185,21 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
         }
       }))
 
-      core.info(`Validator Data = ${JSON.stringify(validator.generics, null, 2)}`)
-      core.info(`Will validate Data = ${JSON.stringify(genericFiles, null, 2)}`)
+      // Load used generic files
+      await Promise.all(sources
+        .getGenericPaths()
+        .filter(path => !unused.generic.includes(path))
+        .map(async (path) => {
+          try {
+            const file = await sources.getFile(path)
+            const data = JSON.parse(await file.text())
+            validator.loadGeneric(data)
+          }
+          catch (err) {
+            // Ignore errors because they already have been validated before
+          }
+        }),
+      )
 
       const validationResult = validator.bulkValidate(genericFiles, [])
 
