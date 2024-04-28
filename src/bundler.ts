@@ -1,7 +1,9 @@
 import path from 'node:path'
+import fs from 'node:fs/promises'
+import { createWriteStream } from 'node:fs'
 import * as core from '@actions/core'
 import type { Bundle } from '@deconz-community/ddf-bundler'
-import { buildFromFiles, createSignature, generateHash } from '@deconz-community/ddf-bundler'
+import { buildFromFiles, createSignature, encode, generateHash } from '@deconz-community/ddf-bundler'
 import { bytesToHex, hexToBytes } from '@noble/hashes/utils'
 import type { InputsParams } from './input'
 import type { Sources } from './source'
@@ -36,13 +38,21 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
 
       if (bundler.outputPath) {
         const parsedPath = path.parse(ddfPath)
-        core.info(`[bundler] Parsed path:${JSON.stringify(parsedPath)}`)
-        parsedPath.ext = '.ddf'
         parsedPath.dir = parsedPath.dir.replace(params.source.path.devices, '')
-        core.info(`after = ${JSON.stringify(parsedPath)}`)
-        core.info(`format = ${path.format(parsedPath)}`)
-        const newPath = path.resolve(path.join(bundler.outputPath, path.format(parsedPath)))
-        core.info(`[bundler] Writing bundle to ${newPath}`)
+        parsedPath.ext = '.ddf'
+        parsedPath.base = `${parsedPath.name}${parsedPath.ext}`
+        const outputPath = path.resolve(path.join(bundler.outputPath, path.format(parsedPath)))
+
+        const encoded = encode(bundle)
+        const stream = createWriteStream(outputPath)
+        if (stream.write(encoded)) {
+          stream.end()
+          core.info(`[bundler] Writing bundle to ${outputPath} OK`)
+        }
+        else {
+          core.info(`[bundler] Writing bundle to ${outputPath} Failed`)
+        }
+        stream.close()
       }
 
       bundles.push(bundle)
