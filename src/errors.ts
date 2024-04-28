@@ -43,6 +43,7 @@ export function handleError(error: ZodError | Error | unknown, file: string, fil
           // core.error(`${errors[path].length} validation error${errors[path].length > 1 ? 's' : ''} in file ${filePath} at ${path}`)
           errors[path].forEach((message) => {
             errorsList.push({
+              type: 'validation',
               message,
               file,
               startLine,
@@ -65,6 +66,7 @@ export function handleError(error: ZodError | Error | unknown, file: string, fil
       paths.forEach((path) => {
         errors[path].forEach((message) => {
           errorsList.push({
+            type: 'validation',
             message,
             file,
           })
@@ -74,18 +76,21 @@ export function handleError(error: ZodError | Error | unknown, file: string, fil
   }
   else if (error instanceof Error) {
     errorsList.push({
+      type: 'validation',
       message: error.message,
       file,
     })
   }
   else if (typeof error === 'string') {
     errorsList.push({
+      type: 'validation',
       message: error,
       file,
     })
   }
   else {
     errorsList.push({
+      type: 'validation',
       message: 'Unknown Error',
       file,
     })
