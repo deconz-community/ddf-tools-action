@@ -38,6 +38,7 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
         const parsedPath = path.parse(ddfPath)
         parsedPath.ext = '.ddf'
         parsedPath.dir = parsedPath.dir.replace(params.source.path.devices, '')
+        core.info(`[bundler] Output dir: ${bundler.outputPath}`)
         const newPath = path.resolve(bundler.outputPath, path.format(parsedPath))
         core.info(`[bundler] Writing bundle to ${newPath}`)
       }
