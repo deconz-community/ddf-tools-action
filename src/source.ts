@@ -82,7 +82,7 @@ export async function getSources(params: InputsParams) {
       const sourceMap = getSourceMap(filePath)
       const source = sourceMap.get(filePath)
       if (!source)
-        throw new Error('Trying to get the modified date of a file that is not loaded')
+        throw new Error('Trying to get the modified date of a file that is not loaded filePath='+ filePath)
 
       if (source.last_modified)
         return source.last_modified
