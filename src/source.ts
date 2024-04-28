@@ -3,6 +3,7 @@ import path from 'node:path'
 import type { DDF } from '@deconz-community/ddf-validator'
 import glob from 'fast-glob'
 import type { InputsParams } from './input.js'
+import * as core from '@actions/core'
 
 export interface Source {
   data: Blob
@@ -47,6 +48,15 @@ export async function getSources(params: InputsParams) {
   }))
 
   const getSourceMap = (filePath: string) => {
+    if(core.isDebug()){
+      core.debug(`getSourceMap: filePath=${filePath}`)
+      core.debug(`ddf.has(filePath)=${ddf.has(filePath)}`)
+      core.debug(`generic.has(filePath)=${generic.has(filePath)}`)
+      core.debug(`misc.has(filePath)=${misc.has(filePath)}`)
+      core.debug(`ddf.paths=${Array.from(ddf.keys()).join(',')}`)
+      core.debug(`generic.paths=${Array.from(generic.keys()).join(',')}`)
+      core.debug(`misc.paths=${Array.from(misc.keys()).join(',')}`)
+    }
     if (ddf.has(filePath))
       return ddf
     if (generic.has(filePath))
