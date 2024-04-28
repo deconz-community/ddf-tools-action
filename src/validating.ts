@@ -16,7 +16,7 @@ export async function validate({ source, validation }: InputsParams): Promise<An
 
   try {
     const validator = createValidator()
-    const skip = !validation.noSkip
+    const skip = false
 
     core.info(`Validatig DDF using GitHub action v${version} and validator v${validator.version}.`)
 

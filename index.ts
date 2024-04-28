@@ -1,9 +1,9 @@
-import { Octokit } from '@octokit/action'
+// import { Octokit } from '@octokit/action'
 import * as core from '@actions/core'
-import { getInputs } from './inputs.js'
-import { getSources } from './source.js'
+import { getInputs } from './src/inputs.js'
+import { getSources } from './src/source.js'
 
-const octokit = new Octokit()
+// const octokit = new Octokit()
 
 async function run() {
   const inputs = await getInputs()

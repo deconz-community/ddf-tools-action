@@ -29,7 +29,7 @@
     "dist/licenses.txt"
   ],
   "scripts": {
-    "build": "tsc && ncc build --minify --license licenses.txt",
+    "build": "tsc && ncc build --license licenses.txt",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
