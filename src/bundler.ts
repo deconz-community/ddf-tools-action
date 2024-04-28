@@ -5,11 +5,95 @@ import * as core from '@actions/core'
 import type { Bundle } from '@deconz-community/ddf-bundler'
 import { buildFromFiles, createSignature, encode, generateHash } from '@deconz-community/ddf-bundler'
 import { DefaultArtifactClient } from '@actions/artifact'
+import { createValidator } from '@deconz-community/ddf-validator'
+import { ZodError } from 'zod'
+import { fromZodError } from 'zod-validation-error'
 import type { InputsParams } from './input'
 import type { Sources } from './source'
 import { handleError, logsErrors } from './errors'
 
 const artifact = new DefaultArtifactClient()
+
+function validateBundle(params: InputsParams, bundle: ReturnType<typeof Bundle>) {
+  const { bundler } = params
+
+  if (!bundler.enabled || !bundler.validation.enabled)
+    throw new Error('Can\'t validate bundle because he is not enabled')
+
+  const validator = createValidator()
+
+  const ddfc = JSON.parse(bundle.data.ddfc)
+  if (typeof ddfc !== 'object' || ddfc === null)
+    throw new Error('Something went wrong while parsing the DDFC file')
+
+  if (bundler.validation.enforceUUID && ddfc.uuid === undefined)
+    throw new Error('UUID is missing in the DDFC file')
+
+  if (ddfc.ddfvalidate === false && bundler.validation.strict) {
+    if (bundler.validation.strict)
+      throw new Error('Strict mode enabled and validation is disabled in the DDFC file')
+    bundle.data.validation = {
+      result: 'skipped',
+      version: validator.version,
+    }
+    return
+  }
+
+  const validationResult = validator.bulkValidate(
+    // Generic files
+    bundle.data.files
+      .filter(file => file.type === 'JSON')
+      .map((file) => {
+        return {
+          path: file.path,
+          data: JSON.parse(file.data as string),
+        }
+      }),
+    // DDF file
+    [
+      {
+        path: bundle.data.name,
+        data: ddfc,
+      },
+    ],
+  )
+
+  if (validationResult.length === 0) {
+    bundle.data.validation = {
+      result: 'success',
+      version: validator.version,
+    }
+    return
+  }
+
+  const errors: {
+    message: string
+    path: (string | number)[]
+  }[] = []
+
+  validationResult.forEach(({ path, error }) => {
+    if (error instanceof ZodError) {
+      fromZodError(error).details.forEach((detail) => {
+        errors.push({
+          path: [path, ...detail.path],
+          message: detail.message,
+        })
+      })
+    }
+    else {
+      errors.push({
+        path: [path],
+        message: error.toString(),
+      })
+    }
+  })
+
+  bundle.data.validation = {
+    result: 'error',
+    version: validator.version,
+    errors,
+  }
+}
 
 export async function runBundler(params: InputsParams, sources: Sources): Promise<ReturnType<typeof Bundle>[]> {
   const { bundler } = params
@@ -35,6 +119,9 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
         path => sources.getFile(path.replace('file://', '')),
         path => sources.getLastModified(path.replace('file://', '')),
       )
+
+      if (bundler.validation.enabled)
+        validateBundle(params, bundle)
 
       bundle.data.hash = await generateHash(bundle.data)
 
