@@ -37,72 +37,70 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
       )
 
       // #region Validation
-      if (bundler.validation.enabled) {
-        const { bundler } = params
+      // Anonymous function to use return and parent scope
+      await (async () => {
+        if (bundler.validation.enabled) {
+          const validator = createValidator()
 
-        if (!bundler.enabled || !bundler.validation.enabled)
-          throw new Error('Can\'t validate bundle because he is not enabled')
+          const ddfc = JSON.parse(bundle.data.ddfc)
+          if (typeof ddfc !== 'object' || ddfc === null)
+            throw new Error('Something went wrong while parsing the DDFC file')
 
-        const validator = createValidator()
+          if (bundler.validation.enforceUUID && ddfc.uuid === undefined)
+            core.error('UUID is not defined in the DDFC file', { file: ddfPath })
 
-        const ddfc = JSON.parse(bundle.data.ddfc)
-        if (typeof ddfc !== 'object' || ddfc === null)
-          throw new Error('Something went wrong while parsing the DDFC file')
+          if (ddfc.ddfvalidate === false && bundler.validation.strict) {
+            if (bundler.validation.strict)
+              core.error('Strict mode enabled and validation is disabled in the DDFC file', { file: ddfPath })
 
-        if (bundler.validation.enforceUUID && ddfc.uuid === undefined)
-          core.error('UUID is not defined in the DDFC file', { file: ddfPath })
+            bundle.data.validation = {
+              result: 'skipped',
+              version: validator.version,
+            }
+            return
+          }
 
-        if (ddfc.ddfvalidate === false && bundler.validation.strict) {
-          if (bundler.validation.strict)
-            core.error('Strict mode enabled and validation is disabled in the DDFC file', { file: ddfPath })
+          const validationResult = validator.bulkValidate(
+            // Generic files
+            bundle.data.files
+              .filter(file => file.type === 'JSON')
+              .map((file) => {
+                return {
+                  path: file.path,
+                  data: JSON.parse(file.data as string),
+                }
+              }),
+            // DDF file
+            [
+              {
+                path: bundle.data.name,
+                data: ddfc,
+              },
+            ],
+          )
+
+          if (validationResult.length === 0) {
+            bundle.data.validation = {
+              result: 'success',
+              version: validator.version,
+            }
+            return
+          }
+
+          const errors: ValidationError[] = []
+
+          await Promise.all(validationResult.map(async (error) => {
+            const file = await sources.getFile(error.path)
+            errors.push(...handleError(error.error, error.path, await file.text()))
+          }))
 
           bundle.data.validation = {
-            result: 'skipped',
+            result: 'error',
             version: validator.version,
+            errors,
           }
-          return
         }
-
-        const validationResult = validator.bulkValidate(
-          // Generic files
-          bundle.data.files
-            .filter(file => file.type === 'JSON')
-            .map((file) => {
-              return {
-                path: file.path,
-                data: JSON.parse(file.data as string),
-              }
-            }),
-          // DDF file
-          [
-            {
-              path: bundle.data.name,
-              data: ddfc,
-            },
-          ],
-        )
-
-        if (validationResult.length === 0) {
-          bundle.data.validation = {
-            result: 'success',
-            version: validator.version,
-          }
-          return
-        }
-
-        const errors: ValidationError[] = []
-
-        await Promise.all(validationResult.map(async (error) => {
-          const file = await sources.getFile(error.path)
-          errors.push(...handleError(error.error, error.path, await file.text()))
-        }))
-
-        bundle.data.validation = {
-          result: 'error',
-          version: validator.version,
-          errors,
-        }
-      }
+      })()
       // #endregion
 
       // #region Hash & Signatures
@@ -143,7 +141,7 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
   // #endregion
 
   // #region Upload bundle as artifacts
-  if (bundler.artifactEnabled) {
+  if (bundler.artifactEnabled && bundles.length > 0) {
     if (!bundlerOutputPath)
       throw new Error('Can\'t upload bundles as artifact because outputPath is not defined')
 
