@@ -50,14 +50,16 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
         fs.mkdir(path.dirname(outputPath), { recursive: true })
         await fs.writeFile(outputPath, data)
 
-        artifact.uploadArtifact(
+        const { id, size } = await artifact.uploadArtifact(
           'Bundles',
           [outputPath],
-          '/bundled',
+          '',
           {
             retentionDays: 1,
           },
         )
+
+        core.info(`Created artifact with id: ${id} (bytes: ${size}`)
       }
 
       bundles.push(bundle)
