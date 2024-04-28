@@ -111,7 +111,7 @@ async function getBundlerInputs(): Promise<BundlerInputs> {
   // TODO : Check if signKeys are valid
   const signKeys = getArrayInput('bundler-sign-keys').map(hexToBytes)
 
-  const outputPath = await getDirectoryInput('bundler-output-path', true)
+  const outputPath = await getDirectoryInput('bundler-output-path', true, true)
 
   return {
     enabled,
