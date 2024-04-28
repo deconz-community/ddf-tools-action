@@ -45,7 +45,7 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
 
         const encoded = encode(bundle)
         const stream = createWriteStream(outputPath)
-        if (stream.write(encoded)) {
+        if (stream.write(await encoded.arrayBuffer())) {
           stream.end()
           core.info(`[bundler] Writing bundle to ${outputPath} OK`)
         }
