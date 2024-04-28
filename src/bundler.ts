@@ -20,9 +20,9 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
   const bundles: ReturnType<typeof Bundle>[] = []
 
   const bundlerOutputPath = bundler.outputPath
-    ?? bundler.artifactEnabled
-    ? await fs.mkdtemp('ddf-bundler')
-    : undefined
+    ?? (bundler.artifactEnabled
+      ? await fs.mkdtemp('ddf-bundler')
+      : undefined)
 
   const writtenFilesPath: string[] = []
 
