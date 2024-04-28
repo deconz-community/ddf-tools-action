@@ -52,8 +52,8 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
 
         const { id, size } = await artifact.uploadArtifact(
           'Bundles',
-          [outputPath.replace(bundler.outputPath, '')],
-          bundler.outputPath,
+          [outputPath],
+          '.',
           {
             retentionDays: 1,
           },
