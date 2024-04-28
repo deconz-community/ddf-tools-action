@@ -41,6 +41,9 @@ inputs:
   bundler-validation-strict:
     description: Validate all files even if they have the ddfvalidate option to false
     default: 'false'
+  bundler-validation-enforce-uuid:
+    description: Enforce unique IDs in the DDF files
+    default: 'true'
 
   # # Upload options
   upload-enabled:

@@ -127,6 +127,7 @@ function getBundlerInputs(): BundlerInputs {
 export type BundlerValidationInputs = {
   enabled: true
   strict: boolean
+  enforceUUID: boolean
 } | {
   enabled: false
 }
@@ -140,6 +141,7 @@ function getValidationInputs(): BundlerValidationInputs {
   return {
     enabled,
     strict: getBooleanInput('bundler-validation-strict'),
+    enforceUUID: getBooleanInput('bundler-validation-enforce-uuid'),
   }
 }
 // #endregion
