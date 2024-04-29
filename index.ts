@@ -3,6 +3,7 @@ import * as core from '@actions/core'
 import type { Bundle } from '@deconz-community/ddf-bundler'
 import { getParams } from './src/input.js'
 import { getSources } from './src/source.js'
+import type { MemoryBundle } from './src/bundler.js'
 import { runBundler } from './src/bundler.js'
 import { runUploader } from './src/uploader.js'
 import { handleError, logsErrors } from './src/errors.js'
@@ -27,7 +28,7 @@ async function run() {
   core.endGroup()
 
   const sources = await getSources(params)
-  const memoryBundles: ReturnType<typeof Bundle>[] = []
+  const memoryBundles: MemoryBundle[] = []
 
   if (params.bundler.enabled)
     memoryBundles.push(...await runBundler(params, sources))

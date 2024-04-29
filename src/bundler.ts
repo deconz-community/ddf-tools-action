@@ -12,7 +12,12 @@ import type { InputsParams } from './input'
 import type { Sources } from './source'
 import { handleError, logsErrors } from './errors'
 
-export async function runBundler(params: InputsParams, sources: Sources): Promise<ReturnType<typeof Bundle>[]> {
+export interface MemoryBundle {
+  bundle: ReturnType<typeof Bundle>
+  path: string
+}
+
+export async function runBundler(params: InputsParams, sources: Sources): Promise<MemoryBundle[]> {
   const { bundler, source } = params
 
   if (!bundler.enabled)
@@ -21,7 +26,7 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
   // #region Bundle creation
   core.info('Creating bundles')
 
-  const bundles: ReturnType<typeof Bundle>[] = []
+  const bundles: MemoryBundle[] = []
 
   const bundlerOutputPath = bundler.outputPath
     ?? (bundler.artifactEnabled
@@ -145,7 +150,10 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
       }
       // #endregion
 
-      bundles.push(bundle)
+      bundles.push({
+        bundle,
+        path: ddfPath,
+      })
     }
     catch (err) {
       core.error(`Error while creating bundle ${ddfPath}`)
