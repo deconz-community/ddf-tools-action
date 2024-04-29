@@ -38,5 +38,10 @@ async function runAction(params: InputsParams) {
 
 async function runCIPR(_params: InputsParams) {
   core.info('Running CI/PR mode')
-  core.info(JSON.stringify(github.context))
+
+  core.info(`Current action = ${github.context.payload.action}`)
+
+  core.startGroup('Debug context')
+  core.info(JSON.stringify(github.context, null, 2))
+  core.endGroup()
 }
