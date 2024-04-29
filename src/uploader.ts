@@ -32,7 +32,7 @@ export async function runUploader(params: InputsParams, memoryBundles: MemoryBun
     core.info(`${bundles.length} bundles packed`)
   }
   else {
-    core.info(`Looking for bundles on the disk to upload at ${upload.inputPath}`)
+    core.info(`Looking for bundles at ${upload.inputPath}`)
     const fileList = await glob(`${upload.inputPath}**/*.ddf`, { onlyFiles: true })
     core.info(`Found ${fileList.length} bundles on the disk to upload`)
     for (const file of fileList) {
@@ -62,6 +62,13 @@ export async function runUploader(params: InputsParams, memoryBundles: MemoryBun
 
   const bulkSize = 10
 
+  const resultCount = {
+    success: 0,
+    failed: 0,
+    alreadyExists: 0,
+  }
+
+  core.startGroup('Upload bundles details')
   for (let i = 0; i < bundles.length; i += bulkSize) {
     const group = bundles.slice(i, i + bulkSize)
     const formData = new FormData()
@@ -83,17 +90,22 @@ export async function runUploader(params: InputsParams, memoryBundles: MemoryBun
 
       Object.entries(result).forEach(([key, value]) => {
         const bundleName = memoryBundles[Number.parseInt(key.replace('bundle-#', ''))]?.path
-
         // TODO: Remove this temporary code, waiting for the extension update release
         if (value.success === false)
           value.code = value.message === 'Bundle with same hash already exists' ? 'bundle_hash_already_exists' : 'unknown'
 
-        if (value.success)
+        if (value.success) {
+          resultCount.success++
           core.info(`Uploaded bundle '${bundleName}' with id ${value.createdId} on the store.`)
-        else if (value.code === 'bundle_hash_already_exists')
+        }
+        else if (value.code === 'bundle_hash_already_exists') {
+          resultCount.alreadyExists++
           core.info(`DDF Bundle '${bundleName}' already exists on the store. Do nothing.`)
-        else
+        }
+        else {
+          resultCount.failed++
           core.error(`Failed to upload DDF bundle '${bundleName}' with code ${value.code}: ${value.message}`)
+        }
       })
     }
     catch (error) {
@@ -101,6 +113,13 @@ export async function runUploader(params: InputsParams, memoryBundles: MemoryBun
       throw logsErrors(handleError(error))
     }
   }
+
+  core.endGroup()
+
+  core.info(`Uploaded ${resultCount.success} bundles, ${resultCount.alreadyExists} already exists and ${resultCount.failed} failed`)
+
+  if (resultCount.failed > 0)
+    core.setFailed('Failed to upload DDF bundles, please check logs for more information')
 
   // #endregion
 }
