@@ -2,11 +2,14 @@ import { type Bundle, encode } from '@deconz-community/ddf-bundler'
 import * as core from '@actions/core'
 import { authentication, createDirectus, rest, serverHealth, staticToken } from '@directus/sdk'
 import type { InputsParams } from './input'
+import { handleError, logsErrors } from './errors'
 
 type UploadResponse = Record<string, {
-  success: boolean
-  createdId?: string
-  message?: string
+  success: true
+  createdId: string
+} | {
+  success: false
+  message: string
 }>
 
 export async function runUploader(params: InputsParams, memoryBundles: ReturnType<typeof Bundle>[]) {
@@ -50,7 +53,7 @@ export async function runUploader(params: InputsParams, memoryBundles: ReturnTyp
     }
 
     try {
-      const result = await client.request<{ result: UploadResponse }>(() => {
+      const { result } = await client.request<{ result: UploadResponse }>(() => {
         return {
           method: 'POST',
           path: '/bundle/upload',
@@ -62,8 +65,9 @@ export async function runUploader(params: InputsParams, memoryBundles: ReturnTyp
       core.info(`Uploaded ${group.length} bundles`)
       core.info(JSON.stringify(result, null, 2))
     }
-    catch (e) {
-      core.error(JSON.stringify(e, null, 2))
+    catch (error) {
+      logsErrors(handleError(error))
+      throw core.setFailed('Failed to upload bundles, please check logs for more information')
     }
   }
 

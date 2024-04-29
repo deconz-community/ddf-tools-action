@@ -4,7 +4,7 @@ import * as core from '@actions/core'
 
 import type { ValidationError } from '@deconz-community/ddf-bundler'
 
-export function handleError(error: ZodError | Error | unknown, file: string, fileContent: string): ValidationError[] {
+export function handleError(error: ZodError | Error | unknown, file?: string, fileContent?: string): ValidationError[] {
   const errorsList: ValidationError[] = []
 
   if (error instanceof ZodError) {
@@ -23,26 +23,28 @@ export function handleError(error: ZodError | Error | unknown, file: string, fil
     const paths = Object.keys(errors)
 
     // Read the JSON file to find the line and column of the error
-    visit(fileContent, {
-      onLiteralValue: (value: any, offset: number, length: number, line: number, column: number, pathSupplier) => {
-        const pathPart = pathSupplier()
-        const path = pathPart.join('/')
-        const index = paths.indexOf(path)
-        if (index > -1) {
-          errors[path].forEach((message) => {
-            errorsList.push({
-              type: 'code',
-              message,
-              file,
-              path: pathPart,
-              line,
-              column,
+    if (file && fileContent) {
+      visit(fileContent, {
+        onLiteralValue: (value: any, offset: number, length: number, line: number, column: number, pathSupplier) => {
+          const pathPart = pathSupplier()
+          const path = pathPart.join('/')
+          const index = paths.indexOf(path)
+          if (index > -1) {
+            errors[path].forEach((message) => {
+              errorsList.push({
+                type: 'code',
+                message,
+                file,
+                path: pathPart,
+                line,
+                column,
+              })
             })
-          })
-          paths.splice(index, 1)
-        }
-      },
-    })
+            paths.splice(index, 1)
+          }
+        },
+      })
+    }
 
     if (paths.length > 0) {
       paths.forEach((path) => {
