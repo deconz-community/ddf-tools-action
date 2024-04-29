@@ -61,10 +61,10 @@ export function handleError(error: ZodError | Error | unknown, file?: string, fi
       })
     }
   }
-  else if (error instanceof Error) {
+  else if (error instanceof Error || (typeof error === 'object' && error !== null && 'message' in error)) {
     errorsList.push({
       type: 'simple',
-      message: error.message,
+      message: String(error.message),
       file,
     })
   }
