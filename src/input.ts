@@ -12,7 +12,7 @@ interface CommonInputs {
 export type InputsParams = CommonInputs & ({
   mode: 'action'
 } | {
-  mode: 'ci'
+  mode: 'ci-pr' | 'ci-push'
   ci: CIInputs
 })
 
@@ -24,7 +24,7 @@ export async function getParams(): Promise<InputsParams> {
     upload: await getUploadInputs(),
   }
 
-  if (params.mode === 'ci')
+  if (params.mode === 'ci-pr' || params.mode === 'ci-push')
     params.ci = getCIInputs()
 
   assertInputs(params as InputsParams)
@@ -47,7 +47,7 @@ export function logsParams(params: InputsParams) {
 }
 
 // #region Mode
-const MODES = ['action', 'ci'] as const
+const MODES = ['action', 'ci-pr', 'ci-push'] as const
 export type Mode = typeof MODES[number]
 function getMode(): Mode {
   const mode = getInput('mode') as Mode | undefined

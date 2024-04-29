@@ -1,4 +1,5 @@
 // import { Octokit } from '@octokit/action'
+import * as github from '@actions/github'
 import * as core from '@actions/core'
 import type { InputsParams } from './src/input.js'
 import { getParams, logsParams } from './src/input.js'
@@ -22,6 +23,8 @@ async function run() {
 
   if (params.mode === 'action')
     await runAction(params)
+  else if (params.mode === 'ci-pr')
+    await runCIPR(params)
 }
 
 async function runAction(params: InputsParams) {
@@ -31,4 +34,9 @@ async function runAction(params: InputsParams) {
     memoryBundles.push(...await runBundler(params, sources))
   if (params.upload.enabled)
     await runUploader(params, memoryBundles)
+}
+
+async function runCIPR(_params: InputsParams) {
+  core.info('Running CI/PR mode')
+  core.info(JSON.stringify(github.context))
 }

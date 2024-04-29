@@ -1,0 +1,66 @@
+# `dist/index.js` is a special file in Actions.
+# When you reference an action with `uses:` in a workflow,
+# `index.js` is the code that will run.
+# For our project, we generate this file through a build process from other source files.
+# We need to make sure the checked-in `index.js` actually matches what we expect it to be.
+name: Continuous integration
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  ci:
+    name: Continuous integration
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        uses: pnpm/action-setup@v3
+        id: pnpm-install
+        with:
+          run_install: true
+
+      - name: Build
+        run: pnpm build
+
+      - name: Test
+        uses: ./
+        with:
+          mode: ci-pr
+          source-devices-path: tests
+          source-ignore-pattern: '**/*([a-z_])(invalid|unused).(json|md)'
+#          bundler-output-path: bundled
+#          bundler-output-artifact-enabled: true
+#          bundler-output-artifact-retention-days: 1
+          bundler-sign-keys: ${{ secrets.BUNDLER_SIGN_KEYS }}
+
+#          upload-enabled: true
+#          upload-input-path: bundled
+#          upload-url: ${{ secrets.UPLOAD_URL }}
+#          upload-token: ${{ secrets.UPLOAD_TOKEN }}
+
+#      - name: Create Release Pull Request or Publish
+#        id: changesets
+#        uses: changesets/action@v1
+#        with:
+#          # This expects you to have a script called release which does a build for your packages and calls changeset publish
+#          publish: pnpm release
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#
+#      - name: Update Release tags
+#        uses: JasonEtco/build-and-tag-action@v2
+#        if: steps.changesets.outcome == 'success' && steps.changesets.outputs.published == 'true'
+#        with:
+#          tag_name: ${{ format('v{0}', fromJSON(steps.changesets.outputs.publishedPackages)[0].version) }}
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
