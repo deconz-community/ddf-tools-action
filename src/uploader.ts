@@ -9,6 +9,7 @@ type UploadResponse = Record<string, {
   createdId: string
 } | {
   success: false
+  code: 'bundle_hash_already_exists' | 'unknown'
   message: string
 }>
 
@@ -66,6 +67,21 @@ export async function runUploader(params: InputsParams, memoryBundles: ReturnTyp
           body: formData,
           headers: { 'Content-Type': 'multipart/form-data' },
         }
+      })
+
+      Object.entries(result).forEach(([key, value]) => {
+        const bundleName = memoryBundles[Number.parseInt(key.replace('bundle-#', ''))]?.data.name
+
+        // TODO: Remove this temporary code, waiting for the extension update release
+        if (value.success === false)
+          value.code = value.message === 'Bundle with same hash already exists' ? 'bundle_hash_already_exists' : 'unknown'
+
+        if (value.success)
+          core.info(`Uploaded bundle '${bundleName}' with id ${value.createdId} on the store.`)
+        else if (value.code === 'bundle_hash_already_exists')
+          core.info(`Uploaded bundle '${bundleName}' already exists on the store.`)
+        else
+          core.error(`Failed to upload bundle '${bundleName}' with code ${value.code}: ${value.message}`)
       })
 
       core.info(`Uploaded ${group.length} bundles`)
