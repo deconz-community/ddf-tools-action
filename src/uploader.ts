@@ -34,12 +34,18 @@ export async function runUploader(params: InputsParams, memoryBundles: ReturnTyp
     .with(staticToken(upload.token))
     .with(rest())
 
-  const health = await client.request(serverHealth())
+  try {
+    const health = await client.request(serverHealth())
 
-  if (health.status !== 'ok')
-    throw new Error(`Server health is not ok: ${health.status}`)
+    if (health.status !== 'ok')
+      throw new Error(`Server health is not ok: ${health.status}`)
 
-  core.info(`health.status=${health.status}`)
+    core.info(`health.status=${health.status}`)
+  }
+  catch (error) {
+    logsErrors(handleError(error))
+    throw core.setFailed('Failed to check server health, please check logs for more information')
+  }
 
   const bulkSize = 10
 
@@ -66,6 +72,7 @@ export async function runUploader(params: InputsParams, memoryBundles: ReturnTyp
       core.info(JSON.stringify(result, null, 2))
     }
     catch (error) {
+      core.error(`error=${JSON.stringify(error, null, 2)}`)
       logsErrors(handleError(error))
       throw core.setFailed('Failed to upload bundles, please check logs for more information')
     }
