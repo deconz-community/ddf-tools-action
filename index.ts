@@ -1,6 +1,8 @@
 // import { Octokit } from '@octokit/action'
 import * as github from '@actions/github'
 import * as core from '@actions/core'
+import { Octokit } from '@octokit/action'
+import type { PullRequestEvent } from '@octokit/webhooks-types'
 import type { InputsParams } from './src/input.js'
 import { getParams, logsParams } from './src/input.js'
 import { getSources } from './src/source.js'
@@ -9,7 +11,7 @@ import { runBundler } from './src/bundler.js'
 import { runUploader } from './src/uploader.js'
 import { handleError, logsErrors } from './src/errors.js'
 
-// const octokit = new Octokit()
+//
 try {
   run()
 }
@@ -38,8 +40,25 @@ async function runAction(params: InputsParams) {
 
 async function runCIPR(_params: InputsParams) {
   core.info('Running CI/PR mode')
+  const context = github.context
 
-  core.info(`Current action = ${github.context.payload.action}`)
+  if (context.eventName !== 'pull_request')
+    throw new Error('This action is not supposed to run on pull_request event')
+
+  const octokit = new Octokit()
+
+  const payload = context.payload as PullRequestEvent
+
+  core.info(`Current action = ${payload.action}`)
+
+  const diff = payload.pull_request.diff_url
+  core.info(`Diff URL = ${diff}`)
+
+  octokit.rest.issues.createComment({
+    ...context.repo,
+    issue_number: payload.pull_request.number,
+    body: 'Thank you for submitting a pull request! We will try to review this as soon as we can.',
+  })
 
   core.startGroup('Debug context')
   core.info(JSON.stringify(github.context, null, 2))

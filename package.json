@@ -51,6 +51,7 @@
     "@antfu/eslint-config": "^2.16.0",
     "@changesets/cli": "^2.27.1",
     "@eslint/eslintrc": "^3.0.2",
+    "@octokit/webhooks-types": "^7.5.1",
     "@types/node": "^20.12.7",
     "@typescript-eslint/eslint-plugin": "^7.8.0",
     "@typescript-eslint/parser": "^7.8.0",
