@@ -72,9 +72,8 @@ export async function runUploader(params: InputsParams, memoryBundles: ReturnTyp
       core.info(JSON.stringify(result, null, 2))
     }
     catch (error) {
-      core.error(`error=${JSON.stringify(error, null, 2)}`)
-      logsErrors(handleError(error))
-      throw core.setFailed('Failed to upload bundles, please check logs for more information')
+      core.setFailed('Failed to upload bundles, please check logs for more information')
+      throw logsErrors(handleError(error))
     }
   }
 

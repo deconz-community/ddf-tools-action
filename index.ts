@@ -5,6 +5,7 @@ import { getParams } from './src/input.js'
 import { getSources } from './src/source.js'
 import { runBundler } from './src/bundler.js'
 import { runUploader } from './src/uploader.js'
+import { handleError, logsErrors } from './src/errors.js'
 
 // const octokit = new Octokit()
 
@@ -35,4 +36,9 @@ async function run() {
     await runUploader(params, memoryBundles)
 }
 
-run()
+try {
+  run()
+}
+catch (error) {
+  logsErrors(handleError(error))
+}
