@@ -242,13 +242,20 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
           generic: 'Unused generic file',
           misc: 'Unused misc file',
         }
-        core.startGroup('Unused files')
+        let inGroup = false
         Object.entries(messagesMap).forEach(([key, message]) => {
           unused[key].forEach((file) => {
+            if (inGroup === false) {
+              core.startGroup('Unused files')
+              inGroup = true
+            }
             core.warning(`${message}:${file}`, { file })
           })
         })
-        core.endGroup()
+        if (inGroup)
+          core.endGroup()
+        else
+          core.info('No unused files found')
       }
     }
   })()

@@ -1,6 +1,8 @@
+import { readFile } from 'node:fs/promises'
 import { type Bundle, encode } from '@deconz-community/ddf-bundler'
 import * as core from '@actions/core'
 import { authentication, createDirectus, rest, serverHealth, staticToken } from '@directus/sdk'
+import { glob } from 'fast-glob'
 import type { InputsParams } from './input'
 import { handleError, logsErrors } from './errors'
 import type { MemoryBundle } from './bundler'
@@ -20,15 +22,24 @@ export async function runUploader(params: InputsParams, memoryBundles: MemoryBun
     throw new Error('Can\'t run uploader because he is not enabled')
 
   // #region Packing bundles
-  core.info('Packing bundles')
   const bundles: Blob[] = []
+
   if (upload.inputPath === undefined) {
+    core.info('Using memory bundles')
     memoryBundles.forEach(({ bundle }) => {
       bundles.push(encode(bundle))
     })
+    core.info(`${bundles.length} bundles packed`)
   }
-
-  core.info(`${bundles.length} bundles packed`)
+  else {
+    core.info(`Looking for bundles on the disk to upload`)
+    const fileList = await glob(upload.inputPath, { onlyFiles: true })
+    core.info(`Found ${fileList} bundles on the disk to upload`)
+    for (const file of fileList) {
+      const fileContent = await readFile(file)
+      bundles.push(new Blob([fileContent]))
+    }
+  }
   // #endregion
 
   // #region Upload
@@ -42,7 +53,7 @@ export async function runUploader(params: InputsParams, memoryBundles: MemoryBun
     if (health.status !== 'ok')
       throw new Error(`Server health is not ok: ${health.status}`)
 
-    core.info(`health.status=${health.status}`)
+    core.info(`Store status = ${health.status}`)
   }
   catch (error) {
     logsErrors(handleError(error))
@@ -80,13 +91,13 @@ export async function runUploader(params: InputsParams, memoryBundles: MemoryBun
         if (value.success)
           core.info(`Uploaded bundle '${bundleName}' with id ${value.createdId} on the store.`)
         else if (value.code === 'bundle_hash_already_exists')
-          core.info(`Bundle '${bundleName}' already exists on the store. Do nothing.`)
+          core.info(`DDF Bundle '${bundleName}' already exists on the store. Do nothing.`)
         else
-          core.error(`Failed to upload bundle '${bundleName}' with code ${value.code}: ${value.message}`)
+          core.error(`Failed to upload DDF bundle '${bundleName}' with code ${value.code}: ${value.message}`)
       })
     }
     catch (error) {
-      core.setFailed('Failed to upload bundles, please check logs for more information')
+      core.setFailed('Failed to upload DDF bundles, please check logs for more information')
       throw logsErrors(handleError(error))
     }
   }
