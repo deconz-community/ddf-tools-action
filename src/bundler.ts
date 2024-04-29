@@ -7,6 +7,7 @@ import { buildFromFiles, createSignature, encode, generateHash } from '@deconz-c
 import { DefaultArtifactClient } from '@actions/artifact'
 import { createValidator } from '@deconz-community/ddf-validator'
 import { bytesToHex } from '@noble/hashes/utils'
+import { secp256k1 } from '@noble/curves/secp256k1'
 import type { InputsParams } from './input'
 import type { Sources } from './source'
 import { handleError, logsErrors } from './errors'
@@ -109,10 +110,10 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
       // #region Hash & Signatures
       bundle.data.hash = await generateHash(bundle.data)
 
-      bundler.signKeys.forEach((key) => {
+      bundler.signKeys.forEach((privateKey) => {
         bundle.data.signatures.push({
-          key,
-          signature: createSignature(bundle.data.hash!, key),
+          key: secp256k1.getPublicKey(privateKey),
+          signature: createSignature(bundle.data.hash!, privateKey),
         })
       })
       // #endregion
