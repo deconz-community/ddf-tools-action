@@ -86,10 +86,16 @@ async function getSourceInputs(): Promise<SourceInputs> {
 // #region Bundler
 const FILE_MODIFIED_METHODS = ['gitlog', 'mtime', 'ctime'] as const
 type FileModifiedMethod = typeof FILE_MODIFIED_METHODS[number]
+const OUTPUT_DIRECTORY_FORMATS = ['source-tree', 'flat'] as const
+type OutputDirectoryFormat = typeof OUTPUT_DIRECTORY_FORMATS[number]
+const OUTPUT_FILE_FORMATS = ['name-hash', 'hash'] as const
+type OutputFileFormat = typeof OUTPUT_FILE_FORMATS[number]
 
 export type BundlerInputs = {
   enabled: true
   outputPath?: string
+  outputDirectoryFormat: OutputDirectoryFormat
+  outputFileFormat: OutputFileFormat
   artifactEnabled: boolean
   artifactRetentionDays: number
   signKeys: Uint8Array[]
@@ -106,9 +112,16 @@ async function getBundlerInputs(): Promise<BundlerInputs> {
     return { enabled: false }
 
   const fileModifiedMethod = getInput('bundler-file-modified-method') as FileModifiedMethod
-
   if (!FILE_MODIFIED_METHODS.includes(fileModifiedMethod))
     throw core.setFailed(`Unknown file modified method : ${fileModifiedMethod}`)
+
+  const outputDirectoryFormat = getInput('bundler-output-directory-format') as OutputDirectoryFormat
+  if (!OUTPUT_DIRECTORY_FORMATS.includes(outputDirectoryFormat))
+    throw core.setFailed(`Unknown output directory format : ${outputDirectoryFormat}`)
+
+  const outputFileFormat = getInput('bundler-output-file-format') as OutputFileFormat
+  if (!OUTPUT_FILE_FORMATS.includes(outputFileFormat))
+    throw core.setFailed(`Unknown output file format : ${outputFileFormat}`)
 
   // TODO : Check if signKeys are valid
   const signKeys = getArrayInput('bundler-sign-keys').map(hexToBytes)
@@ -118,6 +131,8 @@ async function getBundlerInputs(): Promise<BundlerInputs> {
   return {
     enabled,
     outputPath,
+    outputDirectoryFormat,
+    outputFileFormat,
     artifactEnabled: getBooleanInput('bundler-output-artifact-enabled'),
     artifactRetentionDays: Number(getInput('bundler-output-artifact-retention-days')),
     signKeys,

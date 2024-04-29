@@ -6,12 +6,13 @@ import type { Bundle, ValidationError } from '@deconz-community/ddf-bundler'
 import { buildFromFiles, createSignature, encode, generateHash } from '@deconz-community/ddf-bundler'
 import { DefaultArtifactClient } from '@actions/artifact'
 import { createValidator } from '@deconz-community/ddf-validator'
+import { bytesToHex } from '@noble/hashes/utils'
 import type { InputsParams } from './input'
 import type { Sources } from './source'
 import { handleError, logsErrors } from './errors'
 
 export async function runBundler(params: InputsParams, sources: Sources): Promise<ReturnType<typeof Bundle>[]> {
-  const { bundler } = params
+  const { bundler, source } = params
 
   if (!bundler.enabled)
     throw new Error('Can\'t run bundler because he is not enabled')
@@ -32,7 +33,7 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
     core.debug(`[bundler] Bundling DDF ${ddfPath}`)
     try {
       const bundle = await buildFromFiles(
-        `file://${params.source.path.generic}`,
+        `file://${source.path.generic}`,
         `file://${ddfPath}`,
         path => sources.getFile(path.replace('file://', '')),
         path => sources.getLastModified(path.replace('file://', '')),
@@ -119,9 +120,20 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
       // #region Write bundle to disk
       if (bundlerOutputPath) {
         const parsedPath = path.parse(ddfPath)
-        parsedPath.dir = parsedPath.dir.replace(params.source.path.devices, '')
+
+        if (bundler.outputDirectoryFormat === 'source-tree')
+          parsedPath.dir = parsedPath.dir.replace(source.path.devices, '')
+        else if (bundler.outputDirectoryFormat === 'flat')
+          parsedPath.dir = ''
+
+        if (bundler.outputFileFormat === 'name-hash')
+          parsedPath.name = `${parsedPath.name}-${bytesToHex(bundle.data.hash)}`
+        else if (bundler.outputFileFormat === 'hash')
+          parsedPath.name = bytesToHex(bundle.data.hash)
+
         parsedPath.ext = '.ddf'
         parsedPath.base = `${parsedPath.name}${parsedPath.ext}`
+
         const outputPath = path.resolve(path.join(bundlerOutputPath, path.format(parsedPath)))
 
         const encoded = encode(bundle)
