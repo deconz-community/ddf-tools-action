@@ -39,10 +39,14 @@ jobs:
         with:
           source-devices-path: tests
           source-ignore-pattern: '**/*([a-z_])(invalid|unused).(json|md)'
-          bundler-output-path: bundled
-          bundler-output-artifact-enabled: true
-          bundler-output-artifact-retention-days: 1
+#          bundler-output-path: bundled
+#          bundler-output-artifact-enabled: true
+#          bundler-output-artifact-retention-days: 1
           bundler-sign-keys: ${{ secrets.BUNDLER_SIGN_KEYS }}
+
+          upload-enabled: true
+          upload-url: ${{ secrets.UPLOAD_URL }}
+          upload-token: ${{ secrets.UPLOAD_TOKEN }}
 
 #      - name: Create Release Pull Request or Publish
 #        id: changesets

@@ -1,8 +1,10 @@
 // import { Octokit } from '@octokit/action'
 import * as core from '@actions/core'
+import type { Bundle } from '@deconz-community/ddf-bundler'
 import { getParams } from './src/input.js'
 import { getSources } from './src/source.js'
 import { runBundler } from './src/bundler.js'
+import { runUploader } from './src/uploader.js'
 
 // const octokit = new Octokit()
 
@@ -24,18 +26,13 @@ async function run() {
   core.endGroup()
 
   const sources = await getSources(params)
+  const memoryBundles: ReturnType<typeof Bundle>[] = []
 
-  if (params.bundler.enabled) {
-    core.info('Bundler started')
-    const bundles = await runBundler(params, sources)
-    core.info('Bundler finished')
+  if (params.bundler.enabled)
+    memoryBundles.push(...await runBundler(params, sources))
 
-    bundles.forEach((bundle) => {
-      core.info(`Bundle ${bundle.data.desc} created`)
-    })
-
-    core.info('Bundler action finished')
-  }
+  if (params.upload.enabled)
+    await runUploader(params, memoryBundles)
 }
 
 run()
