@@ -116,7 +116,7 @@ export async function runUploader(params: InputsParams, memoryBundles: MemoryBun
 
   core.endGroup()
 
-  core.info(`Uploaded ${resultCount.success} bundles, ${resultCount.alreadyExists} already exists and ${resultCount.failed} failed`)
+  core.info(`Uploaded ${resultCount.success} new bundles, ${resultCount.alreadyExists} already exists and ${resultCount.failed} failed`)
 
   if (resultCount.failed > 0)
     core.setFailed('Failed to upload DDF bundles, please check logs for more information')

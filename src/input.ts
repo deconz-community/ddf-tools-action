@@ -32,6 +32,20 @@ export async function getParams(): Promise<InputsParams> {
   return params as InputsParams
 }
 
+export function logsParams(params: InputsParams) {
+  core.startGroup(`Current mode : ${params.mode}`)
+  const cloneParam = structuredClone(params)
+  if (cloneParam.bundler.enabled)
+    cloneParam.bundler.signKeys = Array(cloneParam.bundler.signKeys.length).fill('***')
+
+  if (cloneParam.upload.enabled) {
+    cloneParam.upload.url = '***'
+    cloneParam.upload.token = '***'
+  }
+  core.info(JSON.stringify(cloneParam, null, 2))
+  core.endGroup()
+}
+
 // #region Mode
 const MODES = ['action', 'ci'] as const
 export type Mode = typeof MODES[number]
