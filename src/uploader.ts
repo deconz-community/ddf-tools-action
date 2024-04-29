@@ -46,7 +46,7 @@ export async function runUploader(params: InputsParams, memoryBundles: ReturnTyp
 
     for (let j = 0; j < group.length; j++) {
       const bundle = group[j]
-      formData.append(`bundle-${i + j + 1}`, bundle)
+      formData.append(`bundle-#${i + j}`, bundle)
     }
 
     try {
