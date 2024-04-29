@@ -194,7 +194,7 @@ async function getUploadInputs(): Promise<UploadInputs> {
 
   return {
     enabled,
-    inputPath: await getDirectoryInput('upload-input-path'),
+    inputPath: await getDirectoryInput('upload-input-path', true),
     url,
     token,
   }
