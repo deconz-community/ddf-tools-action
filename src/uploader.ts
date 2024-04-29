@@ -33,7 +33,7 @@ export async function runUploader(params: InputsParams, memoryBundles: MemoryBun
   }
   else {
     core.info(`Looking for bundles on the disk to upload at ${upload.inputPath}`)
-    const fileList = await glob(upload.inputPath, { onlyFiles: true })
+    const fileList = await glob(`${upload.inputPath}**/*.ddf`, { onlyFiles: true })
     core.info(`Found ${fileList.length} bundles on the disk to upload`)
     for (const file of fileList) {
       const fileContent = await readFile(file)
