@@ -54,6 +54,15 @@ async function runCIPR(_params: InputsParams) {
   const diff = payload.pull_request.diff_url
   core.info(`Diff URL = ${diff}`)
 
+  const files = await octokit.rest.pulls.listFiles({
+    ...context.repo,
+    pull_number: payload.pull_request.number,
+  })
+
+  files.data.forEach((file) => {
+    core.info(`Modified file: ${file.filename}`)
+  })
+  /*
   const comments = await octokit.rest.issues.listComments({
     ...context.repo,
     issue_number: payload.pull_request.number,
@@ -80,6 +89,7 @@ async function runCIPR(_params: InputsParams) {
   })
 
   core.info(`Comment = ${JSON.stringify(comments, null, 2)}`)
+  */
 
   core.startGroup('Debug context')
   core.info(JSON.stringify(github.context, null, 2))
