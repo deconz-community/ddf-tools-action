@@ -32,9 +32,9 @@ export async function runUploader(params: InputsParams, memoryBundles: MemoryBun
     core.info(`${bundles.length} bundles packed`)
   }
   else {
-    core.info(`Looking for bundles on the disk to upload`)
+    core.info(`Looking for bundles on the disk to upload at ${upload.inputPath}`)
     const fileList = await glob(upload.inputPath, { onlyFiles: true })
-    core.info(`Found ${fileList} bundles on the disk to upload`)
+    core.info(`Found ${fileList.length} bundles on the disk to upload`)
     for (const file of fileList) {
       const fileContent = await readFile(file)
       bundles.push(new Blob([fileContent]))
