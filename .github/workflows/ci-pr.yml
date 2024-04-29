@@ -11,7 +11,7 @@ on:
 
 jobs:
   ci:
-    name: Continuous integration
+    name: Continuous integration Test PR
     runs-on: ubuntu-latest
 
     steps:

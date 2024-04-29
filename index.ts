@@ -54,11 +54,20 @@ async function runCIPR(_params: InputsParams) {
   const diff = payload.pull_request.diff_url
   core.info(`Diff URL = ${diff}`)
 
+  const comment = await octokit.rest.issues.getComment({
+    ...context.repo,
+    comment_id: 1,
+  })
+
+  /*
   octokit.rest.issues.createComment({
     ...context.repo,
     issue_number: payload.pull_request.number,
     body: 'Thank you for submitting a pull request! We will try to review this as soon as we can.',
   })
+  */
+
+  core.info(`Comment = ${JSON.stringify(comment, null, 2)}`)
 
   core.startGroup('Debug context')
   core.info(JSON.stringify(github.context, null, 2))
