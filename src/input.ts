@@ -291,7 +291,7 @@ export async function getDirectory<Optional extends boolean = false>(
 }
 
 export function assertInputs(params: InputsParams) {
-  if (params.mode === 'ci') {
+  if (params.mode === 'ci-pr' || params.mode === 'ci-push') {
     if (!params.bundler?.enabled)
       throw core.setFailed('Bundler must be enabled in CI mode')
     if (!params.validation?.enabled)
