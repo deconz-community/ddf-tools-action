@@ -59,6 +59,26 @@ async function runCIPR(_params: InputsParams) {
     issue_number: payload.pull_request.number,
   })
 
+  comments.data.forEach((comment) => {
+    if (!comment.user || comment.user.login !== 'github-actions[bot]')
+      return
+
+    let count = Number(comment.body)
+    if (Number.isNaN(count))
+      count = 0
+
+    count += 1
+    comment.body = count.toString()
+
+    octokit.rest.issues.updateComment({
+      ...context.repo,
+      comment_id: comment.id,
+      body: comment.body,
+    })
+
+    core.info(`Comment = ${comment.body}`)
+  })
+
   core.info(`Comment = ${JSON.stringify(comments, null, 2)}`)
 
   core.startGroup('Debug context')
