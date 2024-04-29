@@ -5,6 +5,9 @@ import * as core from '@actions/core'
 import type { ValidationError } from '@deconz-community/ddf-bundler'
 
 export function handleError(error: ZodError | Error | unknown, file?: string, fileContent?: string): ValidationError[] {
+  if (typeof error === 'object' && error !== null && 'errors' in error && Array.isArray(error.errors))
+    return error.errors.map(error => handleError(error, file, fileContent)).flat()
+
   const errorsList: ValidationError[] = []
 
   if (error instanceof ZodError) {
