@@ -88,7 +88,7 @@ const FILE_MODIFIED_METHODS = ['gitlog', 'mtime', 'ctime'] as const
 type FileModifiedMethod = typeof FILE_MODIFIED_METHODS[number]
 const OUTPUT_DIRECTORY_FORMATS = ['source-tree', 'flat'] as const
 type OutputDirectoryFormat = typeof OUTPUT_DIRECTORY_FORMATS[number]
-const OUTPUT_FILE_FORMATS = ['name-hash', 'hash'] as const
+const OUTPUT_FILE_FORMATS = ['name', 'hash', 'name-hash'] as const
 type OutputFileFormat = typeof OUTPUT_FILE_FORMATS[number]
 
 export type BundlerInputs = {
@@ -122,6 +122,9 @@ async function getBundlerInputs(): Promise<BundlerInputs> {
   const outputFileFormat = getInput('bundler-output-file-format') as OutputFileFormat
   if (!OUTPUT_FILE_FORMATS.includes(outputFileFormat))
     throw core.setFailed(`Unknown output file format : ${outputFileFormat}`)
+
+  if (outputFileFormat === 'name' && outputDirectoryFormat === 'flat')
+    throw core.setFailed('Output file format "name" is not compatible with output directory format "flat" because multiple files can have the same path.')
 
   // TODO : Check if signKeys are valid
   const signKeys = getArrayInput('bundler-sign-keys').map(hexToBytes)
