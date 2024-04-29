@@ -31,7 +31,7 @@ inputs:
     default: flat
   bundler-output-file-format:
     description: 'Format of the output files names (name, name-hash, hash)'
-    default: name
+    default: hash
   bundler-output-artifact-enabled:
     description: Upload the output path as an artifact
     default: 'false'
