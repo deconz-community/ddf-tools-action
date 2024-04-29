@@ -35,6 +35,7 @@ jobs:
       - name: Test
         uses: ./
         with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           mode: ci-pr
           source-devices-path: tests
           source-ignore-pattern: '**/*([a-z_])(invalid|unused).(json|md)'
