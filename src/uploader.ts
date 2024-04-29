@@ -49,17 +49,22 @@ export async function runUploader(params: InputsParams, memoryBundles: ReturnTyp
       formData.append(`bundle-${i + j + 1}`, bundle)
     }
 
-    const result = await client.request<{ result: UploadResponse }>(() => {
-      return {
-        method: 'POST',
-        path: '/bundle/upload',
-        body: formData,
-        headers: { 'Content-Type': 'multipart/form-data' },
-      }
-    })
+    try {
+      const result = await client.request<{ result: UploadResponse }>(() => {
+        return {
+          method: 'POST',
+          path: '/bundle/upload',
+          body: formData,
+          headers: { 'Content-Type': 'multipart/form-data' },
+        }
+      })
 
-    core.info(`Uploaded ${group.length} bundles`)
-    core.info(JSON.stringify(result.result, null, 2))
+      core.info(`Uploaded ${group.length} bundles`)
+      core.info(JSON.stringify(result, null, 2))
+    }
+    catch (e) {
+      core.error(JSON.stringify(e, null, 2))
+    }
   }
 
   core.info('Uploading bundles')
