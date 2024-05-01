@@ -15,6 +15,7 @@ import { handleError, logsErrors } from './errors'
 export interface MemoryBundle {
   bundle: ReturnType<typeof Bundle>
   path: string
+  modified: boolean
 }
 
 export async function runBundler(params: InputsParams, sources: Sources): Promise<MemoryBundle[]> {
@@ -41,8 +42,7 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
       const bundle = await buildFromFiles(
         `file://${source.path.generic}`,
         `file://${ddfPath}`,
-        path => sources.getFile(path.replace('file://', '')),
-        path => sources.getLastModified(path.replace('file://', '')),
+        path => sources.getSource(path.replace('file://', '')),
       )
 
       // #region Validation
@@ -99,8 +99,8 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
           const errors: ValidationError[] = []
 
           await Promise.all(validationResult.map(async (error) => {
-            const file = await sources.getFile(error.path)
-            errors.push(...handleError(error.error, error.path, await file.text()))
+            const source = await sources.getSource(error.path)
+            errors.push(...handleError(error.error, error.path, await source.stringData))
           }))
 
           bundle.data.validation = {
@@ -153,12 +153,14 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
       bundles.push({
         bundle,
         path: ddfPath,
+        // TODO: Check if the file is modified
+        modified: false,
       })
     }
     catch (err) {
       core.error(`Error while creating bundle ${ddfPath}`)
-      const file = await sources.getFile(ddfPath)
-      logsErrors(handleError(err, ddfPath, await file.text()))
+      const source = await sources.getSource(ddfPath)
+      logsErrors(handleError(err, ddfPath, await source.stringData))
     }
   }))
   // #endregion
@@ -199,10 +201,10 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
       // TODO: Optimise this, it's loading the files twice
 
       const genericFiles = await Promise.all(unused.generic.map(async (path) => {
-        const fileContent = await sources.getFile(path)
+        const source = await sources.getSource(path)
         return {
           path,
-          data: JSON.parse(await fileContent.text()),
+          data: JSON.parse(await source.stringData),
         }
       }))
 
@@ -210,7 +212,7 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
       const constantsPath = path.join(params.source.path.generic, 'constants.json')
       genericFiles.push({
         path: constantsPath,
-        data: JSON.parse(await (await sources.getFile(constantsPath)).text()),
+        data: JSON.parse(await (await sources.getSource(constantsPath)).stringData),
       })
 
       // Load used generic files
@@ -219,8 +221,8 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
         .filter(path => !unused.generic.includes(path))
         .map(async (path) => {
           try {
-            const file = await sources.getFile(path)
-            const data = JSON.parse(await file.text())
+            const source = await sources.getSource(path)
+            const data = JSON.parse(await source.stringData)
             validator.loadGeneric(data)
           }
           catch (err) {
@@ -232,8 +234,8 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
       const validationResult = validator.bulkValidate(genericFiles, [])
 
       await Promise.all(validationResult.map(async (error) => {
-        const file = await sources.getFile(error.path)
-        logsErrors(handleError(error.error, error.path, await file.text()))
+        const source = await sources.getSource(error.path)
+        logsErrors(handleError(error.error, error.path, await source.stringData))
       }))
 
       if (bundler.validation.warnUnusedFiles) {

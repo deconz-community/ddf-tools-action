@@ -9,6 +9,7 @@ import type { MemoryBundle } from './src/bundler.js'
 import { runBundler } from './src/bundler.js'
 import { runUploader } from './src/uploader.js'
 import { handleError, logsErrors } from './src/errors.js'
+import { getModifiedFiles } from './src/utils.js'
 
 //
 try {
@@ -37,7 +38,7 @@ async function runAction(params: InputsParams) {
     await runUploader(params, memoryBundles)
 }
 
-async function runCIPR(_params: InputsParams) {
+async function runCIPR(params: InputsParams) {
   core.info('Running CI/PR mode')
   const context = github.context
 
@@ -50,16 +51,11 @@ async function runCIPR(_params: InputsParams) {
 
   core.info(`Current action = ${payload.action}`)
 
-  core.info(`Payload=${JSON.stringify(payload.pull_request, null, 2)}`)
+  const modifiedFiles = await getModifiedFiles(context)
 
-  const files = await octokit.rest.pulls.listFiles({
-    ...context.repo,
-    pull_number: payload.pull_request.number,
-  })
+  const sources = await getSources(params, modifiedFiles)
 
-  files.data.forEach((file) => {
-    core.info(`Modified file: ${JSON.stringify(file, null, 2)}`)
-  })
+  const memoryBundles = await runBundler(params, sources)
 
   /*
   // List of modified files
