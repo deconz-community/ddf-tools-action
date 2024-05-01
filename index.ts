@@ -9,9 +9,7 @@ import type { MemoryBundle } from './src/bundler.js'
 import { runBundler } from './src/bundler.js'
 import { runUploader } from './src/uploader.js'
 import { handleError, logsErrors } from './src/errors.js'
-import { getFileStatus } from './src/utils.js'
 
-//
 try {
   run()
 }
