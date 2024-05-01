@@ -9,7 +9,7 @@ import type { MemoryBundle } from './src/bundler.js'
 import { runBundler } from './src/bundler.js'
 import { runUploader } from './src/uploader.js'
 import { handleError, logsErrors } from './src/errors.js'
-import { getModifiedFiles } from './src/utils.js'
+import { getFileStatus } from './src/utils.js'
 
 //
 try {
@@ -30,7 +30,8 @@ async function run() {
 }
 
 async function runAction(params: InputsParams) {
-  const sources = await getSources(params)
+  const context = github.context
+  const sources = await getSources(params, context)
   const memoryBundles: MemoryBundle[] = []
   if (params.bundler.enabled)
     memoryBundles.push(...await runBundler(params, sources))
@@ -51,9 +52,11 @@ async function runCIPR(params: InputsParams) {
 
   core.info(`Current action = ${payload.action}`)
 
-  const modifiedFiles = await getModifiedFiles(context)
+  const sources = await getSources(params, context)
 
-  const sources = await getSources(params, modifiedFiles)
+  const extraModifiedFilesStatus = Array.from(sources.extraModifiedFilesStatus, ([path, status]) => ({ path, status }))
+
+  core.info(JSON.stringify(extraModifiedFilesStatus, null, 2))
 
   const memoryBundles = await runBundler(params, sources)
 

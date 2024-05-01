@@ -2,9 +2,14 @@ import fs from 'node:fs/promises'
 import path from 'node:path'
 import glob from 'fast-glob'
 import { type Source, type SourceMetadata, createSource } from '@deconz-community/ddf-bundler'
+import type { Context } from '@actions/github/lib/context.js'
+import type { PullRequestEvent } from '@octokit/webhooks-types'
+import { Octokit } from '@octokit/action'
+
+import * as core from '@actions/core'
 import type { InputsParams } from './input.js'
 
-export type FileStatus = 'added' | 'removed' | 'modified' | 'renamed' | 'copied' | 'changed' | 'unchanged'
+export type FileStatus = 'added' | 'removed' | 'modified' | 'unchanged'
 
 export type BundlerSourceMetadata = SourceMetadata & {
   useCount: number
@@ -13,22 +18,23 @@ export type BundlerSourceMetadata = SourceMetadata & {
 
 export type Sources = Awaited<ReturnType<typeof getSources>>
 
-export async function getSources(params: InputsParams, modifiedFiles?: string[]) {
+export const MAX_MODIFIED_FILES_IN_PR = 2000
+
+export async function getSources(params: InputsParams, context: Context) {
   const ddf: Map<string, Source<BundlerSourceMetadata>> = new Map()
   const generic: Map<string, Source<BundlerSourceMetadata>> = new Map()
   const misc: Map<string, Source<BundlerSourceMetadata>> = new Map()
 
-  const isModified = (filePath: string) => {
-    if (!modifiedFiles)
-      return false
+  const fileStatus = context.eventName === 'pull_request'
+    ? await getSourcesStatus(context)
+    : new Map<string, FileStatus>()
 
-    const index = modifiedFiles.indexOf(filePath)
-    if (index !== undefined && index !== -1) {
-      modifiedFiles.splice(index, 1)
-      return true
-    }
-
-    return false
+  const getStatus = (filePath: string) => {
+    const status = fileStatus.get(filePath)
+    if (!status)
+      return 'unchanged'
+    fileStatus.delete(filePath)
+    return status
   }
 
   const sourcePaths = await glob(
@@ -75,22 +81,21 @@ export async function getSources(params: InputsParams, modifiedFiles?: string[])
   }
 
   await Promise.all(sourcePaths.map(async (sourcePath) => {
-    const inputFilePath = path.resolve(sourcePath)
+    const filePath = path.resolve(sourcePath)
 
-    getSourceMap(inputFilePath).set(inputFilePath, createSource<BundlerSourceMetadata>(
-      new Blob([await fs.readFile(inputFilePath)]),
+    getSourceMap(filePath).set(filePath, createSource<BundlerSourceMetadata>(
+      new Blob([await fs.readFile(filePath)]),
       {
-        path: inputFilePath,
-        last_modified: await getLastModified(inputFilePath),
+        path: filePath,
+        last_modified: await getLastModified(filePath),
         useCount: 0,
-        // modified: isModified(inputFilePath),
-        status: 'added',
+        status: getStatus(filePath),
       },
     ))
   }))
 
   return {
-    haveExtraModifiedFiles: Boolean(modifiedFiles?.length),
+    extraModifiedFilesStatus: fileStatus,
     getDDFPaths: () => Array.from(ddf.keys()),
     getGenericPaths: () => Array.from(generic.keys()),
     getMiscFilesPaths: () => Array.from(misc.keys()),
@@ -134,8 +139,7 @@ export async function getSources(params: InputsParams, modifiedFiles?: string[])
             path: filePath,
             last_modified: await getLastModified(filePath),
             useCount: updateCount ? 1 : 0,
-            // modified: isModified(filePath),
-            status: 'added',
+            status: getStatus(filePath),
           },
         )
         sourceMap.set(filePath, source)
@@ -143,4 +147,49 @@ export async function getSources(params: InputsParams, modifiedFiles?: string[])
       }
     },
   }
+}
+
+export async function getSourcesStatus(context: Context) {
+  if (context.eventName !== 'pull_request')
+    throw new Error('This action is not supposed to run on pull_request event')
+
+  const payload = context.payload as PullRequestEvent
+
+  if (payload.pull_request.changed_files > MAX_MODIFIED_FILES_IN_PR) {
+    throw new Error(
+      `Too many files changed in this PR. `
+      + `When I made this tool I did not think that was `
+      + `possible to have more than ${MAX_MODIFIED_FILES_IN_PR} files modified`,
+    )
+  }
+
+  const octokit = new Octokit()
+
+  const fileStatus: Map<string, FileStatus> = new Map()
+
+  const files = await octokit.rest.pulls.listFiles({
+    ...context.repo,
+    per_page: MAX_MODIFIED_FILES_IN_PR,
+    pull_number: payload.pull_request.number,
+  })
+
+  if (core.isDebug())
+    core.debug(`Pull request files list = ${JSON.stringify(files, null, 2)}`)
+
+  files.data.forEach((file) => {
+    switch (file.status) {
+      case 'modified':
+      case 'added':
+      case 'removed':
+        fileStatus.set(file.filename, file.status)
+        break
+      case 'renamed':
+        fileStatus.set(file.filename, 'unchanged')
+        break
+      default:
+        throw new Error(`Unknown file status: ${file.status}`)
+    }
+  })
+
+  return fileStatus
 }
