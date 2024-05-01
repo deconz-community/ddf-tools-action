@@ -96,7 +96,7 @@ export async function getSources(params: InputsParams, context: Context) {
 
   if (fileStatus.size > 0) {
     core.startGroup('Extra modified files status')
-    fileStatus.forEach(([path, status]) => core.info(`[${status}] ${path}`))
+    fileStatus.forEach((status, path) => core.info(`[${status}] ${path}`))
     core.endGroup()
   }
 
