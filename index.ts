@@ -50,6 +50,8 @@ async function runCIPR(_params: InputsParams) {
 
   core.info(`Current action = ${payload.action}`)
 
+  core.info(`Payload=${JSON.stringify(payload.pull_request, null, 2)}`)
+
   const files = await octokit.rest.pulls.listFiles({
     ...context.repo,
     pull_number: payload.pull_request.number,
