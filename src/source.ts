@@ -94,6 +94,12 @@ export async function getSources(params: InputsParams, context: Context) {
     ))
   }))
 
+  if (fileStatus.size > 0) {
+    core.startGroup('Extra modified files status')
+    fileStatus.forEach(([path, status]) => core.info(`[${status}] ${path}`))
+    core.endGroup()
+  }
+
   return {
     extraModifiedFilesStatus: fileStatus,
     getDDFPaths: () => Array.from(ddf.keys()),

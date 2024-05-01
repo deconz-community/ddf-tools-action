@@ -52,10 +52,6 @@ async function runCIPR(params: InputsParams) {
 
   const sources = await getSources(params, context)
 
-  const extraModifiedFilesStatus = Array.from(sources.extraModifiedFilesStatus, ([path, status]) => ({ path, status }))
-
-  core.info(JSON.stringify(extraModifiedFilesStatus, null, 2))
-
   const memoryBundles = await runBundler(params, sources)
 
   if (params.upload.enabled)
