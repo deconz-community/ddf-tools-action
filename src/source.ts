@@ -4,9 +4,11 @@ import glob from 'fast-glob'
 import { type Source, type SourceMetadata, createSource } from '@deconz-community/ddf-bundler'
 import type { InputsParams } from './input.js'
 
+export type FileStatus = 'added' | 'removed' | 'modified' | 'renamed' | 'copied' | 'changed' | 'unchanged'
+
 export type BundlerSourceMetadata = SourceMetadata & {
   useCount: number
-  modified: boolean
+  status: FileStatus
 }
 
 export type Sources = Awaited<ReturnType<typeof getSources>>

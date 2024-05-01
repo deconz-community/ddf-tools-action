@@ -2,6 +2,7 @@ import path from 'node:path'
 import type { Context } from '@actions/github/lib/context'
 import { Octokit } from '@octokit/action'
 import type { PullRequestEvent } from '@octokit/webhooks-types'
+import * as core from '@actions/core'
 
 export const MAX_MODIFIED_FILES = 2000
 
@@ -26,6 +27,8 @@ export async function getModifiedFiles(context: Context) {
     per_page: MAX_MODIFIED_FILES,
     pull_number: payload.pull_request.number,
   })
+
+  core.info(`Pull list files = ${JSON.stringify(files, null, 2)}`)
 
   return files.data.map(file => path.resolve(file.filename))
 }
