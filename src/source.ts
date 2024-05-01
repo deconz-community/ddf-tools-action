@@ -83,7 +83,8 @@ export async function getSources(params: InputsParams, modifiedFiles?: string[])
         path: inputFilePath,
         last_modified: await getLastModified(inputFilePath),
         useCount: 0,
-        modified: isModified(inputFilePath),
+        // modified: isModified(inputFilePath),
+        status: 'added',
       },
     ))
   }))
@@ -133,7 +134,8 @@ export async function getSources(params: InputsParams, modifiedFiles?: string[])
             path: filePath,
             last_modified: await getLastModified(filePath),
             useCount: updateCount ? 1 : 0,
-            modified: isModified(filePath),
+            // modified: isModified(filePath),
+            status: 'added',
           },
         )
         sourceMap.set(filePath, source)
