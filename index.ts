@@ -57,6 +57,9 @@ async function runCIPR(params: InputsParams) {
 
   const memoryBundles = await runBundler(params, sources)
 
+  if (params.upload.enabled)
+    await runUploader(params, memoryBundles)
+
   /*
   // List of modified files
   const files = await octokit.rest.pulls.listFiles({
