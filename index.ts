@@ -1,4 +1,3 @@
-// import { Octokit } from '@octokit/action'
 import * as github from '@actions/github'
 import * as core from '@actions/core'
 import { Octokit } from '@octokit/action'
@@ -50,6 +49,15 @@ async function runCIPR(_params: InputsParams) {
   const payload = context.payload as PullRequestEvent
 
   core.info(`Current action = ${payload.action}`)
+
+  const files = await octokit.rest.pulls.listFiles({
+    ...context.repo,
+    pull_number: payload.pull_request.number,
+  })
+
+  files.data.forEach((file) => {
+    core.info(`Modified file: ${JSON.stringify(file, null, 2)}`)
+  })
 
   /*
   // List of modified files
