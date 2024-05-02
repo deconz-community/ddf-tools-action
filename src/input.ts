@@ -38,9 +38,9 @@ export function logsParams(params: InputsParams) {
   if (cloneParam.bundler.enabled)
     cloneParam.bundler.signKeys = Array(cloneParam.bundler.signKeys.length).fill('***')
 
-  if (cloneParam.upload.enabled) {
-    cloneParam.upload.url = '***'
-    cloneParam.upload.token = '***'
+  if (cloneParam.upload.store.enabled) {
+    cloneParam.upload.store.url = '***'
+    cloneParam.upload.store.token = '***'
   }
   core.info(JSON.stringify(cloneParam, null, 2))
   core.endGroup()
@@ -110,8 +110,6 @@ export type BundlerInputs = {
   outputPath?: string
   outputDirectoryFormat: OutputDirectoryFormat
   outputFileFormat: OutputFileFormat
-  artifactEnabled: boolean
-  artifactRetentionDays: number
   signKeys: Uint8Array[]
   fileModifiedMethod: FileModifiedMethod
   validation: BundlerValidationInputs
@@ -150,8 +148,6 @@ async function getBundlerInputs(): Promise<BundlerInputs> {
     outputPath,
     outputDirectoryFormat,
     outputFileFormat,
-    artifactEnabled: getBooleanInput('bundler-output-artifact-enabled'),
-    artifactRetentionDays: Number(getInput('bundler-output-artifact-retention-days')),
     signKeys,
     fileModifiedMethod,
     validation: getValidationInputs(),
@@ -185,32 +181,51 @@ function getValidationInputs(): BundlerValidationInputs {
 // #endregion
 
 // #region Upload
-export type UploadInputs = {
-  enabled: true
-  inputPath?: string
-  url: string
-  token: string
-} | {
-  enabled: false
+export interface UploadInputs {
+  store: {
+    enabled: true
+    inputPath?: string
+    url: string
+    token: string
+  } | {
+    enabled: false
+  }
+  artifact: {
+    enabled: true
+    retentionDays: number
+  } | {
+    enabled: false
+  }
 }
 
 async function getUploadInputs(): Promise<UploadInputs> {
-  const enabled = getBooleanInput('upload-enabled')
-
-  if (!enabled)
-    return { enabled: false }
-
-  const url = getInput('upload-url')
-  const token = getInput('upload-token')
-
-  if (!url || !token)
-    throw core.setFailed('Both url and token must be provided for upload action')
-
   return {
-    enabled,
-    inputPath: await getDirectoryInput('upload-input-path', true),
-    url,
-    token,
+    store: await (async () => {
+      if (!getBooleanInput('upload-store-enabled'))
+        return { enabled: false }
+
+      const url = getInput('upload-store-url')
+      const token = getInput('upload-store-token')
+
+      if (!url || !token)
+        throw core.setFailed('Both url and token must be provided for upload action')
+
+      return {
+        enabled: true,
+        inputPath: await getDirectoryInput('upload-store-input-path', true),
+        url,
+        token,
+      }
+    })(),
+    artifact: (() => {
+      if (!getBooleanInput('upload-artifact-enabled'))
+        return { enabled: false }
+
+      return {
+        enabled: true,
+        retentionDays: Number.parseInt(getInput('upload-artifact-retention-days') ?? '3'),
+      }
+    })(),
   }
 }
 // #endregion

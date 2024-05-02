@@ -4,8 +4,9 @@ import { Octokit } from '@octokit/action'
 import type { PullRequestEvent } from '@octokit/webhooks-types'
 import { Liquid } from 'liquidjs'
 import appRoot from 'app-root-path'
-import type { MemoryBundle } from './bundler'
+import type { BundlerResult, MemoryBundle } from './bundler'
 import type { InputsParams } from './input'
+import type { UploaderResult } from './uploader'
 
 interface BundleInfo {
   path: string
@@ -60,13 +61,15 @@ export async function parseTemplate<TemplateName extends keyof Templates>(
   const templatePath = appRoot.resolve(`../templates/${name}.liquid`)
   const template = await fs.readFile(templatePath, 'utf-8')
   const engine = new Liquid()
-  return await engine.parseAndRender(template, data)
+  return (await engine.parseAndRender(template, data))
+    .replace(/\n{2,}/g, '\n')
 }
 
 export async function updateModifiedBundleInteraction(
   params: InputsParams,
   context: Context,
-  bundle: MemoryBundle[],
+  bundler: BundlerResult,
+  uploader: UploaderResult,
 ) {
   if (context.eventName !== 'pull_request')
     throw new Error('This action is not supposed to run on pull_request event')
@@ -81,14 +84,22 @@ export async function updateModifiedBundleInteraction(
   })
 
   const body = await parseTemplate('modified-bundles', {
-    added_bundles: [{ path: 'foo' }],
-    modified_bundles: [{ path: 'bar' }],
+    added_bundles: bundler.memoryBundles
+      .filter(bundle => bundle.status === 'added')
+      .map(bundle => ({ path: bundle.path })),
+    modified_bundles: bundler.memoryBundles
+      .filter(bundle => bundle.status === 'modified')
+      .map(bundle => ({ path: bundle.path })),
     deleted_bundles: [{ path: 'baz' }],
     payload,
     artifact: {
-      enabled: true,
-      url: 'https://example.com',
-      retention_days: 5,
+      enabled: params.upload.artifact.enabled,
+      url: octokit.actions.downloadArtifact.endpoint({
+        ...context.repo,
+        artifact_id: uploader.artifact?.id ?? 0,
+        archive_format: 'zip',
+      }).url,
+      retention_days: params.upload.artifact.enabled ? params.upload.artifact.retentionDays : 0,
     },
     validation: {
       enabled: true,

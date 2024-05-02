@@ -4,7 +4,6 @@ import { Buffer } from 'node:buffer'
 import * as core from '@actions/core'
 import type { Bundle, ValidationError } from '@deconz-community/ddf-bundler'
 import { buildFromFiles, createSignature, encode, generateHash } from '@deconz-community/ddf-bundler'
-import { DefaultArtifactClient } from '@actions/artifact'
 import { createValidator } from '@deconz-community/ddf-validator'
 import { bytesToHex } from '@noble/hashes/utils'
 import { secp256k1 } from '@noble/curves/secp256k1'
@@ -15,11 +14,16 @@ import { handleError, logsErrors } from './errors'
 export interface MemoryBundle {
   bundle: ReturnType<typeof Bundle>
   path: string
-  status: Omit<FileStatus, 'removed'>
+  status: 'added' | 'modified' | 'unchanged'
 }
 
-export async function runBundler(params: InputsParams, sources: Sources): Promise<MemoryBundle[]> {
-  const { bundler, source } = params
+export interface BundlerResult {
+  memoryBundles: MemoryBundle[]
+  diskBundles: string[]
+}
+
+export async function runBundler(params: InputsParams, sources: Sources): Promise<BundlerResult> {
+  const { bundler, source, upload } = params
 
   if (!bundler.enabled)
     throw new Error('Can\'t run bundler because he is not enabled')
@@ -27,14 +31,14 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
   // #region Bundle creation
   core.info('Creating bundles')
 
-  const bundles: MemoryBundle[] = []
+  const memoryBundles: MemoryBundle[] = []
 
   const bundlerOutputPath = bundler.outputPath
-    ?? (bundler.artifactEnabled
+    ?? (upload.artifact.enabled
       ? await fs.mkdtemp('ddf-bundler')
       : undefined)
 
-  const writtenFilesPath: string[] = []
+  const diskBundles: string[] = []
 
   await Promise.all(sources.getDDFPaths().map(async (ddfPath) => {
     core.debug(`[bundler] Bundling DDF ${ddfPath}`)
@@ -159,11 +163,11 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
         const data = Buffer.from(await encoded.arrayBuffer())
         fs.mkdir(path.dirname(outputPath), { recursive: true })
         await fs.writeFile(outputPath, data)
-        writtenFilesPath.push(outputPath)
+        diskBundles.push(outputPath)
       }
       // #endregion
 
-      bundles.push({
+      memoryBundles.push({
         bundle,
         path: ddfPath,
         status,
@@ -175,29 +179,6 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
       logsErrors(handleError(err, ddfPath, await source.stringData))
     }
   }))
-  // #endregion
-
-  // #region Upload bundle as artifacts
-  if (bundler.artifactEnabled && bundles.length > 0) {
-    core.startGroup('Upload bundles as artifact')
-
-    if (!bundlerOutputPath)
-      throw new Error('Can\'t upload bundles as artifact because outputPath is not defined')
-
-    const artifact = new DefaultArtifactClient()
-
-    const { id, size } = await artifact.uploadArtifact(
-      'Bundles',
-      writtenFilesPath,
-      bundlerOutputPath,
-      {
-        retentionDays: bundler.artifactRetentionDays,
-      },
-    )
-    core.endGroup()
-
-    core.info(`Created artifact with id: ${id} (bytes: ${size}) with a duration of ${bundler.artifactRetentionDays} days`)
-  }
   // #endregion
 
   // #region Validation of unused files
@@ -274,7 +255,10 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
 
   // #endregion
 
-  core.info(`Bundler finished: ${bundles.length}`)
+  core.info(`Bundler finished: ${memoryBundles.length}`)
 
-  return bundles
+  return {
+    memoryBundles,
+    diskBundles,
+  }
 }

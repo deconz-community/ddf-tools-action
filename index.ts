@@ -5,9 +5,8 @@ import type { PullRequestEvent } from '@octokit/webhooks-types'
 import type { InputsParams } from './src/input.js'
 import { getParams, logsParams } from './src/input.js'
 import { getSources } from './src/source.js'
-import type { MemoryBundle } from './src/bundler.js'
 import { runBundler } from './src/bundler.js'
-import { runUploader } from './src/uploader.js'
+import { runUploaders } from './src/uploader.js'
 import { handleError, logsErrors } from './src/errors.js'
 import { updateModifiedBundleInteraction } from './src/interaction.js'
 
@@ -31,11 +30,12 @@ async function run() {
 async function runAction(params: InputsParams) {
   const context = github.context
   const sources = await getSources(params, context)
-  const memoryBundles: MemoryBundle[] = []
-  if (params.bundler.enabled)
-    memoryBundles.push(...await runBundler(params, sources))
-  if (params.upload.enabled)
-    await runUploader(params, memoryBundles)
+  const bundlerResult = params.bundler.enabled
+    ? await runBundler(params, sources)
+    : { memoryBundles: [], diskBundles: [] }
+
+  if (params.upload.artifact.enabled || params.upload.store.enabled)
+    await runUploaders(params, bundlerResult)
 }
 
 async function runCIPR(params: InputsParams) {
@@ -44,8 +44,6 @@ async function runCIPR(params: InputsParams) {
 
   if (context.eventName !== 'pull_request')
     throw new Error('This action is not supposed to run on pull_request event')
-
-  const octokit = new Octokit()
 
   const payload = context.payload as PullRequestEvent
 
@@ -58,17 +56,10 @@ async function runCIPR(params: InputsParams) {
   }
 
   const sources = await getSources(params, context)
+  const bundler = await runBundler(params, sources)
+  const uploader = await runUploaders(params, bundler)
 
-  const memoryBundles = await runBundler(params, sources)
-
-  memoryBundles.forEach((memoryBundle) => {
-    core.info(`Bundle ${memoryBundle.path} is ${memoryBundle.status}`)
-  })
-
-  if (params.upload.enabled)
-    await runUploader(params, memoryBundles)
-
-  await updateModifiedBundleInteraction(params, context, memoryBundles)
+  await updateModifiedBundleInteraction(params, context, bundler, uploader)
 
   /*
   // List of modified files

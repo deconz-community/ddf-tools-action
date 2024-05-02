@@ -1,11 +1,12 @@
 import { readFile } from 'node:fs/promises'
-import { type Bundle, encode } from '@deconz-community/ddf-bundler'
+import { encode } from '@deconz-community/ddf-bundler'
 import * as core from '@actions/core'
-import { authentication, createDirectus, rest, serverHealth, staticToken } from '@directus/sdk'
+import { createDirectus, rest, serverHealth, staticToken } from '@directus/sdk'
 import { glob } from 'fast-glob'
+import { DefaultArtifactClient } from '@actions/artifact'
 import type { InputsParams } from './input'
 import { handleError, logsErrors } from './errors'
-import type { MemoryBundle } from './bundler'
+import type { BundlerResult } from './bundler'
 
 type UploadResponse = Record<string, {
   success: true
@@ -16,24 +17,41 @@ type UploadResponse = Record<string, {
   message: string
 }>
 
-export async function runUploader(params: InputsParams, memoryBundles: MemoryBundle[]) {
-  const { upload } = params
-  if (!upload.enabled)
+export type UploaderResult = Awaited<ReturnType<typeof runUploaders>>
+
+export async function runUploaders(params: InputsParams, bundlerResult: BundlerResult) {
+  return {
+    store: params.upload.store.enabled
+      ? await runStoreUploader(params, bundlerResult)
+      : undefined,
+    artifact: params.upload.artifact.enabled
+      ? await runArtifactUploader(params, bundlerResult)
+      : undefined,
+  }
+}
+
+export async function runStoreUploader(params: InputsParams, bundlerResult: BundlerResult) {
+  const uploadParams = params.upload.store
+
+  if (!uploadParams.enabled)
+    throw new Error('Can\'t run store uploader because he is not enabled')
+
+  if (!uploadParams.enabled)
     throw new Error('Can\'t run uploader because he is not enabled')
 
   // #region Packing bundles
   const bundles: Blob[] = []
 
-  if (upload.inputPath === undefined) {
+  if (uploadParams.inputPath === undefined) {
     core.info('Using memory bundles')
-    memoryBundles.forEach(({ bundle }) => {
+    bundlerResult.memoryBundles.forEach(({ bundle }) => {
       bundles.push(encode(bundle))
     })
     core.info(`${bundles.length} bundles packed`)
   }
   else {
-    core.info(`Looking for bundles at ${upload.inputPath}`)
-    const fileList = await glob(`${upload.inputPath}**/*.ddf`, { onlyFiles: true })
+    core.info(`Looking for bundles at ${uploadParams.inputPath}`)
+    const fileList = await glob(`${uploadParams.inputPath}**/*.ddf`, { onlyFiles: true })
     core.info(`Found ${fileList.length} bundles on the disk to upload`)
     for (const file of fileList) {
       const fileContent = await readFile(file)
@@ -42,9 +60,9 @@ export async function runUploader(params: InputsParams, memoryBundles: MemoryBun
   }
   // #endregion
 
-  // #region Upload
-  const client = createDirectus(upload.url)
-    .with(staticToken(upload.token))
+  // #region Store Upload
+  const client = createDirectus(uploadParams.url)
+    .with(staticToken(uploadParams.token))
     .with(rest())
 
   try {
@@ -89,7 +107,7 @@ export async function runUploader(params: InputsParams, memoryBundles: MemoryBun
       })
 
       Object.entries(result).forEach(([key, value]) => {
-        const bundleName = memoryBundles[Number.parseInt(key.replace('bundle-#', ''))]?.path
+        const bundleName = bundlerResult.memoryBundles[Number.parseInt(key.replace('bundle-#', ''))]?.path
         // TODO: Remove this temporary code, waiting for the extension update release
         if (value.success === false)
           value.code = value.message === 'Bundle with same hash already exists' ? 'bundle_hash_already_exists' : 'unknown'
@@ -121,5 +139,40 @@ export async function runUploader(params: InputsParams, memoryBundles: MemoryBun
   if (resultCount.failed > 0)
     core.setFailed('Failed to upload DDF bundles, please check logs for more information')
 
+  return resultCount
   // #endregion
 }
+
+// #region Upload bundle as artifacts
+export async function runArtifactUploader(params: InputsParams, bundlerResult: BundlerResult) {
+  const artifactParams = params.upload.artifact
+
+  if (!artifactParams.enabled || !params.bundler.enabled)
+    throw new Error('Can\'t run store uploader because he is not enabled')
+
+  const bundlerOutputPath = params.bundler.outputPath
+
+  if (bundlerResult.diskBundles.length > 0) {
+    core.startGroup('Upload bundles as artifact')
+
+    if (!bundlerOutputPath)
+      throw new Error('Can\'t upload bundles as artifact because outputPath is not defined')
+
+    const artifact = new DefaultArtifactClient()
+
+    const { id, size } = await artifact.uploadArtifact(
+      'Bundles',
+      bundlerResult.diskBundles,
+      bundlerOutputPath,
+      {
+        retentionDays: artifactParams.retentionDays,
+      },
+    )
+    core.endGroup()
+
+    core.info(`Created artifact with id: ${id} (bytes: ${size}) with a duration of ${artifactParams.retentionDays} days`)
+
+    return { id, size }
+  }
+}
+// #endregion
