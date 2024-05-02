@@ -9,6 +9,7 @@ import type { MemoryBundle } from './src/bundler.js'
 import { runBundler } from './src/bundler.js'
 import { runUploader } from './src/uploader.js'
 import { handleError, logsErrors } from './src/errors.js'
+import { updateModifiedBundle } from './src/interaction.js'
 
 try {
   run()
@@ -55,11 +56,13 @@ async function runCIPR(params: InputsParams) {
   const memoryBundles = await runBundler(params, sources)
 
   memoryBundles.forEach((memoryBundle) => {
-    core.info(`Bundle ${memoryBundle.path} is updated: ${memoryBundle.isUpdated}`)
+    core.info(`Bundle ${memoryBundle.path} is ${memoryBundle.status}`)
   })
 
   if (params.upload.enabled)
     await runUploader(params, memoryBundles)
+
+  await updateModifiedBundle(params, context, memoryBundles)
 
   /*
   // List of modified files

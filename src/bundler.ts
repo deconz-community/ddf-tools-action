@@ -9,13 +9,13 @@ import { createValidator } from '@deconz-community/ddf-validator'
 import { bytesToHex } from '@noble/hashes/utils'
 import { secp256k1 } from '@noble/curves/secp256k1'
 import type { InputsParams } from './input'
-import type { Sources } from './source'
+import type { FileStatus, Sources } from './source'
 import { handleError, logsErrors } from './errors'
 
 export interface MemoryBundle {
   bundle: ReturnType<typeof Bundle>
   path: string
-  isUpdated: boolean
+  status: Omit<FileStatus, 'removed'>
 }
 
 export async function runBundler(params: InputsParams, sources: Sources): Promise<MemoryBundle[]> {
@@ -39,15 +39,21 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
   await Promise.all(sources.getDDFPaths().map(async (ddfPath) => {
     core.debug(`[bundler] Bundling DDF ${ddfPath}`)
     try {
-      let isUpdated = false
+      let status: FileStatus = 'unchanged'
       const bundle = await buildFromFiles(
         `file://${source.path.generic}`,
         `file://${ddfPath}`,
-        async (path) => {
-          const source = await sources.getSource(path.replace('file://', ''))
-          core.info(`Source: ${path} / ${source.metadata.status}`)
-          if (source.metadata.status !== 'unchanged')
-            isUpdated = true
+        async (filePath) => {
+          const source = await sources.getSource(filePath.replace('file://', ''))
+
+          if (source.metadata.status === 'unchanged')
+            return source
+
+          if (filePath === ddfPath && source.metadata.status === 'added')
+            status = 'added'
+          else if (status === 'unchanged')
+            status = 'modified'
+
           return source
         },
       )
@@ -160,7 +166,7 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
       bundles.push({
         bundle,
         path: ddfPath,
-        isUpdated,
+        status,
       })
     }
     catch (err) {
@@ -203,8 +209,6 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
       const unused = sources.getUnusedFiles()
 
       const validator = createValidator()
-
-      // TODO: Optimise this, it's loading the files twice
 
       const genericFiles = await Promise.all(unused.generic.map(async (path) => {
         const source = await sources.getSource(path)

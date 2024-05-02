@@ -1,0 +1,29 @@
+<!-- DDF-TOOLS-ACTION/modified-bundles -->
+Hey @{{ pull_request.user.login }}, thanks for your pull request!
+
+{% if added_files.size > 0 %}
+I have detected that you added the following DDF:
+{% for file in added_files %}
+- {{ file.filename }}
+{% endfor %}
+{% endif %}
+
+{% if modified_files.size > 0 %}
+I have detected that you modified the following DDF:
+{% for file in modified_files %}
+- {{ file.filename }}
+{% endfor %}
+{% endif %}
+
+{% if deleted_files.size > 0 %}
+I have detected that you deleted the following DDF:
+{% for file in deleted_files %}
+- {{ file.filename }}
+{% endfor %}
+{% endif %}
+
+> [!TIP]
+> I bundled the DDF and made a zip that you can find [here]({{ artifact.url}}).
+> The link will be valid for {{ artifact.retention_days}} days.
+
+Cheers!
