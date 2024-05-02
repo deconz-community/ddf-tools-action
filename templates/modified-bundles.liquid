@@ -45,4 +45,4 @@ Hey @{{ payload.pull_request.user.login }}, thanks for your pull request!
 {% endif %}
 
 > [!NOTE]
-> Updated since commit {{ payload.merge_commit_sha }}.
+> Updated since commit {{ payload.pull_request.head.sha }}.

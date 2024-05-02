@@ -51,9 +51,9 @@ async function runCIPR(params: InputsParams) {
 
   core.info(`Current action = ${payload.action}`)
 
-  if (true) {
+  if (core.isDebug()) {
     core.startGroup('Debug payload')
-    core.info(JSON.stringify(payload, null, 2))
+    core.debug(JSON.stringify(payload, null, 2))
     core.endGroup()
   }
 
