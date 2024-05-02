@@ -8,6 +8,7 @@ import * as core from '@actions/core'
 import type { BundlerResult } from './bundler'
 import type { InputsParams } from './input'
 import type { UploaderResult } from './uploader'
+import type { Sources } from './source'
 
 interface BundleInfo {
   path: string
@@ -70,6 +71,7 @@ export async function parseTemplate<TemplateName extends keyof Templates>(
 export async function updateModifiedBundleInteraction(
   params: InputsParams,
   context: Context,
+  sources: Sources,
   bundler: BundlerResult,
   uploader: UploaderResult,
 ) {
@@ -90,11 +92,13 @@ export async function updateModifiedBundleInteraction(
   const body = await parseTemplate('modified-bundles', {
     added_bundles: bundler.memoryBundles
       .filter(bundle => bundle.status === 'added')
-      .map(bundle => ({ path: bundle.path })),
+      .map(bundle => ({ path: bundle.path.replace(params.source.path.devices, '') })),
     modified_bundles: bundler.memoryBundles
       .filter(bundle => bundle.status === 'modified')
-      .map(bundle => ({ path: bundle.path })),
-    deleted_bundles: [{ path: 'baz' }],
+      .map(bundle => ({ path: bundle.path.replace(params.source.path.devices, '') })),
+    deleted_bundles: sources.getUnusedFiles().ddf
+      .filter(path => path.startsWith(params.source.path.devices))
+      .map(path => ({ path: path.replace(params.source.path.devices, '') })),
     payload,
     artifact: {
       enabled: params.upload.artifact.enabled,

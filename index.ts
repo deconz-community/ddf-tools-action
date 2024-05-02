@@ -59,7 +59,7 @@ async function runCIPR(params: InputsParams) {
   const bundler = await runBundler(params, sources)
   const uploader = await runUploaders(params, bundler)
 
-  await updateModifiedBundleInteraction(params, context, bundler, uploader)
+  await updateModifiedBundleInteraction(params, context, sources, bundler, uploader)
 
   /*
   // List of modified files
