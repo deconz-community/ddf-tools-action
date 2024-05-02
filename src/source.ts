@@ -183,14 +183,15 @@ export async function getSourcesStatus(context: Context) {
     core.debug(`Pull request files list = ${JSON.stringify(files, null, 2)}`)
 
   files.data.forEach((file) => {
+    const filePath = path.resolve(file.filename)
     switch (file.status) {
       case 'modified':
       case 'added':
       case 'removed':
-        fileStatus.set(file.filename, file.status)
+        fileStatus.set(filePath, file.status)
         break
       case 'renamed':
-        fileStatus.set(file.filename, 'unchanged')
+        fileStatus.set(filePath, 'unchanged')
         break
       default:
         throw new Error(`Unknown file status: ${file.status}`)
