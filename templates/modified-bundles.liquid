@@ -5,8 +5,8 @@ Hey @{{ pull_request.user.login }}, thanks for your pull request[^1]!
 
 {% if added_files.size > 0 %}
 ### Added
-{% for file in added_files %}
-- {{ file.filename }}
+{% for bundle in added_bundles %}
+- {{ bundle.path }}
 {% endfor %}
 {% endif %}
 
@@ -24,9 +24,11 @@ Hey @{{ pull_request.user.login }}, thanks for your pull request[^1]!
 {% endfor %}
 {% endif %}
 
+{% if artifact.enabled %}
 > [!TIP]
 > I bundled the DDF and made a zip that you can find [here]({{ artifact.url}}).
 > The link will be valid for {{ artifact.retention_days}} days.
+{% endif %}
 
 ## Validation
 
