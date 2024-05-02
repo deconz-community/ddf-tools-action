@@ -12,6 +12,7 @@ import type { Sources } from './source'
 
 interface BundleInfo {
   path: string
+  product?: string
 }
 
 interface Templates {
@@ -92,13 +93,21 @@ export async function updateModifiedBundleInteraction(
   const body = await parseTemplate('modified-bundles', {
     added_bundles: bundler.memoryBundles
       .filter(bundle => bundle.status === 'added')
-      .map(bundle => ({ path: bundle.path.replace(params.source.path.devices, '') })),
+      .map(bundle => ({
+        path: bundle.path.replace(params.source.path.devices, ''),
+        product: bundle.bundle.data.desc.product,
+      })),
     modified_bundles: bundler.memoryBundles
       .filter(bundle => bundle.status === 'modified')
-      .map(bundle => ({ path: bundle.path.replace(params.source.path.devices, '') })),
+      .map(bundle => ({
+        path: bundle.path.replace(params.source.path.devices, ''),
+        product: bundle.bundle.data.desc.product,
+      })),
     deleted_bundles: sources.getUnusedFiles().ddf
       .filter(path => path.startsWith(params.source.path.devices))
-      .map(path => ({ path: path.replace(params.source.path.devices, '') })),
+      .map(path => ({
+        path: path.replace(params.source.path.devices, ''),
+      })),
     payload,
     artifact: {
       enabled: params.upload.artifact.enabled,

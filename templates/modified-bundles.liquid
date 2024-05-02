@@ -1,19 +1,25 @@
 <!-- DDF-TOOLS-ACTION/modified-bundles -->
 Hey @{{ payload.pull_request.user.login }}, thanks for your pull request!
 
+{% if artifact.enabled %}
+> [!TIP]
+> Modified bundles can be donloaded [here]({{ artifact.url}}).
+> ![Relative expire date](https://img.shields.io/date/{{ artifact.expires_at }}?style=flat&label=expire)
+{% endif %}
+
 ## Bundles changes
 
 {% if added_bundles.size > 0 %}
 ### Added
 {% for bundle in added_bundles %}
-- {{ bundle.path }}
+- {{ bundle.path }} : {{ bundle.product }}
 {% endfor %}
 {% endif %}
 
 {% if modified_bundles.size > 0 %}
 ### Modified
 {% for file in modified_bundles %}
-- {{ file.path }}
+- {{ file.path }} : {{ bundle.product }}
 {% endfor %}
 {% endif %}
 
@@ -22,12 +28,6 @@ Hey @{{ payload.pull_request.user.login }}, thanks for your pull request!
 {% for file in deleted_bundles %}
 - {{ file.path }}
 {% endfor %}
-{% endif %}
-
-{% if artifact.enabled %}
-> [!TIP]
-> Modified bundles can be donloaded [here]({{ artifact.url}}). ![Relative expire date](https://img.shields.io/date/{{ artifact.expires_at }}?style=flat&label=expire)
-
 {% endif %}
 
 {% if validation.enabled %}
