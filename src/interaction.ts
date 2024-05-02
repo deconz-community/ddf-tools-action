@@ -92,7 +92,7 @@ export async function updateModifiedBundleInteraction(
 
   bundler.memoryBundles.forEach((bundle) => {
     core.info(`Bundle ${bundle.path} status = ${bundle.status}`)
-    core.info(`Bundle ${bundle.path} data = ${JSON.stringify(bundle.bundle.data, null, 2)}`)
+    core.info(`Bundle ${bundle.path} data = ${JSON.stringify(bundle.bundle.data.desc.product, null, 2)}`)
   })
 
   const body = await parseTemplate('modified-bundles', {
@@ -106,7 +106,7 @@ export async function updateModifiedBundleInteraction(
       .filter(bundle => bundle.status === 'modified')
       .map(bundle => ({
         path: bundle.path.replace(params.source.path.devices, ''),
-        product: bundle.bundle.data.desc.product,
+        product: JSON.stringify(bundle.bundle.data, null, 2),
       })),
     deleted_bundles: sources.getUnusedFiles().ddf
       .filter(path => path.startsWith(params.source.path.devices))
