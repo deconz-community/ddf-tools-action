@@ -45,6 +45,7 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
         `file://${ddfPath}`,
         async (path) => {
           const source = await sources.getSource(path.replace('file://', ''))
+          core.info(`Source: ${path} / ${source.metadata.status}`)
           if (source.metadata.status !== 'unchanged')
             isUpdated = true
           return source
