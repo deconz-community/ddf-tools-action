@@ -54,6 +54,10 @@ async function runCIPR(params: InputsParams) {
 
   const memoryBundles = await runBundler(params, sources)
 
+  memoryBundles.forEach((memoryBundle) => {
+    core.info(`Bundle ${memoryBundle.path} is updated: ${memoryBundle.isUpdated}`)
+  })
+
   if (params.upload.enabled)
     await runUploader(params, memoryBundles)
 

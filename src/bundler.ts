@@ -15,7 +15,7 @@ import { handleError, logsErrors } from './errors'
 export interface MemoryBundle {
   bundle: ReturnType<typeof Bundle>
   path: string
-  modified: boolean
+  isUpdated: boolean
 }
 
 export async function runBundler(params: InputsParams, sources: Sources): Promise<MemoryBundle[]> {
@@ -39,10 +39,16 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
   await Promise.all(sources.getDDFPaths().map(async (ddfPath) => {
     core.debug(`[bundler] Bundling DDF ${ddfPath}`)
     try {
+      let isUpdated = false
       const bundle = await buildFromFiles(
         `file://${source.path.generic}`,
         `file://${ddfPath}`,
-        path => sources.getSource(path.replace('file://', '')),
+        async (path) => {
+          const source = await sources.getSource(path.replace('file://', ''))
+          if (source.metadata.status !== 'unchanged')
+            isUpdated = true
+          return source
+        },
       )
 
       // #region Validation
@@ -153,8 +159,7 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
       bundles.push({
         bundle,
         path: ddfPath,
-        // TODO: Check if the file is modified
-        modified: false,
+        isUpdated,
       })
     }
     catch (err) {
