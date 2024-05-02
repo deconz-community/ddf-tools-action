@@ -25,6 +25,14 @@ interface Templates {
     } | {
       enabled: false
     }
+    validation: {
+      enabled: true
+      result: 'success' | 'failure'
+    } | {
+      enabled: false
+    }
+    updated_at: Date
+    commit: string
   }
 }
 
@@ -85,6 +93,12 @@ export async function updateModifiedBundleInteraction(
       url: 'https://example.com',
       retention_days: 5,
     },
+    validation: {
+      enabled: true,
+      result: 'success',
+    },
+    commit: 'abcdef',
+    updated_at: new Date(),
   })
 
   if (existingComment !== undefined) {

@@ -1,25 +1,25 @@
 <!-- DDF-TOOLS-ACTION/modified-bundles -->
-Hey @{{ pull_request.user.login }}, thanks for your pull request[^1]!
+Hey @{{ pull_request.user.login }}, thanks for your pull request!
 
 ## Bundles changes
 
-{% if added_files.size > 0 %}
+{% if added_bundles.size > 0 %}
 ### Added
 {% for bundle in added_bundles %}
 - {{ bundle.path }}
 {% endfor %}
 {% endif %}
 
-{% if modified_files.size > 0 %}
+{% if modified_bundles.size > 0 %}
 ### Modified
-{% for file in modified_files %}
+{% for file in modified_bundles %}
 - {{ file.filename }}
 {% endfor %}
 {% endif %}
 
-{% if deleted_files.size > 0 %}
+{% if deleted_bundles.size > 0 %}
 ### Deleted
-{% for file in deleted_files %}
+{% for file in deleted_bundles %}
 - {{ file.filename }}
 {% endfor %}
 {% endif %}
@@ -30,14 +30,19 @@ Hey @{{ pull_request.user.login }}, thanks for your pull request[^1]!
 > The link will be valid for {{ artifact.retention_days}} days.
 {% endif %}
 
+{% if validation.enabled %}
 ## Validation
 
+{% if validation.result == 'success' %}
 > [!TIP]
 > Everything is fine !
+{% endif %}
 
+{% if validation.result == 'failure' %}
 > [!CAUTION]
 > Some errors are reported, please check the logs here.
-
+{% endif %}
+{% endif %}
 
 > [!NOTE]
-> Updated at "xx:xx:xx" for commit {{ commit }}.
+> Updated at "{{updated_at}}" for commit {{ commit }}.
