@@ -52,7 +52,7 @@ export async function parseTemplate<TemplateName extends keyof Templates>(
   name: TemplateName,
   data: Templates[TemplateName],
 ) {
-  const templatePath = appRoot.resolve(`templates/${name}.liquid`)
+  const templatePath = appRoot.resolve(`../templates/${name}.liquid`)
   const template = await fs.readFile(templatePath, 'utf-8')
   const engine = new Liquid()
   return await engine.parseAndRender(template, data)
