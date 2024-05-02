@@ -12,7 +12,7 @@ import type { Sources } from './source'
 
 interface BundleInfo {
   path: string
-  product?: string
+  product: string
 }
 
 interface Templates {
@@ -20,7 +20,7 @@ interface Templates {
     payload: PullRequestEvent
     added_bundles: BundleInfo[]
     modified_bundles: BundleInfo[]
-    deleted_bundles: BundleInfo[]
+    deleted_bundles: Pick<BundleInfo, 'path'>[]
     artifact: {
       enabled: true
       url: string
@@ -90,11 +90,6 @@ export async function updateModifiedBundleInteraction(
 
   const retention_days = params.upload.artifact.enabled ? params.upload.artifact.retentionDays : 0
 
-  bundler.memoryBundles.forEach((bundle) => {
-    core.info(`Bundle ${bundle.path} status = ${bundle.status}`)
-    core.info(`Bundle ${bundle.path} data = ${JSON.stringify(bundle.bundle.data.desc.product, null, 2)}`)
-  })
-
   const body = await parseTemplate('modified-bundles', {
     added_bundles: bundler.memoryBundles
       .filter(bundle => bundle.status === 'added')
@@ -106,7 +101,7 @@ export async function updateModifiedBundleInteraction(
       .filter(bundle => bundle.status === 'modified')
       .map(bundle => ({
         path: bundle.path.replace(params.source.path.devices, ''),
-        product: JSON.stringify(bundle.bundle.data, null, 2),
+        product: bundle.bundle.data.desc.product,
       })),
     deleted_bundles: sources.getUnusedFiles().ddf
       .filter(path => path.startsWith(params.source.path.devices))

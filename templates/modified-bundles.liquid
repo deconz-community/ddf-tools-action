@@ -18,15 +18,15 @@ Hey @{{ payload.pull_request.user.login }}, thanks for your pull request!
 
 {% if modified_bundles.size > 0 %}
 ### Modified
-{% for file in modified_bundles %}
-- {{ file.path }} : {{ bundle.product }}
+{% for bundle in modified_bundles %}
+- {{ bundle.path }} : {{ bundle.product }}
 {% endfor %}
 {% endif %}
 
 {% if deleted_bundles.size > 0 %}
 ### Deleted
-{% for file in deleted_bundles %}
-- {{ file.path }}
+{% for bundle in deleted_bundles %}
+- {{ bundle.path }}
 {% endfor %}
 {% endif %}
 
