@@ -23,6 +23,7 @@ interface Templates {
       enabled: true
       url: string
       retention_days: number
+      expires_at: number
     } | {
       enabled: false
     }
@@ -84,6 +85,8 @@ export async function updateModifiedBundleInteraction(
     return comment.body?.startsWith('<!-- DDF-TOOLS-ACTION/modified-bundles -->')
   })
 
+  const retention_days = params.upload.artifact.enabled ? params.upload.artifact.retentionDays : 0
+
   const body = await parseTemplate('modified-bundles', {
     added_bundles: bundler.memoryBundles
       .filter(bundle => bundle.status === 'added')
@@ -96,7 +99,8 @@ export async function updateModifiedBundleInteraction(
     artifact: {
       enabled: params.upload.artifact.enabled,
       url: `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}/artifacts/${uploader.artifact?.id}`,
-      retention_days: params.upload.artifact.enabled ? params.upload.artifact.retentionDays : 0,
+      retention_days,
+      expires_at: Math.floor(Date.now() / 1000) + retention_days * 24 * 60 * 60,
     },
     validation: {
       enabled: true,

@@ -26,8 +26,8 @@ Hey @{{ payload.pull_request.user.login }}, thanks for your pull request!
 
 {% if artifact.enabled %}
 > [!TIP]
-> I bundled the DDF and made a zip that you can find [here]({{ artifact.url}}).
-> The link will be valid for {{ artifact.retention_days}} days.
+> I bundled the DDF and made a zip that you can find [here]({{ artifact.url}}). ![Relative expire date](https://img.shields.io/date/{{ artifact.expires_at }}?style=flat&label=expire)
+
 {% endif %}
 
 {% if validation.enabled %}
