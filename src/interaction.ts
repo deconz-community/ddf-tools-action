@@ -4,7 +4,8 @@ import { Octokit } from '@octokit/action'
 import type { PullRequestEvent } from '@octokit/webhooks-types'
 import { Liquid } from 'liquidjs'
 import appRoot from 'app-root-path'
-import type { BundlerResult, MemoryBundle } from './bundler'
+import * as core from '@actions/core'
+import type { BundlerResult } from './bundler'
 import type { InputsParams } from './input'
 import type { UploaderResult } from './uploader'
 
@@ -62,7 +63,7 @@ export async function parseTemplate<TemplateName extends keyof Templates>(
   const template = await fs.readFile(templatePath, 'utf-8')
   const engine = new Liquid()
   return (await engine.parseAndRender(template, data))
-    .replace(/\n{2,}/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
 }
 
 export async function updateModifiedBundleInteraction(
@@ -82,6 +83,12 @@ export async function updateModifiedBundleInteraction(
   const existingComment = existingComments.find((comment) => {
     return comment.body?.startsWith('<!-- DDF-TOOLS-ACTION/modified-bundles -->')
   })
+
+  core.info(`Artifact URL ${octokit.actions.downloadArtifact.endpoint({
+    ...context.repo,
+    artifact_id: uploader.artifact?.id ?? 0,
+    archive_format: 'zip',
+  }).url}`)
 
   const body = await parseTemplate('modified-bundles', {
     added_bundles: bundler.memoryBundles
