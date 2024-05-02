@@ -39,14 +39,16 @@ jobs:
           source-devices-path: tests
           source-ignore-pattern: '**/*([a-z_])(invalid|unused).(json|md)'
           # bundler-output-path: bundled
-          bundler-output-artifact-enabled: true
-          bundler-output-artifact-retention-days: 1
           bundler-sign-keys: ${{ secrets.BUNDLER_SIGN_KEYS }}
+          
+          # upload-store-eenabled: true
+          # upload-store-einput-path: bundled
+          # upload-store-eurl: ${{ secrets.UPLOAD_URL }}
+          # upload-store-etoken: ${{ secrets.UPLOAD_TOKEN }}
+          
+          upload-artifact-enabled: true
+          upload-artifact-retention-days: 1
 
-          # upload-enabled: true
-          # upload-input-path: bundled
-          # upload-url: ${{ secrets.UPLOAD_URL }}
-          # upload-token: ${{ secrets.UPLOAD_TOKEN }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
