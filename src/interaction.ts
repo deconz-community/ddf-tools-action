@@ -1,4 +1,3 @@
-import path from 'node:path'
 import fs from 'node:fs/promises'
 import type { Context } from '@actions/github/lib/context'
 import { Octokit } from '@octokit/action'
@@ -14,7 +13,7 @@ interface BundleInfo {
 
 interface Templates {
   'modified-bundles': {
-    pull_request: PullRequestEvent['pull_request']
+    payload: PullRequestEvent
     added_bundles: BundleInfo[]
     modified_bundles: BundleInfo[]
     deleted_bundles: BundleInfo[]
@@ -31,8 +30,6 @@ interface Templates {
     } | {
       enabled: false
     }
-    updated_at: Date
-    commit: string
   }
 }
 
@@ -87,7 +84,7 @@ export async function updateModifiedBundleInteraction(
     added_bundles: [{ path: 'foo' }],
     modified_bundles: [{ path: 'bar' }],
     deleted_bundles: [{ path: 'baz' }],
-    pull_request: payload.pull_request,
+    payload,
     artifact: {
       enabled: true,
       url: 'https://example.com',
@@ -97,8 +94,6 @@ export async function updateModifiedBundleInteraction(
       enabled: true,
       result: 'success',
     },
-    commit: 'abcdef',
-    updated_at: new Date(),
   })
 
   if (existingComment !== undefined) {

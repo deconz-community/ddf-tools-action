@@ -1,5 +1,5 @@
 <!-- DDF-TOOLS-ACTION/modified-bundles -->
-Hey @{{ pull_request.user.login }}, thanks for your pull request!
+Hey @{{ payload.pull_request.user.login }}, thanks for your pull request!
 
 ## Bundles changes
 
@@ -13,14 +13,14 @@ Hey @{{ pull_request.user.login }}, thanks for your pull request!
 {% if modified_bundles.size > 0 %}
 ### Modified
 {% for file in modified_bundles %}
-- {{ file.filename }}
+- {{ file.path }}
 {% endfor %}
 {% endif %}
 
 {% if deleted_bundles.size > 0 %}
 ### Deleted
 {% for file in deleted_bundles %}
-- {{ file.filename }}
+- {{ file.path }}
 {% endfor %}
 {% endif %}
 
@@ -45,4 +45,4 @@ Hey @{{ pull_request.user.login }}, thanks for your pull request!
 {% endif %}
 
 > [!NOTE]
-> Updated at "{{updated_at}}" for commit {{ commit }}.
+> Updated since commit {{ payload.merge_commit_sha }}.
