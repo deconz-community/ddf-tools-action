@@ -35,6 +35,9 @@ importers:
       '@octokit/action':
         specifier: ^6.1.0
         version: 6.1.0
+      app-root-path:
+        specifier: ^3.1.0
+        version: 3.1.0
       fast-glob:
         specifier: ^3.3.2
         version: 3.3.2
@@ -1043,6 +1046,10 @@ packages:
   ansi-styles@6.2.1:
     resolution: {integrity: sha512-bN798gFfQX+viw3R7yrGWRqnrN2oRkEkUjjl4JNn4E8GxxbjtG3FbrEIIY3l8/hrwUwIeCZvi4QuOTP4MErVug==}
     engines: {node: '>=12'}
+
+  app-root-path@3.1.0:
+    resolution: {integrity: sha512-biN3PwB2gUtjaYy/isrU3aNWI5w+fAfvHkSvCKeQGxhmYpwKFUxudR3Yya+KqVRHBmEDYh+/lTozYCFbmzX4nA==}
+    engines: {node: '>= 6.0.0'}
 
   archiver-utils@5.0.2:
     resolution: {integrity: sha512-wuLJMmIBQYCsGZgYLTy5FIB2pF6Lfb6cXMSF8Qywwk3t20zWnAi7zLcQFdKQmIB8wyZpY5ER38x08GbwtR2cLA==}
@@ -4660,6 +4667,8 @@ snapshots:
     optional: true
 
   ansi-styles@6.2.1: {}
+
+  app-root-path@3.1.0: {}
 
   archiver-utils@5.0.2:
     dependencies:

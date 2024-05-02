@@ -4,6 +4,7 @@ import type { Context } from '@actions/github/lib/context'
 import { Octokit } from '@octokit/action'
 import type { PullRequestEvent } from '@octokit/webhooks-types'
 import { Liquid } from 'liquidjs'
+import appRoot from 'app-root-path'
 import type { MemoryBundle } from './bundler'
 import type { InputsParams } from './input'
 
@@ -47,8 +48,12 @@ export async function getExistingCommentsPR(
     })
 }
 
-export async function parseTemplate<TemplateName extends keyof Templates>(name: TemplateName, data: Templates[TemplateName]) {
-  const template = await fs.readFile(path.join(__dirname, `../templates/${name}.md`), 'utf-8')
+export async function parseTemplate<TemplateName extends keyof Templates>(
+  name: TemplateName,
+  data: Templates[TemplateName],
+) {
+  const templatePath = appRoot.resolve(`templates/${name}.liquid`)
+  const template = await fs.readFile(templatePath, 'utf-8')
   const engine = new Liquid()
   return await engine.parseAndRender(template, data)
 }
