@@ -84,12 +84,6 @@ export async function updateModifiedBundleInteraction(
     return comment.body?.startsWith('<!-- DDF-TOOLS-ACTION/modified-bundles -->')
   })
 
-  core.info(`Artifact URL ${octokit.actions.downloadArtifact.endpoint({
-    ...context.repo,
-    artifact_id: uploader.artifact?.id ?? 0,
-    archive_format: 'zip',
-  }).url}`)
-
   const body = await parseTemplate('modified-bundles', {
     added_bundles: bundler.memoryBundles
       .filter(bundle => bundle.status === 'added')
@@ -101,11 +95,7 @@ export async function updateModifiedBundleInteraction(
     payload,
     artifact: {
       enabled: params.upload.artifact.enabled,
-      url: octokit.actions.downloadArtifact.endpoint({
-        ...context.repo,
-        artifact_id: uploader.artifact?.id ?? 0,
-        archive_format: 'zip',
-      }).url,
+      url: `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}/artifacts/${uploader.artifact?.id}`,
       retention_days: params.upload.artifact.enabled ? params.upload.artifact.retentionDays : 0,
     },
     validation: {
