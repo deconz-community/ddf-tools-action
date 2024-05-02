@@ -3,8 +3,8 @@ Hey @{{ payload.pull_request.user.login }}, thanks for your pull request!
 
 {% if artifact.enabled %}
 > [!TIP]
-> Modified bundles can be donloaded [here]({{ artifact.url}}).
-> ![Relative expire date](https://img.shields.io/date/{{ artifact.expires_at }}?style=flat&label=expire)
+> Modified bundles can be downloaded [here]({{ artifact.url}}).
+> ![Relative expire date](https://img.shields.io/date/{{ artifact.expires_at }}?label=file%20expiration)
 {% endif %}
 
 ## Bundles changes
@@ -12,7 +12,7 @@ Hey @{{ payload.pull_request.user.login }}, thanks for your pull request!
 {% if added_bundles.size > 0 %}
 ### Added
 {% for bundle in added_bundles %}
-- {{ bundle.path }} : {{ bundle.product }}
+- `{{ bundle.path }}` : {{ bundle.product }}
 {% endfor %}
 {% endif %}
 
