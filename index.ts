@@ -51,6 +51,12 @@ async function runCIPR(params: InputsParams) {
 
   core.info(`Current action = ${payload.action}`)
 
+  if (true) {
+    core.startGroup('Debug payload')
+    core.info(JSON.stringify(payload, null, 2))
+    core.endGroup()
+  }
+
   const sources = await getSources(params, context)
 
   const memoryBundles = await runBundler(params, sources)
