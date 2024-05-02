@@ -90,6 +90,11 @@ export async function updateModifiedBundleInteraction(
 
   const retention_days = params.upload.artifact.enabled ? params.upload.artifact.retentionDays : 0
 
+  bundler.memoryBundles.forEach((bundle) => {
+    core.info(`Bundle ${bundle.path} status = ${bundle.status}`)
+    core.info(`Bundle ${bundle.path} data = ${JSON.stringify(bundle.bundle.data, null, 2)}`)
+  })
+
   const body = await parseTemplate('modified-bundles', {
     added_bundles: bundler.memoryBundles
       .filter(bundle => bundle.status === 'added')
