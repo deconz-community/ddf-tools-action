@@ -27,7 +27,7 @@ export async function getExistingCommentsPR(
     })
 }
 
-export async function updateModifiedBundle(
+export async function updateModifiedBundleInteraction(
   params: InputsParams,
   context: Context,
   bundle: MemoryBundle[],
@@ -40,24 +40,28 @@ export async function updateModifiedBundle(
 
   const existingComments = await getExistingCommentsPR(context)
 
-  const existingCommentID = existingComments.find((comment) => {
+  const existingComment = existingComments.find((comment) => {
     return comment.body?.startsWith('<!-- DDF-TOOLS-ACTION/modified-bundles -->')
-  })?.id
+  })
 
-  if (existingCommentID !== undefined) {
-    await octokit.rest.issues.deleteComment({
+  const body = `<!-- DDF-TOOLS-ACTION/modified-bundles -->\n${bundle
+    .map((memoryBundle) => {
+      return `* ${memoryBundle.path} is ${memoryBundle.status}`
+    })
+    .join('\n')}`
+
+  if (existingComment !== undefined) {
+    await octokit.rest.issues.updateComment({
       ...context.repo,
-      comment_id: existingCommentID,
+      comment_id: existingComment.id,
+      body,
     })
   }
-
-  octokit.rest.issues.createComment({
-    ...context.repo,
-    issue_number: payload.pull_request.number,
-    body: `<!-- DDF-TOOLS-ACTION/modified-bundles -->\n${bundle
-      .map((memoryBundle) => {
-        return `* ${memoryBundle.path} is ${memoryBundle.status}`
-      })
-      .join('\n')}`,
-  })
+  else {
+    octokit.rest.issues.createComment({
+      ...context.repo,
+      issue_number: payload.pull_request.number,
+      body,
+    })
+  }
 }
