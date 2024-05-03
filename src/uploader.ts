@@ -71,8 +71,8 @@ export async function runStoreUploader(params: InputsParams, bundlerResult: Bund
     core.info(`Store status = ${health.status}`)
   }
   catch (error) {
-    logsErrors(handleError(error))
-    throw core.setFailed('Failed to check server health, please check logs for more information')
+    core.setFailed('Failed to check server health, please check logs for more information')
+    throw logsErrors(handleError(error))
   }
 
   const bulkSize = 10
@@ -134,7 +134,7 @@ export async function runStoreUploader(params: InputsParams, bundlerResult: Bund
   core.info(`Uploaded ${resultCount.success} new bundles, ${resultCount.alreadyExists} already exists and ${resultCount.failed} failed`)
 
   if (resultCount.failed > 0)
-    core.setFailed('Failed to upload DDF bundles, please check logs for more information')
+    throw core.setFailed('Failed to upload DDF bundles, please check logs for more information')
 
   return resultCount
   // #endregion

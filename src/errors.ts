@@ -91,10 +91,7 @@ export function logsErrors(errors: ValidationError[], groupName?: string) {
     return
 
   if (groupName)
-    core.startGroup(groupName)
-
-  core.setFailed('Errors found please check logs for more information')
-  core.saveState('ddf-bundler-validator-result', 'failure')
+    core.startGroup(`[error]${groupName}`)
 
   errors.forEach((error) => {
     if (error.type === 'simple') {

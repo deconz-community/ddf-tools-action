@@ -32,6 +32,7 @@ interface Templates {
     validation: {
       enabled: true
       result: 'success' | 'failure'
+      detail_url: string
     } | {
       enabled: false
     }
@@ -119,7 +120,8 @@ export async function updateModifiedBundleInteraction(
     },
     validation: {
       enabled: params.bundler.enabled && params.bundler.validation.enabled,
-      result: (core.getState('ddf-bundler-validator-result') ?? 'success') as any,
+      result: bundler.validationErrors.length === 0 ? 'success' : 'failure',
+      detail_url: `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}/job/${context.job}`,
     },
   })
 

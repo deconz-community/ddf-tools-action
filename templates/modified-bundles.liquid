@@ -40,7 +40,7 @@ Hey @{{ payload.pull_request.user.login }}, thanks for your pull request!
 
 {% if validation.result == 'failure' %}
 > [!CAUTION]
-> Some errors are reported, please check the logs here.
+> Some errors are reported, please check the logs [here]({{ validation.detail_url }}).
 {% endif %}
 {% endif %}
 
