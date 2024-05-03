@@ -1,6 +1,7 @@
 import { ZodError } from 'zod'
 import { visit } from 'jsonc-parser'
 import * as core from '@actions/core'
+import appRoot from 'app-root-path'
 
 import type { ValidationError } from '@deconz-community/ddf-bundler'
 
@@ -87,8 +88,6 @@ export function handleError(error: ZodError | Error | unknown, file?: string, fi
 }
 
 export function logsErrors(errors: ValidationError[]) {
-  core.info(`Error data = ${JSON.stringify(errors)}`)
-
   if (errors.length === 0)
     return
 
@@ -98,7 +97,7 @@ export function logsErrors(errors: ValidationError[]) {
     }
     else if (error.type === 'code') {
       core.error(error.message, {
-        file: error.file,
+        file: error.file.replace(appRoot.path, ''),
         startLine: error.line,
         startColumn: error.column,
         title: 'Sample title',
