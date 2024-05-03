@@ -99,6 +99,7 @@ export function logsErrors(errors: ValidationError[]) {
         file: error.file,
         startLine: error.line,
         startColumn: error.column,
+        title: 'Sample title',
       })
     }
   })
