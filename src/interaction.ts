@@ -118,7 +118,7 @@ export async function updateModifiedBundleInteraction(
       expires_at: Math.floor(Date.now() / 1000) + retention_days * 24 * 60 * 60,
     },
     validation: {
-      enabled: params.validation.enabled,
+      enabled: params.bundler.enabled && params.bundler.validation.enabled,
       result: (core.getState('ddf-bundler-validator-result') ?? 'success') as any,
     },
   })
