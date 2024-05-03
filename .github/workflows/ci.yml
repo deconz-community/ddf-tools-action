@@ -40,9 +40,9 @@ jobs:
           mode: action
           source-devices-path: tests
           source-ignore-pattern: '**/*([a-z_])(invalid|unused).(json|md)'
-#          bundler-output-path: bundled
-#          bundler-output-artifact-enabled: true
-#          bundler-output-artifact-retention-days: 1
+          # bundler-output-path: bundled
+          # bundler-output-artifact-enabled: true
+          # bundler-output-artifact-retention-days: 1
           bundler-sign-keys: ${{ secrets.BUNDLER_SIGN_KEYS }}
 
 #          upload-store-enabled: true
