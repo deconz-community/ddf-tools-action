@@ -70,6 +70,7 @@ export async function getSources(params: InputsParams, context: Context) {
     switch (params.bundler.fileModifiedMethod) {
       case 'gitlog': {
         const log = await git.log({ file: filePath })
+        core.info(`Git log for ${filePath}: ${JSON.stringify(log, null, 2)}`)
         const latestCommit = log.latest
         if (latestCommit === null) {
           core.warning(`No commit found for ${filePath}`)
