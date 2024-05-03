@@ -147,7 +147,7 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
           if (errors.length > 0) {
             const filePath = ddfPath.replace(source.path.devices, '')
             core.error(`Bundle validation error for DDF at ${filePath}`)
-            logsErrors(errors, `Error details for ${filePath}`)
+            logsErrors(errors)
             validationErrors.push(...errors)
           }
 
@@ -210,7 +210,7 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
       const errors = handleError(err, ddfPath, await fileSource.stringData)
       const filePath = ddfPath.replace(source.path.devices, '')
       core.error(`Bundle creation error for DDF at ${filePath}`)
-      logsErrors(errors, `Error details for ${filePath}`)
+      logsErrors(errors)
       validationErrors.push(...errors)
     }
   }))

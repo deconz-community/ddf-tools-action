@@ -86,14 +86,9 @@ export function handleError(error: ZodError | Error | unknown, file?: string, fi
   return errorsList
 }
 
-export function logsErrors(errors: ValidationError[], groupName?: string) {
+export function logsErrors(errors: ValidationError[]) {
   if (errors.length === 0)
     return
-
-  if (groupName) {
-    core.error(`${groupName} has errors`)
-    core.startGroup(groupName)
-  }
 
   errors.forEach((error) => {
     if (error.type === 'simple') {
@@ -107,7 +102,4 @@ export function logsErrors(errors: ValidationError[], groupName?: string) {
       })
     }
   })
-
-  if (groupName)
-    core.endGroup()
 }
