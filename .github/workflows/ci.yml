@@ -37,7 +37,7 @@ jobs:
         run: pnpm build
 
       - name: Run DDF Push Action
-        if: github.event_name == 'push'
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         uses: ./
         with:
           mode: push

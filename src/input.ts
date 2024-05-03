@@ -191,6 +191,7 @@ export interface UploadInputs {
     url: string
     token: string
     status: StoreBundleStatus
+    toolboxUrl?: string
   } | {
     enabled: false
   }
@@ -225,6 +226,7 @@ async function getUploadInputs(): Promise<UploadInputs> {
         url,
         token,
         status: (status ?? STORE_BUNDLE_STATUSES[0]) as StoreBundleStatus,
+        toolboxUrl: getInput('upload-store-toolbox-url'),
       }
     })(),
     artifact: (() => {

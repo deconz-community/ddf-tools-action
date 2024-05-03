@@ -6,24 +6,32 @@ import { Liquid } from 'liquidjs'
 import appRoot from 'app-root-path'
 import * as core from '@actions/core'
 import type { BundleData } from '@deconz-community/ddf-bundler'
+import { bytesToHex } from '@noble/hashes/utils'
 import type { BundlerResult } from './bundler'
 import type { InputsParams } from './input'
 import type { UploaderResult } from './uploader'
 import type { Sources } from './source'
 
-interface BundleInfo {
+interface ModifiedBundleInfo {
   path: string
   product: string
   validation_emoji: string
   messages?: string[]
 }
 
+interface UploadedBundleInfo {
+  path: string
+  product: string
+  hash: string
+  store_url?: string
+}
+
 interface Templates {
   'modified-bundles': {
     payload: PullRequestEvent
-    added_bundles: BundleInfo[]
-    modified_bundles: BundleInfo[]
-    deleted_bundles: Pick<BundleInfo, 'path'>[]
+    added_bundles: ModifiedBundleInfo[]
+    modified_bundles: ModifiedBundleInfo[]
+    deleted_bundles: Pick<ModifiedBundleInfo, 'path'>[]
     clock_emoji: string
     artifact: {
       enabled: true
@@ -41,6 +49,12 @@ interface Templates {
     } | {
       enabled: false
     }
+  }
+  'merged-pr': {
+    payload: PullRequestEvent
+    added_bundles: UploadedBundleInfo[]
+    modified_bundles: UploadedBundleInfo[]
+    clock_emoji: string
   }
 }
 
@@ -77,6 +91,67 @@ export async function parseTemplate<TemplateName extends keyof Templates>(
     .replace(/\n{3,}/g, '\n\n')
 }
 
+export async function updateClosedPRInteraction(
+  params: InputsParams,
+  context: Context,
+  sources: Sources,
+  bundler: BundlerResult,
+) {
+  if (context.eventName !== 'pull_request')
+    throw new Error('This action is not supposed to run on pull_request event')
+
+  const octokit = new Octokit()
+  const payload = context.payload as PullRequestEvent
+
+  const existingComments = await getExistingCommentsPR(context)
+
+  const existingComment = existingComments.find((comment) => {
+    return comment.body?.startsWith('<!-- DDF-TOOLS-ACTION/merged-pr -->')
+  })
+
+  bundler.memoryBundles.forEach((bundle) => {
+    core.info(`bundle=${JSON.stringify(bundle.bundle.data.validation?.result)}`)
+  })
+
+  const store_url = params.upload.store.enabled ? params.upload.store.url : undefined
+
+  const body = await parseTemplate('merged-pr', {
+    added_bundles: bundler.memoryBundles
+      .filter(bundle => bundle.status === 'added')
+      .map(bundle => ({
+        path: bundle.path.replace(`${params.source.path.devices}/`, ''),
+        product: bundle.bundle.data.desc.product,
+        hash: bytesToHex(bundle.bundle.data.hash!),
+        store_url,
+      })),
+    modified_bundles: bundler.memoryBundles
+      .filter(bundle => bundle.status === 'modified')
+      .map(bundle => ({
+        path: bundle.path.replace(`${params.source.path.devices}/`, ''),
+        product: bundle.bundle.data.desc.product,
+        hash: bytesToHex(bundle.bundle.data.hash!),
+        store_url,
+      })),
+    payload,
+    clock_emoji: CLOCKS[Math.floor(Math.random() * CLOCKS.length)],
+  })
+
+  if (existingComment !== undefined) {
+    await octokit.rest.issues.updateComment({
+      ...context.repo,
+      comment_id: existingComment.id,
+      body,
+    })
+  }
+  else {
+    octokit.rest.issues.createComment({
+      ...context.repo,
+      issue_number: payload.pull_request.number,
+      body,
+    })
+  }
+}
+
 export async function updateModifiedBundleInteraction(
   params: InputsParams,
   context: Context,
@@ -97,8 +172,6 @@ export async function updateModifiedBundleInteraction(
   })
 
   const retention_days = params.upload.artifact.enabled ? params.upload.artifact.retentionDays : 0
-
-  core.info(`params.validation=${JSON.stringify(params.validation)}`)
 
   bundler.memoryBundles.forEach((bundle) => {
     core.info(`bundle=${JSON.stringify(bundle.bundle.data.validation?.result)}`)

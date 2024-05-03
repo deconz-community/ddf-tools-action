@@ -65,6 +65,9 @@ inputs:
   upload-store-status:
     description: Store system signature to use for the upload (alpha, beta, stable)
     default: alpha
+  upload-store-toolbox-url:
+    description: URL to upload the DDF toolbox to
+    default: 'https://deconz-community.github.io/ddf-tools/#/'
 
   upload-artifact-enabled:
     description: Upload the output path as an artifact

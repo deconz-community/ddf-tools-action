@@ -8,7 +8,7 @@ import { getSources } from './src/source.js'
 import { runBundler } from './src/bundler.js'
 import { runUploaders } from './src/uploader.js'
 import { handleError, logsErrors } from './src/errors.js'
-import { updateModifiedBundleInteraction } from './src/interaction.js'
+import { updateClosedPRInteraction, updateModifiedBundleInteraction } from './src/interaction.js'
 
 try {
   run()
@@ -24,14 +24,16 @@ async function run() {
 
   const context = github.context
 
-  core.startGroup('Debug context')
-  core.info(`${JSON.stringify(context, null, 2)}`)
-  core.endGroup()
+  if (core.isDebug()) {
+    core.startGroup('Debug context')
+    core.info(JSON.stringify(context, null, 2))
+    core.endGroup()
+  }
 
   if (params.mode === 'push')
     await runPush(params)
   else if (params.mode === 'pull_request')
-    await runCIPR(params)
+    await runPullRequest(params)
 }
 
 async function runPush(params: InputsParams) {
@@ -45,7 +47,7 @@ async function runPush(params: InputsParams) {
     await runUploaders(params, bundlerResult)
 }
 
-async function runCIPR(params: InputsParams) {
+async function runPullRequest(params: InputsParams) {
   core.info('Running CI/PR mode')
   const context = github.context
 
@@ -56,63 +58,13 @@ async function runCIPR(params: InputsParams) {
 
   core.info(`Current action = ${payload.action}`)
 
-  if (core.isDebug() || true) {
-    core.startGroup('Debug payload')
-    core.info(JSON.stringify(payload, null, 2))
-    core.endGroup()
-  }
-
   const sources = await getSources(params, context)
   const bundler = await runBundler(params, sources)
-  const uploader = await runUploaders(params, bundler)
-
-  await updateModifiedBundleInteraction(params, context, sources, bundler, uploader)
-
-  /*
-  // List of modified files
-  const files = await octokit.rest.pulls.listFiles({
-    ...context.repo,
-    pull_number: payload.pull_request.number,
-  })
-
-  files.data.forEach((file) => {
-    core.info(`Modified file: ${file.filename}`)
-  })
-  */
-
-  /*
-  // List of comments
-  const comments = await octokit.rest.issues.listComments({
-    ...context.repo,
-    issue_number: payload.pull_request.number,
-  })
-
-  comments.data.forEach((comment) => {
-    if (!comment.user || comment.user.login !== 'github-actions[bot]')
-      return
-
-    let count = Number(comment.body)
-    if (Number.isNaN(count))
-      count = 0
-
-    count += 1
-    comment.body = count.toString()
-
-    octokit.rest.issues.updateComment({
-      ...context.repo,
-      comment_id: comment.id,
-      body: comment.body,
-    })
-
-    core.info(`Comment = ${comment.body}`)
-  })
-
-  core.info(`Comment = ${JSON.stringify(comments, null, 2)}`)
-  */
-
-  if (core.isDebug()) {
-    core.startGroup('Debug context')
-    core.debug(JSON.stringify(github.context, null, 2))
-    core.endGroup()
+  if (payload.action === 'closed') {
+    await updateClosedPRInteraction(params, context, sources, bundler)
+  }
+  else {
+    const uploader = await runUploaders(params, bundler)
+    await updateModifiedBundleInteraction(params, context, sources, bundler, uploader)
   }
 }
