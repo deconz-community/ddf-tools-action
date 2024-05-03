@@ -5,6 +5,7 @@ import type { PullRequestEvent } from '@octokit/webhooks-types'
 import { Liquid } from 'liquidjs'
 import appRoot from 'app-root-path'
 import * as core from '@actions/core'
+import type { BundleData } from '@deconz-community/ddf-bundler'
 import type { BundlerResult } from './bundler'
 import type { InputsParams } from './input'
 import type { UploaderResult } from './uploader'
@@ -103,11 +104,11 @@ export async function updateModifiedBundleInteraction(
     core.info(`bundle=${JSON.stringify(bundle.bundle.data.validation?.result)}`)
   })
 
-  const getResultEmoji = (result: string | undefined) => {
+  const getResultEmoji = (result: Exclude<BundleData['validation'], undefined>['result'] | undefined) => {
     switch (result) {
       case 'success':
         return ':heavy_check_mark:'
-      case 'failure':
+      case 'error':
         return ':x:'
       case 'skipped':
       default:

@@ -20,9 +20,7 @@ Hey @{{ payload.pull_request.user.login }}, thanks for your pull request!
 ### Modified
 {% for bundle in modified_bundles %}
 - {{ bundle.path }} : {{ bundle.product }} {{ bundle.validation_emoji }}
-{% for message in bundle.messages %}
-  - {{ message }}
-{% endfor %}
+{% for message in bundle.messages %}  - {{ message }}{% endfor %}
 {% endfor %}
 {% endif %}
 
@@ -30,9 +28,7 @@ Hey @{{ payload.pull_request.user.login }}, thanks for your pull request!
 ### Deleted
 {% for bundle in deleted_bundles %}
 - {{ bundle.path }}
-{% for message in bundle.messages %}
-  - {{ message }}
-{% endfor %}
+{% for message in bundle.messages %}  - {{ message }}{% endfor %}
 {% endfor %}
 {% endif %}
 
@@ -51,6 +47,3 @@ Hey @{{ payload.pull_request.user.login }}, thanks for your pull request!
 {% endif %}
 
 <sub>{{ clock_emoji }} Updated for commit {{ payload.pull_request.head.sha }}</sub>
-
-:heavy_check_mark:
-:x:
