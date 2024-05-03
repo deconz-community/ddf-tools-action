@@ -90,8 +90,10 @@ export function logsErrors(errors: ValidationError[], groupName?: string) {
   if (errors.length === 0)
     return
 
-  if (groupName)
-    core.startGroup(`[error]${groupName}`)
+  if (groupName) {
+    core.error(`${groupName} has errors`)
+    core.startGroup(groupName)
+  }
 
   errors.forEach((error) => {
     if (error.type === 'simple') {

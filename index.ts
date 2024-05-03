@@ -14,10 +14,8 @@ try {
   run()
 }
 catch (error) {
-  logsErrors(
-    handleError(error),
-    'An error occurred while running the action.',
-  )
+  core.setFailed('An error occurred while running the action.')
+  logsErrors(handleError(error))
 }
 
 async function run() {
