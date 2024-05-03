@@ -93,7 +93,17 @@ export function logsErrors(errors: ValidationError[]) {
 
   errors.forEach((error) => {
     if (error.type === 'simple') {
-      core.error(error.message)
+      if (!error.file) {
+        core.error(error.message)
+      }
+      else {
+        core.error(error.message, {
+          file: error.file.replace(`${appRoot.path}/`, ''),
+          startLine: 0,
+          startColumn: 0,
+          title: 'Sample title',
+        })
+      }
     }
     else if (error.type === 'code') {
       core.error(error.message, {
