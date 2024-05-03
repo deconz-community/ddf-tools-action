@@ -4,6 +4,7 @@ import { Buffer } from 'node:buffer'
 import * as core from '@actions/core'
 import type { Bundle, ValidationError } from '@deconz-community/ddf-bundler'
 import { buildFromFiles, createSignature, encode, generateHash } from '@deconz-community/ddf-bundler'
+import type { FileDefinitionWithError } from '@deconz-community/ddf-validator'
 import { createValidator } from '@deconz-community/ddf-validator'
 import { bytesToHex } from '@noble/hashes/utils'
 import { secp256k1 } from '@noble/curves/secp256k1'
@@ -67,13 +68,25 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
       await (async () => {
         if (bundler.validation.enabled) {
           const validator = createValidator()
+          const validationResult: FileDefinitionWithError[] = []
 
           const ddfc = JSON.parse(bundle.data.ddfc)
-          if (typeof ddfc !== 'object' || ddfc === null)
-            throw new Error('Something went wrong while parsing the DDFC file')
+          if (typeof ddfc !== 'object' || ddfc === null) {
+            validationResult.push({
+              error: new Error('Something went wrong while parsing the DDFC file'),
+              path: ddfPath,
+              data: ddfc,
+            })
+            return
+          }
 
-          if (bundler.validation.enforceUUID && ddfc.uuid === undefined)
-            core.error('UUID is not defined in the DDFC file', { file: ddfPath })
+          if (bundler.validation.enforceUUID && ddfc.uuid === undefined) {
+            validationResult.push({
+              error: new Error('UUID is not defined in the DDFC file'),
+              path: ddfPath,
+              data: ddfc,
+            })
+          }
 
           if (ddfc.ddfvalidate === false && bundler.validation.strict) {
             if (bundler.validation.strict)
@@ -86,7 +99,7 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
             return
           }
 
-          const validationResult = validator.bulkValidate(
+          validationResult.push(...validator.bulkValidate(
             // Generic files
             bundle.data.files
               .filter(file => file.type === 'JSON')
@@ -103,7 +116,7 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
                 data: ddfc,
               },
             ],
-          )
+          ))
 
           if (validationResult.length === 0) {
             bundle.data.validation = {
