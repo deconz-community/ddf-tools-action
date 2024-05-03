@@ -5,8 +5,10 @@ import { type Source, type SourceMetadata, createSource } from '@deconz-communit
 import type { Context } from '@actions/github/lib/context.js'
 import type { PullRequestEvent } from '@octokit/webhooks-types'
 import { Octokit } from '@octokit/action'
+import { simpleGit } from 'simple-git'
 
 import * as core from '@actions/core'
+import appRootPath from 'app-root-path'
 import type { InputsParams } from './input.js'
 
 export type FileStatus = 'added' | 'removed' | 'modified' | 'unchanged'
@@ -24,6 +26,7 @@ export async function getSources(params: InputsParams, context: Context) {
   const ddf: Map<string, Source<BundlerSourceMetadata>> = new Map()
   const generic: Map<string, Source<BundlerSourceMetadata>> = new Map()
   const misc: Map<string, Source<BundlerSourceMetadata>> = new Map()
+  const git = simpleGit(appRootPath.path)
 
   const fileStatus = context.eventName === 'pull_request'
     ? await getSourcesStatus(context)
@@ -66,8 +69,13 @@ export async function getSources(params: InputsParams, context: Context) {
 
     switch (params.bundler.fileModifiedMethod) {
       case 'gitlog': {
-        // TODO: Implement gitlog
-        return new Date(1714319023000)
+        const log = await git.log({ file: filePath })
+        const latestCommit = log.latest
+        if (latestCommit === null) {
+          core.warning(`No commit found for ${filePath}`)
+          return new Date()
+        }
+        return new Date(latestCommit.date)
       }
       case 'mtime': {
         return (await fs.stat(filePath)).mtime
