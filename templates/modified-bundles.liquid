@@ -7,19 +7,20 @@ Hey @{{ payload.pull_request.user.login }}, thanks for your pull request!
 > ![Relative expire date](https://img.shields.io/date/{{ artifact.expires_at }}?label=file%20expiration)
 {% endif %}
 
-## Bundles changes
+## DDF Bundles changes
 
 {% if added_bundles.size > 0 %}
 ### Added
 {% for bundle in added_bundles %}
-- `{{ bundle.path }}` : {{ bundle.product }}
+- `{{ bundle.path }}` : {{ bundle.product }} {{ bundle.validation_emoji }}
 {% endfor %}
 {% endif %}
 
 {% if modified_bundles.size > 0 %}
 ### Modified
 {% for bundle in modified_bundles %}
-- {{ bundle.path }} : {{ bundle.product }}
+- {{ bundle.path }} : {{ bundle.product }} {{ bundle.validation_emoji }}
+{% for message in bundle.messages %}  - {{ message }}{% endfor %}
 {% endfor %}
 {% endif %}
 
@@ -27,6 +28,7 @@ Hey @{{ payload.pull_request.user.login }}, thanks for your pull request!
 ### Deleted
 {% for bundle in deleted_bundles %}
 - {{ bundle.path }}
+{% for message in bundle.messages %}  - {{ message }}{% endfor %}
 {% endfor %}
 {% endif %}
 
@@ -40,8 +42,8 @@ Hey @{{ payload.pull_request.user.login }}, thanks for your pull request!
 
 {% if validation.result == 'failure' %}
 > [!CAUTION]
-> Some errors are reported, please check the logs here.
+> Some errors have been reported. Please check the error annotations [here]({{ validation.files_url }}) and the logs [here]({{ validation.detail_url }}).
 {% endif %}
 {% endif %}
 
-<sub>Updated for commit {{ payload.pull_request.head.sha }}</sub>
+<sub>{{ clock_emoji }} Updated for commit {{ payload.pull_request.head.sha }}</sub>

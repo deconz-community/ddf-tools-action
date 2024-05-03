@@ -14,6 +14,7 @@ try {
   run()
 }
 catch (error) {
+  core.setFailed('An error occurred while running the action.')
   logsErrors(handleError(error))
 }
 
@@ -21,18 +22,24 @@ async function run() {
   const params = await getParams()
   logsParams(params)
 
-  if (params.mode === 'action')
-    await runAction(params)
-  else if (params.mode === 'ci-pr')
+  const context = github.context
+
+  core.startGroup('Debug context')
+  core.info(`${JSON.stringify(context, null, 2)}`)
+  core.endGroup()
+
+  if (params.mode === 'push')
+    await runPush(params)
+  else if (params.mode === 'pull_request')
     await runCIPR(params)
 }
 
-async function runAction(params: InputsParams) {
+async function runPush(params: InputsParams) {
   const context = github.context
   const sources = await getSources(params, context)
   const bundlerResult = params.bundler.enabled
     ? await runBundler(params, sources)
-    : { memoryBundles: [], diskBundles: [] }
+    : { memoryBundles: [], diskBundles: [], validationErrors: [] }
 
   if (params.upload.artifact.enabled || params.upload.store.enabled)
     await runUploaders(params, bundlerResult)

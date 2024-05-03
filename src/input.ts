@@ -10,9 +10,9 @@ interface CommonInputs {
   upload: UploadInputs
 }
 export type InputsParams = CommonInputs & ({
-  mode: 'action'
+  mode: 'push'
 } | {
-  mode: 'ci-pr' | 'ci-push'
+  mode: 'pull_request'
   ci: CIInputs
 })
 
@@ -24,7 +24,7 @@ export async function getParams(): Promise<InputsParams> {
     upload: await getUploadInputs(),
   }
 
-  if (params.mode === 'ci-pr' || params.mode === 'ci-push')
+  if (params.mode === 'pull_request')
     params.ci = getCIInputs()
 
   assertInputs(params as InputsParams)
@@ -47,7 +47,7 @@ export function logsParams(params: InputsParams) {
 }
 
 // #region Mode
-const MODES = ['action', 'ci-pr', 'ci-push'] as const
+const MODES = ['push', 'pull_request'] as const
 export type Mode = typeof MODES[number]
 function getMode(): Mode {
   const mode = getInput('mode') as Mode | undefined
@@ -316,7 +316,7 @@ export async function getDirectory<Optional extends boolean = false>(
 }
 
 export function assertInputs(params: InputsParams) {
-  if (params.mode === 'ci-pr' || params.mode === 'ci-push') {
+  if (params.mode === 'pull_request') {
     if (!params.bundler?.enabled)
       throw core.setFailed('Bundler must be enabled in CI mode')
     if (!params.bundler.validation?.enabled)

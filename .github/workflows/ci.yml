@@ -6,6 +6,8 @@
 name: Continuous integration
 
 on:
+  pull_request:
+    types: [opened, synchronize, closed]
   push:
     branches:
       - main
@@ -34,23 +36,33 @@ jobs:
       - name: Build
         run: pnpm build
 
-      - name: Test
+      - name: Run DDF Push Action
+        if: github.event_name == 'push'
         uses: ./
         with:
-          mode: action
+          mode: push
           source-devices-path: tests
           source-ignore-pattern: '**/*([a-z_])(invalid|unused).(json|md)'
-          # bundler-output-path: bundled
-          # bundler-output-artifact-enabled: true
-          # bundler-output-artifact-retention-days: 1
-          bundler-sign-keys: ${{ secrets.BUNDLER_SIGN_KEYS }}
+          upload-store-enabled: true
+          upload-store-url: ${{ secrets.UPLOAD_URL }}
+          upload-store-token: ${{ secrets.UPLOAD_TOKEN }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-#          upload-store-enabled: true
-#          upload-store-input-path: bundled
-#          upload-store-url: ${{ secrets.UPLOAD_URL }}
-#          upload-store-token: ${{ secrets.UPLOAD_TOKEN }}
+      - name: Run DDF Pull Request Interaction
+        if: github.event_name == 'pull_request'
+        uses: ./
+        with:
+          mode: pull_request
+          source-devices-path: tests
+          source-ignore-pattern: '**/*([a-z_])(invalid|unused).(json|md)'
+          upload-artifact-enabled: true
+          upload-artifact-retention-days: 3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 #      - name: Create Release Pull Request or Publish
+#        if: github.event_name == 'push'
 #        id: changesets
 #        uses: changesets/action@v1
 #        with:
@@ -60,6 +72,7 @@ jobs:
 #          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 #
 #      - name: Update Release tags
+#        if: github.event_name == 'push'
 #        uses: JasonEtco/build-and-tag-action@v2
 #        if: steps.changesets.outcome == 'success' && steps.changesets.outputs.published == 'true'
 #        with:

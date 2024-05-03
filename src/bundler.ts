@@ -4,6 +4,7 @@ import { Buffer } from 'node:buffer'
 import * as core from '@actions/core'
 import type { Bundle, ValidationError } from '@deconz-community/ddf-bundler'
 import { buildFromFiles, createSignature, encode, generateHash } from '@deconz-community/ddf-bundler'
+import type { FileDefinitionWithError } from '@deconz-community/ddf-validator'
 import { createValidator } from '@deconz-community/ddf-validator'
 import { bytesToHex } from '@noble/hashes/utils'
 import { secp256k1 } from '@noble/curves/secp256k1'
@@ -20,6 +21,7 @@ export interface MemoryBundle {
 export interface BundlerResult {
   memoryBundles: MemoryBundle[]
   diskBundles: string[]
+  validationErrors: ValidationError[]
 }
 
 export async function runBundler(params: InputsParams, sources: Sources): Promise<BundlerResult> {
@@ -32,13 +34,13 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
   core.info('Creating bundles')
 
   const memoryBundles: MemoryBundle[] = []
+  const diskBundles: string[] = []
+  const validationErrors: ValidationError[] = []
 
   const bundlerOutputPath = bundler.outputPath
     ?? (upload.artifact.enabled
       ? await fs.mkdtemp('ddf-bundler')
       : undefined)
-
-  const diskBundles: string[] = []
 
   await Promise.all(sources.getDDFPaths().map(async (ddfPath) => {
     core.debug(`[bundler] Bundling DDF ${ddfPath}`)
@@ -67,13 +69,25 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
       await (async () => {
         if (bundler.validation.enabled) {
           const validator = createValidator()
+          const validationResult: FileDefinitionWithError[] = []
 
           const ddfc = JSON.parse(bundle.data.ddfc)
-          if (typeof ddfc !== 'object' || ddfc === null)
-            throw new Error('Something went wrong while parsing the DDFC file')
+          if (typeof ddfc !== 'object' || ddfc === null) {
+            validationResult.push({
+              error: new Error('Something went wrong while parsing the DDFC file'),
+              path: ddfPath,
+              data: ddfc,
+            })
+            return
+          }
 
-          if (bundler.validation.enforceUUID && ddfc.uuid === undefined)
-            core.error('UUID is not defined in the DDFC file', { file: ddfPath })
+          if (bundler.validation.enforceUUID && ddfc.uuid === undefined) {
+            validationResult.push({
+              error: new Error('UUID is not defined in the DDFC file'),
+              path: ddfPath,
+              data: ddfc,
+            })
+          }
 
           if (ddfc.ddfvalidate === false && bundler.validation.strict) {
             if (bundler.validation.strict)
@@ -86,7 +100,7 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
             return
           }
 
-          const validationResult = validator.bulkValidate(
+          validationResult.push(...validator.bulkValidate(
             // Generic files
             bundle.data.files
               .filter(file => file.type === 'JSON')
@@ -103,7 +117,7 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
                 data: ddfc,
               },
             ],
-          )
+          ))
 
           if (validationResult.length === 0) {
             bundle.data.validation = {
@@ -116,9 +130,16 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
           const errors: ValidationError[] = []
 
           await Promise.all(validationResult.map(async (error) => {
-            const source = await sources.getSource(error.path)
-            errors.push(...handleError(error.error, error.path, await source.stringData))
+            const sourceFile = await sources.getSource(error.path)
+            errors.push(...handleError(error.error, error.path, await sourceFile.stringData))
           }))
+
+          if (errors.length > 0) {
+            const filePath = ddfPath.replace(source.path.devices, '')
+            core.error(`Bundle validation error for DDF at ${filePath}`)
+            logsErrors(errors)
+            validationErrors.push(...errors)
+          }
 
           bundle.data.validation = {
             result: 'error',
@@ -175,8 +196,12 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
     }
     catch (err) {
       core.error(`Error while creating bundle ${ddfPath}`)
-      const source = await sources.getSource(ddfPath)
-      logsErrors(handleError(err, ddfPath, await source.stringData))
+      const fileSource = await sources.getSource(ddfPath)
+      const errors = handleError(err, ddfPath, await fileSource.stringData)
+      const filePath = ddfPath.replace(source.path.devices, '')
+      core.error(`Bundle creation error for DDF at ${filePath}`)
+      logsErrors(errors)
+      validationErrors.push(...errors)
     }
   }))
   // #endregion
@@ -226,7 +251,12 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
 
       await Promise.all(validationResult.map(async (error) => {
         const source = await sources.getSource(error.path)
-        logsErrors(handleError(error.error, error.path, await source.stringData))
+        const errors = handleError(error.error, error.path, await source.stringData)
+        if (errors.length > 0) {
+          core.error('Validation error for unused files')
+          logsErrors(errors)
+          validationErrors.push(...errors)
+        }
       }))
 
       if (bundler.validation.warnUnusedFiles) {
@@ -255,10 +285,14 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
 
   // #endregion
 
-  core.info(`Bundler finished: ${memoryBundles.length}`)
+  if (validationErrors.length > 0)
+    core.setFailed('Bundler finished with validation errors')
+  else
+    core.info(`Bundler finished: ${memoryBundles.length}`)
 
   return {
     memoryBundles,
     diskBundles,
+    validationErrors,
   }
 }
