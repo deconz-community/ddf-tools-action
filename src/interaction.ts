@@ -113,7 +113,7 @@ export async function updateClosedPRInteraction(
     core.info(`bundle=${JSON.stringify(bundle.bundle.data.validation?.result)}`)
   })
 
-  const store_url = params.upload.store.enabled ? params.upload.store.url : undefined
+  const store_url = params.upload.store.toolboxUrl
 
   const body = await parseTemplate('merged-pr', {
     added_bundles: bundler.memoryBundles

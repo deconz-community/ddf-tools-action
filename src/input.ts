@@ -194,6 +194,7 @@ export interface UploadInputs {
     toolboxUrl?: string
   } | {
     enabled: false
+    toolboxUrl?: string
   }
   artifact: {
     enabled: true
@@ -207,8 +208,12 @@ export interface UploadInputs {
 async function getUploadInputs(): Promise<UploadInputs> {
   return {
     store: await (async () => {
-      if (!getBooleanInput('upload-store-enabled'))
-        return { enabled: false }
+      if (!getBooleanInput('upload-store-enabled')) {
+        return {
+          enabled: false,
+          toolboxUrl: getInput('upload-store-toolbox-url'),
+        }
+      }
 
       const url = getInput('upload-store-url')
       const token = getInput('upload-store-token')
