@@ -44,6 +44,7 @@ interface Templates {
 }
 
 const CLOCKS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(hour => [`:clock${hour}:`, `:clock${hour}30:`]).flat()
+CLOCKS.push(':duck:')
 
 export async function getExistingCommentsPR(
   context: Context,
