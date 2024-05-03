@@ -98,8 +98,8 @@ export function logsErrors(errors: ValidationError[]) {
     else if (error.type === 'code') {
       core.error(error.message, {
         file: error.file.replace(`${appRoot.path}/`, ''),
-        startLine: error.line,
-        startColumn: error.column,
+        startLine: error.line ?? 1,
+        startColumn: error.column ?? 1,
         title: 'Sample title',
       })
     }
