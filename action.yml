@@ -7,7 +7,7 @@ branding:
 inputs:
   mode:
     default: push
-    description: 'Mode to run the action in (push, pull_request)'
+    description: 'Mode to run the action in (manual, push, pull_request)'
 
   # # Common options for validate and bundle
   source-devices-path:
@@ -72,6 +72,9 @@ inputs:
   upload-artifact-enabled:
     description: Upload the output path as an artifact
     default: 'false'
+  upload-artifact-filter:
+    description: Comma seperated list of status to use for the artifact upload (added, modified, unchanged)
+    default: added,modified,unchanged
   upload-artifact-retention-days:
     description: Duration of the artifact in days
     default: '3'

@@ -18,9 +18,14 @@ export interface MemoryBundle {
   status: 'added' | 'modified' | 'unchanged'
 }
 
+export interface DiskBundle {
+  path: string
+  status: 'added' | 'modified' | 'unchanged'
+}
+
 export interface BundlerResult {
   memoryBundles: MemoryBundle[]
-  diskBundles: string[]
+  diskBundles: DiskBundle[]
   validationErrors: ValidationError[]
 }
 
@@ -34,7 +39,7 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
   core.info('Creating bundles')
 
   const memoryBundles: MemoryBundle[] = []
-  const diskBundles: string[] = []
+  const diskBundles: DiskBundle[] = []
   const validationErrors: ValidationError[] = []
 
   const bundlerOutputPath = bundler.outputPath
@@ -184,7 +189,10 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
         const data = Buffer.from(await encoded.arrayBuffer())
         fs.mkdir(path.dirname(outputPath), { recursive: true })
         await fs.writeFile(outputPath, data)
-        diskBundles.push(outputPath)
+        diskBundles.push({
+          path: outputPath,
+          status,
+        })
       }
       // #endregion
 

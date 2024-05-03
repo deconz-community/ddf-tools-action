@@ -30,21 +30,39 @@ async function run() {
     core.endGroup()
   }
 
-  if (params.mode === 'push')
-    await runPush(params)
-  else if (params.mode === 'pull_request')
-    await runPullRequest(params)
+  switch (params.mode) {
+    case 'manual':
+      return await runManual(params)
+    case 'push':
+      return await runPush(params)
+    case 'pull_request':
+      return await runPullRequest(params)
+  }
 }
 
-async function runPush(params: InputsParams) {
+async function runManual(params: InputsParams) {
   const context = github.context
   const sources = await getSources(params, context)
   const bundlerResult = params.bundler.enabled
     ? await runBundler(params, sources)
     : { memoryBundles: [], diskBundles: [], validationErrors: [] }
+  if (params.upload.artifact.enabled || params.upload.store.enabled)
+    await runUploaders(params, context, bundlerResult)
+}
+
+async function runPush(params: InputsParams) {
+  const context = github.context
+  const sources = await getSources(params, context)
+
+  if (!sources.haveModifiedDDF)
+    return core.info('No files modified in the DDF folder, stopping the action')
+
+  const bundlerResult = params.bundler.enabled
+    ? await runBundler(params, sources)
+    : { memoryBundles: [], diskBundles: [], validationErrors: [] }
 
   if (params.upload.artifact.enabled || params.upload.store.enabled)
-    await runUploaders(params, bundlerResult)
+    await runUploaders(params, context, bundlerResult)
 }
 
 async function runPullRequest(params: InputsParams) {
@@ -59,12 +77,22 @@ async function runPullRequest(params: InputsParams) {
   core.info(`Current action = ${payload.action}`)
 
   const sources = await getSources(params, context)
+
+  if (!sources.haveModifiedDDF)
+    return core.info('No files modified in the DDF folder, stopping the action')
+
   const bundler = await runBundler(params, sources)
+
+  if (bundler.memoryBundles.filter(bundle => bundle.status !== 'unchanged').length === 0) {
+    core.info('No bundles changed stopping the action')
+    return
+  }
+
   if (payload.action === 'closed') {
     await updateClosedPRInteraction(params, context, sources, bundler)
   }
   else {
-    const uploader = await runUploaders(params, bundler)
+    const uploader = await runUploaders(params, context, bundler)
     await updateModifiedBundleInteraction(params, context, sources, bundler, uploader)
   }
 }

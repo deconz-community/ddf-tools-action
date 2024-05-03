@@ -101,6 +101,7 @@ export async function getSources(params: InputsParams, context: Context) {
   }
 
   return {
+    haveModifiedDDF: sourcePaths.length > 0,
     extraModifiedFilesStatus: fileStatus,
     getDDFPaths: () => Array.from(ddf.keys()),
     getGenericPaths: () => Array.from(generic.keys()),

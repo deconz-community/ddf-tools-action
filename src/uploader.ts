@@ -4,6 +4,7 @@ import * as core from '@actions/core'
 import { createDirectus, rest, serverHealth, staticToken } from '@directus/sdk'
 import { glob } from 'fast-glob'
 import { DefaultArtifactClient } from '@actions/artifact'
+import type { Context } from '@actions/github/lib/context'
 import type { InputsParams } from './input'
 import { handleError, logsErrors } from './errors'
 import type { BundlerResult } from './bundler'
@@ -19,18 +20,18 @@ type UploadResponse = Record<string, {
 
 export type UploaderResult = Awaited<ReturnType<typeof runUploaders>>
 
-export async function runUploaders(params: InputsParams, bundlerResult: BundlerResult) {
+export async function runUploaders(params: InputsParams, context: Context, bundlerResult: BundlerResult) {
   return {
     store: params.upload.store.enabled
-      ? await runStoreUploader(params, bundlerResult)
+      ? await runStoreUploader(params, context, bundlerResult)
       : undefined,
     artifact: params.upload.artifact.enabled
-      ? await runArtifactUploader(params, bundlerResult)
+      ? await runArtifactUploader(params, context, bundlerResult)
       : undefined,
   }
 }
 
-export async function runStoreUploader(params: InputsParams, bundlerResult: BundlerResult) {
+export async function runStoreUploader(params: InputsParams, context: Context, bundlerResult: BundlerResult) {
   const storeParams = params.upload.store
 
   if (!storeParams.enabled)
@@ -141,26 +142,30 @@ export async function runStoreUploader(params: InputsParams, bundlerResult: Bund
 }
 
 // #region Upload bundle as artifacts
-export async function runArtifactUploader(params: InputsParams, bundlerResult: BundlerResult) {
+export async function runArtifactUploader(params: InputsParams, context: Context, bundlerResult: BundlerResult) {
   const artifactParams = params.upload.artifact
 
   if (!artifactParams.enabled || !params.bundler.enabled)
     throw new Error('Can\'t run store uploader because he is not enabled')
 
-  const bundlerOutputPath = params.bundler.outputPath
+  const { filter } = artifactParams
 
-  if (bundlerResult.diskBundles.length > 0) {
+  const bundlesToUpload = filter
+    ? bundlerResult.diskBundles.filter(bundle => filter.includes(bundle.path))
+    : bundlerResult.diskBundles
+
+  if (bundlesToUpload.length > 0) {
     core.startGroup('Upload bundles as artifact')
 
-    if (!bundlerOutputPath)
+    if (!params.bundler.outputPath)
       throw new Error('Can\'t upload bundles as artifact because outputPath is not defined')
 
     const artifact = new DefaultArtifactClient()
 
     const { id, size } = await artifact.uploadArtifact(
       'Bundles',
-      bundlerResult.diskBundles,
-      bundlerOutputPath,
+      bundlesToUpload.map(bundle => bundle.path),
+      params.bundler.outputPath,
       {
         retentionDays: artifactParams.retentionDays,
       },
