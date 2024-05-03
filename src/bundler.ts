@@ -131,6 +131,7 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
           await Promise.all(validationResult.map(async (error) => {
             const source = await sources.getSource(error.path)
             errors.push(...handleError(error.error, error.path, await source.stringData))
+            logsErrors(errors)
           }))
 
           bundle.data.validation = {
