@@ -125,7 +125,7 @@ export async function runStoreUploader(params: InputsParams, bundlerResult: Bund
     }
     catch (error) {
       core.setFailed('Failed to upload DDF bundles, please check logs for more information')
-      throw logsErrors(handleError(error))
+      throw logsErrors(handleError(error), 'Upload bundles error details')
     }
   }
 

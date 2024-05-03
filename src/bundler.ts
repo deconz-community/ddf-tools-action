@@ -129,9 +129,13 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
           const errors: ValidationError[] = []
 
           await Promise.all(validationResult.map(async (error) => {
-            const source = await sources.getSource(error.path)
-            errors.push(...handleError(error.error, error.path, await source.stringData))
-            logsErrors(errors)
+            const sourceFile = await sources.getSource(error.path)
+            errors.push(...handleError(error.error, error.path, await sourceFile.stringData))
+
+            logsErrors(
+              errors,
+              `Validation error for DDF at ${ddfPath.replace(source.path.devices, '')}`,
+            )
           }))
 
           bundle.data.validation = {
@@ -189,8 +193,11 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
     }
     catch (err) {
       core.error(`Error while creating bundle ${ddfPath}`)
-      const source = await sources.getSource(ddfPath)
-      logsErrors(handleError(err, ddfPath, await source.stringData))
+      const fileSource = await sources.getSource(ddfPath)
+      logsErrors(
+        handleError(err, ddfPath, await fileSource.stringData),
+        `Bundle creation error for DDF ${ddfPath.replace(source.path.devices, '')}`,
+      )
     }
   }))
   // #endregion
@@ -240,7 +247,10 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
 
       await Promise.all(validationResult.map(async (error) => {
         const source = await sources.getSource(error.path)
-        logsErrors(handleError(error.error, error.path, await source.stringData))
+        logsErrors(
+          handleError(error.error, error.path, await source.stringData),
+          'Validation error for unused files',
+        )
       }))
 
       if (bundler.validation.warnUnusedFiles) {

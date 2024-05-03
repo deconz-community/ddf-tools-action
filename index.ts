@@ -14,7 +14,10 @@ try {
   run()
 }
 catch (error) {
-  logsErrors(handleError(error))
+  logsErrors(
+    handleError(error),
+    'An error occurred while running the action.',
+  )
 }
 
 async function run() {

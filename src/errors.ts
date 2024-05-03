@@ -86,11 +86,15 @@ export function handleError(error: ZodError | Error | unknown, file?: string, fi
   return errorsList
 }
 
-export function logsErrors(errors: ValidationError[]) {
-  if (errors.length > 0) {
-    core.setFailed('Errors found please check logs for more information')
-    core.saveState('ddf-bundler-validator-result', 'failed')
-  }
+export function logsErrors(errors: ValidationError[], groupName?: string) {
+  if (errors.length === 0)
+    return
+
+  if (groupName)
+    core.startGroup(groupName)
+
+  core.setFailed('Errors found please check logs for more information')
+  core.saveState('ddf-bundler-validator-result', 'failure')
 
   errors.forEach((error) => {
     if (error.type === 'simple') {
@@ -104,4 +108,7 @@ export function logsErrors(errors: ValidationError[]) {
       })
     }
   })
+
+  if (groupName)
+    core.endGroup()
 }
