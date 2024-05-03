@@ -2,6 +2,7 @@ import path from 'node:path'
 import fs from 'node:fs/promises'
 import * as core from '@actions/core'
 import { hexToBytes } from '@noble/hashes/utils'
+import { secp256k1 } from '@noble/curves/secp256k1'
 
 export interface InputsParams {
   mode: 'push' | 'manual' | 'pull_request'
@@ -130,8 +131,16 @@ async function getBundlerInputs(): Promise<BundlerInputs> {
   if (outputFileFormat === 'name' && outputDirectoryFormat === 'flat')
     throw core.setFailed('Output file format "name" is not compatible with output directory format "flat" because multiple files can have the same path.')
 
-  // TODO : Check if signKeys are valid
-  const signKeys = getArrayInput('bundler-sign-keys').map(hexToBytes)
+  let signKeys: Uint8Array[]
+  try {
+    signKeys = getArrayInput('bundler-sign-keys').map(hexToBytes)
+    signKeys.forEach((key) => {
+      secp256k1.getPublicKey(key)
+    })
+  }
+  catch (e) {
+    throw core.setFailed(`Invalid signature keys : ${e}`)
+  }
 
   const outputPath = (await getDirectoryInput('bundler-output-path', true, true))
     ?? await fs.mkdtemp('ddf-bundler')

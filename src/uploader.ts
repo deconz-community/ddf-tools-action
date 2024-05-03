@@ -106,9 +106,6 @@ export async function runStoreUploader(params: InputsParams, context: Context, b
 
       Object.entries(result).forEach(([key, value]) => {
         const bundleName = bundlerResult.memoryBundles[Number.parseInt(key.replace('bundle-#', ''))]?.path
-        // TODO: Remove this temporary code, waiting for the extension update release
-        if (value.success === false)
-          value.code = value.message === 'Bundle with same hash already exists' ? 'bundle_hash_already_exists' : 'unknown'
 
         if (value.success) {
           resultCount.success++

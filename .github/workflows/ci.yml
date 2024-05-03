@@ -61,6 +61,7 @@ jobs:
           upload-store-enabled: true
           upload-store-url: ${{ secrets.UPLOAD_URL }}
           upload-store-token: ${{ secrets.UPLOAD_TOKEN }}
+          bundler-sign-keys: 'key1,key2,key3'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
