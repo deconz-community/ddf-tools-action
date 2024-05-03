@@ -22,13 +22,17 @@ async function run() {
   const params = await getParams()
   logsParams(params)
 
-  if (params.mode === 'action')
-    await runAction(params)
-  else if (params.mode === 'ci-pr')
+  const context = github.context
+
+  core.info(`context = ${JSON.stringify(context, null, 2)}`)
+
+  if (params.mode === 'push')
+    await runPush(params)
+  else if (params.mode === 'pull_request')
     await runCIPR(params)
 }
 
-async function runAction(params: InputsParams) {
+async function runPush(params: InputsParams) {
   const context = github.context
   const sources = await getSources(params, context)
   const bundlerResult = params.bundler.enabled

@@ -6,8 +6,8 @@ branding:
   color: green
 inputs:
   mode:
-    default: action
-    description: 'Mode to run the action in (action, ci-pr, ci-push)'
+    default: push
+    description: 'Mode to run the action in (push, pull_request)'
 
   # # Common options for validate and bundle
   source-devices-path:

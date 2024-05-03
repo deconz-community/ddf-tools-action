@@ -10,9 +10,9 @@ interface CommonInputs {
   upload: UploadInputs
 }
 export type InputsParams = CommonInputs & ({
-  mode: 'action'
+  mode: 'push'
 } | {
-  mode: 'ci-pr' | 'ci-push'
+  mode: 'pull_request'
   ci: CIInputs
 })
 
