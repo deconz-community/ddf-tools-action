@@ -146,15 +146,15 @@ export async function updateModifiedBundleInteraction(
     clock_emoji: CLOCKS[Math.floor(Math.random() * CLOCKS.length)],
     artifact: {
       enabled: params.upload.artifact.enabled,
-      url: `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}/artifacts/${uploader.artifact?.id}`,
+      url: `${payload.pull_request.base.repo.html_url}/actions/runs/${context.runId}/artifacts/${uploader.artifact?.id}`,
       retention_days,
       expires_at: Math.floor(Date.now() / 1000) + retention_days * 24 * 60 * 60,
     },
     validation: {
       enabled: params.bundler.enabled && params.bundler.validation.enabled,
       result: bundler.validationErrors.length === 0 ? 'success' : 'failure',
-      files_url: `https://github.com/${context.repo.owner}/${context.repo.repo}/pull/${payload.pull_request.id}/files`,
-      detail_url: `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+      files_url: `${payload.pull_request.base.repo.html_url}/pull/${payload.pull_request.id}/files`,
+      detail_url: `${payload.pull_request.base.repo.html_url}/actions/runs/${context.runId}`,
     },
   })
 
