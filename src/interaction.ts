@@ -13,6 +13,8 @@ import type { Sources } from './source'
 interface BundleInfo {
   path: string
   product: string
+  validation_emoji: string
+  messages?: string[]
 }
 
 interface Templates {
@@ -21,6 +23,7 @@ interface Templates {
     added_bundles: BundleInfo[]
     modified_bundles: BundleInfo[]
     deleted_bundles: Pick<BundleInfo, 'path'>[]
+    clock_emoji: string
     artifact: {
       enabled: true
       url: string
@@ -32,12 +35,15 @@ interface Templates {
     validation: {
       enabled: true
       result: 'success' | 'failure'
+      files_url: string
       detail_url: string
     } | {
       enabled: false
     }
   }
 }
+
+const CLOCKS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(hour => [`:clock${hour}:`, `:clock${hour}30:`]).flat()
 
 export async function getExistingCommentsPR(
   context: Context,
@@ -93,18 +99,42 @@ export async function updateModifiedBundleInteraction(
 
   core.info(`params.validation=${JSON.stringify(params.validation)}`)
 
+  bundler.memoryBundles.forEach((bundle) => {
+    core.info(`bundle=${JSON.stringify(bundle.bundle.data.validation?.result)}`)
+  })
+
+  const getResultEmoji = (result: string | undefined) => {
+    switch (result) {
+      case 'success':
+        return ':heavy_check_mark:'
+      case 'failure':
+        return ':x:'
+      case 'skipped':
+      default:
+        return ':curly_loop: (unvalidated)'
+    }
+  }
+
   const body = await parseTemplate('modified-bundles', {
     added_bundles: bundler.memoryBundles
       .filter(bundle => bundle.status === 'added')
       .map(bundle => ({
         path: bundle.path.replace(`${params.source.path.devices}/`, ''),
         product: bundle.bundle.data.desc.product,
+        validation_emoji: getResultEmoji(bundle.bundle.data.validation?.result),
+        messages: bundle.bundle.data.validation?.result === 'error'
+          ? bundle.bundle.data.validation.errors.map(error => error.message)
+          : [],
       })),
     modified_bundles: bundler.memoryBundles
       .filter(bundle => bundle.status === 'modified')
       .map(bundle => ({
         path: bundle.path.replace(`${params.source.path.devices}/`, ''),
         product: bundle.bundle.data.desc.product,
+        validation_emoji: getResultEmoji(bundle.bundle.data.validation?.result),
+        messages: bundle.bundle.data.validation?.result === 'error'
+          ? bundle.bundle.data.validation.errors.map(error => error.message)
+          : [],
       })),
     deleted_bundles: sources.getUnusedFiles().ddf
       .filter(path => path.startsWith(params.source.path.devices))
@@ -112,6 +142,7 @@ export async function updateModifiedBundleInteraction(
         path: path.replace(`${params.source.path.devices}/`, ''),
       })),
     payload,
+    clock_emoji: CLOCKS[Math.floor(Math.random() * CLOCKS.length)],
     artifact: {
       enabled: params.upload.artifact.enabled,
       url: `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}/artifacts/${uploader.artifact?.id}`,
@@ -121,6 +152,7 @@ export async function updateModifiedBundleInteraction(
     validation: {
       enabled: params.bundler.enabled && params.bundler.validation.enabled,
       result: bundler.validationErrors.length === 0 ? 'success' : 'failure',
+      files_url: `https://github.com/${context.repo.owner}/${context.repo.repo}/pull/${payload.pull_request.id}/files`,
       detail_url: `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
     },
   })
