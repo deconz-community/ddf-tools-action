@@ -87,6 +87,8 @@ export function handleError(error: ZodError | Error | unknown, file?: string, fi
 }
 
 export function logsErrors(errors: ValidationError[]) {
+  core.info(`Error data = ${JSON.stringify(errors)}`)
+
   if (errors.length === 0)
     return
 
