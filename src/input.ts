@@ -10,7 +10,7 @@ interface CommonInputs {
   upload: UploadInputs
 }
 export type InputsParams = CommonInputs & ({
-  mode: 'push'
+  mode: 'push' | 'manual'
 } | {
   mode: 'pull_request'
   ci: CIInputs
@@ -47,7 +47,7 @@ export function logsParams(params: InputsParams) {
 }
 
 // #region Mode
-const MODES = ['push', 'pull_request'] as const
+const MODES = ['manual', 'push', 'pull_request'] as const
 export type Mode = typeof MODES[number]
 function getMode(): Mode {
   const mode = getInput('mode') as Mode | undefined
@@ -191,11 +191,13 @@ export interface UploadInputs {
     url: string
     token: string
     status: StoreBundleStatus
+    toolboxUrl?: string
   } | {
     enabled: false
   }
   artifact: {
     enabled: true
+    filter?: string[]
     retentionDays: number
   } | {
     enabled: false
@@ -225,6 +227,7 @@ async function getUploadInputs(): Promise<UploadInputs> {
         url,
         token,
         status: (status ?? STORE_BUNDLE_STATUSES[0]) as StoreBundleStatus,
+        toolboxUrl: getInput('upload-store-toolbox-url'),
       }
     })(),
     artifact: (() => {
@@ -233,6 +236,7 @@ async function getUploadInputs(): Promise<UploadInputs> {
 
       return {
         enabled: true,
+        filter: getInput('upload-artifact-filter')?.split(','),
         retentionDays: Number.parseInt(getInput('upload-artifact-retention-days') ?? '3'),
       }
     })(),
