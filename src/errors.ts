@@ -87,6 +87,11 @@ export function handleError(error: ZodError | Error | unknown, file?: string, fi
 }
 
 export function logsErrors(errors: ValidationError[]) {
+  if (errors.length > 0) {
+    core.setFailed('Errors found please check logs for more information')
+    core.saveState('ddf-bundler-validator-result', 'failed')
+  }
+
   errors.forEach((error) => {
     if (error.type === 'simple') {
       core.error(error.message)
