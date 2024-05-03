@@ -97,19 +97,19 @@ export async function updateModifiedBundleInteraction(
     added_bundles: bundler.memoryBundles
       .filter(bundle => bundle.status === 'added')
       .map(bundle => ({
-        path: bundle.path.replace(params.source.path.devices, ''),
+        path: bundle.path.replace(`${params.source.path.devices}/`, ''),
         product: bundle.bundle.data.desc.product,
       })),
     modified_bundles: bundler.memoryBundles
       .filter(bundle => bundle.status === 'modified')
       .map(bundle => ({
-        path: bundle.path.replace(params.source.path.devices, ''),
+        path: bundle.path.replace(`${params.source.path.devices}/`, ''),
         product: bundle.bundle.data.desc.product,
       })),
     deleted_bundles: sources.getUnusedFiles().ddf
       .filter(path => path.startsWith(params.source.path.devices))
       .map(path => ({
-        path: path.replace(params.source.path.devices, ''),
+        path: path.replace(`${params.source.path.devices}/`, ''),
       })),
     payload,
     artifact: {
