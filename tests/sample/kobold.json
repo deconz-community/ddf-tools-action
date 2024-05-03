@@ -2,7 +2,6 @@
   "schema": "devcap1.schema.json",
   "$schema": "https://unpkg.com/@deconz-community/ddf-validator/dist/ddf-schema.json",
   "manufacturername": "$MF_DE",
-  "uuid": "cf42e141-c6ef-4358-92c5-9d7912400bf9",
   "md:known_issues": ["../notes/kobold.md"],
   "modelid": "Kobold",
   "product": "Kobold 2.0",
