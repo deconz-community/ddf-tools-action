@@ -79,29 +79,6 @@ inputs:
     description: Duration of the artifact in days
     default: '3'
 
-  # # CI options
-  # ## PR options
-  ci-pr-validate:
-    description: Validate the DDF files in a PR
-    default: 'true'
-  ci-pr-draft-bundle:
-    description: Create a draft bundle for the PR
-    default: 'true'
-  ci-pr-release-bundle:
-    description: Release the bundle when PR merged
-    default: 'true'
-  ci-pr-affected-bundle-list:
-    description: Add a message on the PR with the list of affected DDF
-    default: 'true'
-
-  # ## Push options
-  ci-push-validate:
-    description: Validate the DDF files on push
-    default: 'true'
-  ci-push-release-bundle:
-    description: Release the bundle when PR merged
-    default: 'true'
-
 runs:
   using: node20
   main: dist/index.js

@@ -1,6 +1,5 @@
 import * as github from '@actions/github'
 import * as core from '@actions/core'
-import { Octokit } from '@octokit/action'
 import type { PullRequestEvent } from '@octokit/webhooks-types'
 import type { InputsParams } from './src/input.js'
 import { getParams, logsParams } from './src/input.js'

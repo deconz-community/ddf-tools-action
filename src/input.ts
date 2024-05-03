@@ -3,18 +3,13 @@ import fs from 'node:fs/promises'
 import * as core from '@actions/core'
 import { hexToBytes } from '@noble/hashes/utils'
 
-interface CommonInputs {
+export interface InputsParams {
+  mode: 'push' | 'manual' | 'pull_request'
   source: SourceInputs
   bundler: BundlerInputs
   validation: BundlerValidationInputs
   upload: UploadInputs
 }
-export type InputsParams = CommonInputs & ({
-  mode: 'push' | 'manual'
-} | {
-  mode: 'pull_request'
-  ci: CIInputs
-})
 
 export async function getParams(): Promise<InputsParams> {
   const params: Partial<InputsParams> = {
@@ -23,9 +18,6 @@ export async function getParams(): Promise<InputsParams> {
     bundler: await getBundlerInputs(),
     upload: await getUploadInputs(),
   }
-
-  if (params.mode === 'pull_request')
-    params.ci = getCIInputs()
 
   assertInputs(params as InputsParams)
 
@@ -245,24 +237,6 @@ async function getUploadInputs(): Promise<UploadInputs> {
         retentionDays: Number.parseInt(getInput('upload-artifact-retention-days') ?? '3'),
       }
     })(),
-  }
-}
-// #endregion
-
-// #region CI
-export type CIInputs = ReturnType<typeof getCIInputs>
-function getCIInputs() {
-  return {
-    pr: {
-      validate: getBooleanInput('ci-pr-validate'),
-      draftBundle: getBooleanInput('ci-pr-draft-bundle'),
-      releaseBundle: getBooleanInput('ci-pr-release-bundle'),
-      affectedBundleList: getBooleanInput('ci-pr-affected-bundle-list'),
-    },
-    push: {
-      validate: getBooleanInput('ci-push-validate'),
-      releaseBundle: getBooleanInput('ci-push-release-bundle'),
-    },
   }
 }
 // #endregion
