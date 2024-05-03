@@ -121,7 +121,7 @@ export async function updateModifiedBundleInteraction(
     validation: {
       enabled: params.bundler.enabled && params.bundler.validation.enabled,
       result: bundler.validationErrors.length === 0 ? 'success' : 'failure',
-      detail_url: `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}/job/${context.job}`,
+      detail_url: `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
     },
   })
 
