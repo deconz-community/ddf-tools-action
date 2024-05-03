@@ -75,6 +75,7 @@ export async function getSources(params: InputsParams, context: Context) {
           core.warning(`No commit found for ${filePath}`)
           return new Date()
         }
+        core.info(`Last commit for ${filePath}: ${latestCommit.date} = ${new Date(latestCommit.date).toISOString()}`)
         return new Date(latestCommit.date)
       }
       case 'mtime': {
