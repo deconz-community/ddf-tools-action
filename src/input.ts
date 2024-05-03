@@ -38,9 +38,9 @@ export function logsParams(params: InputsParams) {
   if (cloneParam.bundler.enabled)
     cloneParam.bundler.signKeys = Array(cloneParam.bundler.signKeys.length).fill('***')
 
-  if (cloneParam.upload.enabled) {
-    cloneParam.upload.url = '***'
-    cloneParam.upload.token = '***'
+  if (cloneParam.upload.store.enabled) {
+    cloneParam.upload.store.url = '***'
+    cloneParam.upload.store.token = '***'
   }
   core.info(JSON.stringify(cloneParam, null, 2))
   core.endGroup()
@@ -110,8 +110,6 @@ export type BundlerInputs = {
   outputPath?: string
   outputDirectoryFormat: OutputDirectoryFormat
   outputFileFormat: OutputFileFormat
-  artifactEnabled: boolean
-  artifactRetentionDays: number
   signKeys: Uint8Array[]
   fileModifiedMethod: FileModifiedMethod
   validation: BundlerValidationInputs
@@ -143,15 +141,14 @@ async function getBundlerInputs(): Promise<BundlerInputs> {
   // TODO : Check if signKeys are valid
   const signKeys = getArrayInput('bundler-sign-keys').map(hexToBytes)
 
-  const outputPath = await getDirectoryInput('bundler-output-path', true, true)
+  const outputPath = (await getDirectoryInput('bundler-output-path', true, true))
+    ?? await fs.mkdtemp('ddf-bundler')
 
   return {
     enabled,
     outputPath,
     outputDirectoryFormat,
     outputFileFormat,
-    artifactEnabled: getBooleanInput('bundler-output-artifact-enabled'),
-    artifactRetentionDays: Number(getInput('bundler-output-artifact-retention-days')),
     signKeys,
     fileModifiedMethod,
     validation: getValidationInputs(),
@@ -185,32 +182,60 @@ function getValidationInputs(): BundlerValidationInputs {
 // #endregion
 
 // #region Upload
-export type UploadInputs = {
-  enabled: true
-  inputPath?: string
-  url: string
-  token: string
-} | {
-  enabled: false
+export const STORE_BUNDLE_STATUSES = ['alpha', 'beta', 'stable'] as const
+export type StoreBundleStatus = typeof STORE_BUNDLE_STATUSES[number]
+export interface UploadInputs {
+  store: {
+    enabled: true
+    inputPath?: string
+    url: string
+    token: string
+    status: StoreBundleStatus
+  } | {
+    enabled: false
+  }
+  artifact: {
+    enabled: true
+    retentionDays: number
+  } | {
+    enabled: false
+  }
 }
 
 async function getUploadInputs(): Promise<UploadInputs> {
-  const enabled = getBooleanInput('upload-enabled')
-
-  if (!enabled)
-    return { enabled: false }
-
-  const url = getInput('upload-url')
-  const token = getInput('upload-token')
-
-  if (!url || !token)
-    throw core.setFailed('Both url and token must be provided for upload action')
-
   return {
-    enabled,
-    inputPath: await getDirectoryInput('upload-input-path', true),
-    url,
-    token,
+    store: await (async () => {
+      if (!getBooleanInput('upload-store-enabled'))
+        return { enabled: false }
+
+      const url = getInput('upload-store-url')
+      const token = getInput('upload-store-token')
+
+      if (!url || !token)
+        throw core.setFailed('Both url and token must be provided for upload action')
+
+      const status = getInput('upload-store-status')
+
+      if (status && !STORE_BUNDLE_STATUSES.includes(status as StoreBundleStatus))
+        throw core.setFailed(`Unknown store status : ${status}`)
+
+      return {
+        enabled: true,
+        inputPath: await getDirectoryInput('upload-store-input-path', true),
+        url,
+        token,
+        status: (status ?? STORE_BUNDLE_STATUSES[0]) as StoreBundleStatus,
+      }
+    })(),
+    artifact: (() => {
+      if (!getBooleanInput('upload-artifact-enabled'))
+        return { enabled: false }
+
+      return {
+        enabled: true,
+        retentionDays: Number.parseInt(getInput('upload-artifact-retention-days') ?? '3'),
+      }
+    })(),
   }
 }
 // #endregion
@@ -294,7 +319,7 @@ export function assertInputs(params: InputsParams) {
   if (params.mode === 'ci-pr' || params.mode === 'ci-push') {
     if (!params.bundler?.enabled)
       throw core.setFailed('Bundler must be enabled in CI mode')
-    if (!params.validation?.enabled)
+    if (!params.bundler.validation?.enabled)
       throw core.setFailed('Validator must be enabled in CI mode')
   }
 }

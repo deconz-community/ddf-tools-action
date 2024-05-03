@@ -21,7 +21,8 @@
         "GitHub.copilot-chat",
         "yoavbls.pretty-ts-errors",
         "christian-kohler.npm-intellisense",
-        "MylesMurphy.prettify-ts"
+        "MylesMurphy.prettify-ts",
+        "sissel.shopify-liquid"
       ]
     }
   },

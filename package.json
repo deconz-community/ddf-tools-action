@@ -25,7 +25,8 @@
   "main": "dist/index.js",
   "files": [
     "dist/index.js",
-    "dist/licenses.txt"
+    "dist/licenses.txt",
+    "templates/"
   ],
   "scripts": {
     "build": "tsc && ncc build --license licenses.txt",
@@ -35,30 +36,33 @@
     "@actions/artifact": "^2.1.7",
     "@actions/core": "^1.10.1",
     "@actions/github": "^6.0.0",
-    "@deconz-community/ddf-bundler": "^0.19.0",
-    "@deconz-community/ddf-validator": "^2.27.2",
+    "@deconz-community/ddf-bundler": "^0.20.0",
+    "@deconz-community/ddf-validator": "^2.28.0",
     "@directus/sdk": "^15.1.0",
     "@noble/curves": "^1.4.0",
     "@noble/hashes": "^1.4.0",
     "@octokit/action": "^6.1.0",
+    "app-root-path": "^3.1.0",
     "fast-glob": "^3.3.2",
     "glob": "^10.3.12",
     "jsonc-parser": "^3.2.1",
+    "liquidjs": "^10.12.0",
     "zod": "^3.23.5",
     "zod-validation-error": "^3.2.0"
   },
   "devDependencies": {
-    "@antfu/eslint-config": "^2.16.0",
+    "@antfu/eslint-config": "^2.16.1",
     "@changesets/cli": "^2.27.1",
     "@eslint/eslintrc": "^3.0.2",
-    "@types/node": "^20.12.7",
+    "@octokit/webhooks-types": "^7.5.1",
+    "@types/node": "^20.12.8",
     "@typescript-eslint/eslint-plugin": "^7.8.0",
     "@typescript-eslint/parser": "^7.8.0",
     "@vercel/ncc": "^0.38.1",
     "eslint": "^9.1.1",
     "eslint-plugin-github": "^4.10.2",
     "eslint-plugin-jest": "^28.3.0",
-    "taze": "^0.13.7",
+    "taze": "^0.13.8",
     "typescript": "^5.4.5"
   }
 }

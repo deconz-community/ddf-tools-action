@@ -4,21 +4,26 @@ import { Buffer } from 'node:buffer'
 import * as core from '@actions/core'
 import type { Bundle, ValidationError } from '@deconz-community/ddf-bundler'
 import { buildFromFiles, createSignature, encode, generateHash } from '@deconz-community/ddf-bundler'
-import { DefaultArtifactClient } from '@actions/artifact'
 import { createValidator } from '@deconz-community/ddf-validator'
 import { bytesToHex } from '@noble/hashes/utils'
 import { secp256k1 } from '@noble/curves/secp256k1'
 import type { InputsParams } from './input'
-import type { Sources } from './source'
+import type { FileStatus, Sources } from './source'
 import { handleError, logsErrors } from './errors'
 
 export interface MemoryBundle {
   bundle: ReturnType<typeof Bundle>
   path: string
+  status: 'added' | 'modified' | 'unchanged'
 }
 
-export async function runBundler(params: InputsParams, sources: Sources): Promise<MemoryBundle[]> {
-  const { bundler, source } = params
+export interface BundlerResult {
+  memoryBundles: MemoryBundle[]
+  diskBundles: string[]
+}
+
+export async function runBundler(params: InputsParams, sources: Sources): Promise<BundlerResult> {
+  const { bundler, source, upload } = params
 
   if (!bundler.enabled)
     throw new Error('Can\'t run bundler because he is not enabled')
@@ -26,23 +31,35 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
   // #region Bundle creation
   core.info('Creating bundles')
 
-  const bundles: MemoryBundle[] = []
+  const memoryBundles: MemoryBundle[] = []
 
   const bundlerOutputPath = bundler.outputPath
-    ?? (bundler.artifactEnabled
+    ?? (upload.artifact.enabled
       ? await fs.mkdtemp('ddf-bundler')
       : undefined)
 
-  const writtenFilesPath: string[] = []
+  const diskBundles: string[] = []
 
   await Promise.all(sources.getDDFPaths().map(async (ddfPath) => {
     core.debug(`[bundler] Bundling DDF ${ddfPath}`)
     try {
+      let status: FileStatus = 'unchanged'
       const bundle = await buildFromFiles(
         `file://${source.path.generic}`,
         `file://${ddfPath}`,
-        path => sources.getFile(path.replace('file://', '')),
-        path => sources.getLastModified(path.replace('file://', '')),
+        async (filePath) => {
+          const source = await sources.getSource(filePath.replace('file://', ''))
+
+          if (source.metadata.status === 'unchanged')
+            return source
+
+          if (filePath === ddfPath && source.metadata.status === 'added')
+            status = 'added'
+          else if (status === 'unchanged')
+            status = 'modified'
+
+          return source
+        },
       )
 
       // #region Validation
@@ -99,8 +116,8 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
           const errors: ValidationError[] = []
 
           await Promise.all(validationResult.map(async (error) => {
-            const file = await sources.getFile(error.path)
-            errors.push(...handleError(error.error, error.path, await file.text()))
+            const source = await sources.getSource(error.path)
+            errors.push(...handleError(error.error, error.path, await source.stringData))
           }))
 
           bundle.data.validation = {
@@ -146,44 +163,22 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
         const data = Buffer.from(await encoded.arrayBuffer())
         fs.mkdir(path.dirname(outputPath), { recursive: true })
         await fs.writeFile(outputPath, data)
-        writtenFilesPath.push(outputPath)
+        diskBundles.push(outputPath)
       }
       // #endregion
 
-      bundles.push({
+      memoryBundles.push({
         bundle,
         path: ddfPath,
+        status,
       })
     }
     catch (err) {
       core.error(`Error while creating bundle ${ddfPath}`)
-      const file = await sources.getFile(ddfPath)
-      logsErrors(handleError(err, ddfPath, await file.text()))
+      const source = await sources.getSource(ddfPath)
+      logsErrors(handleError(err, ddfPath, await source.stringData))
     }
   }))
-  // #endregion
-
-  // #region Upload bundle as artifacts
-  if (bundler.artifactEnabled && bundles.length > 0) {
-    core.startGroup('Upload bundles as artifact')
-
-    if (!bundlerOutputPath)
-      throw new Error('Can\'t upload bundles as artifact because outputPath is not defined')
-
-    const artifact = new DefaultArtifactClient()
-
-    const { id, size } = await artifact.uploadArtifact(
-      'Bundles',
-      writtenFilesPath,
-      bundlerOutputPath,
-      {
-        retentionDays: bundler.artifactRetentionDays,
-      },
-    )
-    core.endGroup()
-
-    core.info(`Created artifact with id: ${id} (bytes: ${size}) with a duration of ${bundler.artifactRetentionDays} days`)
-  }
   // #endregion
 
   // #region Validation of unused files
@@ -196,13 +191,11 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
 
       const validator = createValidator()
 
-      // TODO: Optimise this, it's loading the files twice
-
       const genericFiles = await Promise.all(unused.generic.map(async (path) => {
-        const fileContent = await sources.getFile(path)
+        const source = await sources.getSource(path)
         return {
           path,
-          data: JSON.parse(await fileContent.text()),
+          data: JSON.parse(await source.stringData),
         }
       }))
 
@@ -210,7 +203,7 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
       const constantsPath = path.join(params.source.path.generic, 'constants.json')
       genericFiles.push({
         path: constantsPath,
-        data: JSON.parse(await (await sources.getFile(constantsPath)).text()),
+        data: JSON.parse(await (await sources.getSource(constantsPath)).stringData),
       })
 
       // Load used generic files
@@ -219,8 +212,8 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
         .filter(path => !unused.generic.includes(path))
         .map(async (path) => {
           try {
-            const file = await sources.getFile(path)
-            const data = JSON.parse(await file.text())
+            const source = await sources.getSource(path)
+            const data = JSON.parse(await source.stringData)
             validator.loadGeneric(data)
           }
           catch (err) {
@@ -232,8 +225,8 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
       const validationResult = validator.bulkValidate(genericFiles, [])
 
       await Promise.all(validationResult.map(async (error) => {
-        const file = await sources.getFile(error.path)
-        logsErrors(handleError(error.error, error.path, await file.text()))
+        const source = await sources.getSource(error.path)
+        logsErrors(handleError(error.error, error.path, await source.stringData))
       }))
 
       if (bundler.validation.warnUnusedFiles) {
@@ -262,7 +255,10 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
 
   // #endregion
 
-  core.info(`Bundler finished: ${bundles.length}`)
+  core.info(`Bundler finished: ${memoryBundles.length}`)
 
-  return bundles
+  return {
+    memoryBundles,
+    diskBundles,
+  }
 }

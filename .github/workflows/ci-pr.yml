@@ -7,11 +7,11 @@ name: Continuous integration
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened]
+    types: [opened, synchronize, reopened, closed]
 
 jobs:
   ci:
-    name: Continuous integration
+    name: Continuous integration Test PR
     runs-on: ubuntu-latest
 
     steps:
@@ -38,15 +38,20 @@ jobs:
           mode: ci-pr
           source-devices-path: tests
           source-ignore-pattern: '**/*([a-z_])(invalid|unused).(json|md)'
-#          bundler-output-path: bundled
-#          bundler-output-artifact-enabled: true
-#          bundler-output-artifact-retention-days: 1
+          # bundler-output-path: bundled
           bundler-sign-keys: ${{ secrets.BUNDLER_SIGN_KEYS }}
 
-#          upload-enabled: true
-#          upload-input-path: bundled
-#          upload-url: ${{ secrets.UPLOAD_URL }}
-#          upload-token: ${{ secrets.UPLOAD_TOKEN }}
+          # upload-store-enabled: true
+          # upload-store-input-path: bundled
+          # upload-store-url: ${{ secrets.UPLOAD_URL }}
+          # upload-store-token: ${{ secrets.UPLOAD_TOKEN }}
+
+          upload-artifact-enabled: true
+          upload-artifact-retention-days: 3
+          upload-store-status: beta
+
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 #      - name: Create Release Pull Request or Publish
 #        id: changesets
