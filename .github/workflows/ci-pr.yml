@@ -40,14 +40,15 @@ jobs:
           source-ignore-pattern: '**/*([a-z_])(invalid|unused).(json|md)'
           # bundler-output-path: bundled
           bundler-sign-keys: ${{ secrets.BUNDLER_SIGN_KEYS }}
-          
-          # upload-store-eenabled: true
-          # upload-store-einput-path: bundled
-          # upload-store-eurl: ${{ secrets.UPLOAD_URL }}
-          # upload-store-etoken: ${{ secrets.UPLOAD_TOKEN }}
-          
+
+          # upload-store-enabled: true
+          # upload-store-input-path: bundled
+          # upload-store-url: ${{ secrets.UPLOAD_URL }}
+          # upload-store-token: ${{ secrets.UPLOAD_TOKEN }}
+
           upload-artifact-enabled: true
           upload-artifact-retention-days: 3
+          upload-store-status: beta
 
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

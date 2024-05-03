@@ -31,18 +31,15 @@ export async function runUploaders(params: InputsParams, bundlerResult: BundlerR
 }
 
 export async function runStoreUploader(params: InputsParams, bundlerResult: BundlerResult) {
-  const uploadParams = params.upload.store
+  const storeParams = params.upload.store
 
-  if (!uploadParams.enabled)
+  if (!storeParams.enabled)
     throw new Error('Can\'t run store uploader because he is not enabled')
-
-  if (!uploadParams.enabled)
-    throw new Error('Can\'t run uploader because he is not enabled')
 
   // #region Packing bundles
   const bundles: Blob[] = []
 
-  if (uploadParams.inputPath === undefined) {
+  if (storeParams.inputPath === undefined) {
     core.info('Using memory bundles')
     bundlerResult.memoryBundles.forEach(({ bundle }) => {
       bundles.push(encode(bundle))
@@ -50,8 +47,8 @@ export async function runStoreUploader(params: InputsParams, bundlerResult: Bund
     core.info(`${bundles.length} bundles packed`)
   }
   else {
-    core.info(`Looking for bundles at ${uploadParams.inputPath}`)
-    const fileList = await glob(`${uploadParams.inputPath}**/*.ddf`, { onlyFiles: true })
+    core.info(`Looking for bundles at ${storeParams.inputPath}`)
+    const fileList = await glob(`${storeParams.inputPath}**/*.ddf`, { onlyFiles: true })
     core.info(`Found ${fileList.length} bundles on the disk to upload`)
     for (const file of fileList) {
       const fileContent = await readFile(file)
@@ -61,8 +58,8 @@ export async function runStoreUploader(params: InputsParams, bundlerResult: Bund
   // #endregion
 
   // #region Store Upload
-  const client = createDirectus(uploadParams.url)
-    .with(staticToken(uploadParams.token))
+  const client = createDirectus(storeParams.url)
+    .with(staticToken(storeParams.token))
     .with(rest())
 
   try {
@@ -100,7 +97,7 @@ export async function runStoreUploader(params: InputsParams, bundlerResult: Bund
       const { result } = await client.request<{ result: UploadResponse }>(() => {
         return {
           method: 'POST',
-          path: '/bundle/upload',
+          path: `/bundle/upload/${storeParams.status}`,
           body: formData,
           headers: { 'Content-Type': 'multipart/form-data' },
         }

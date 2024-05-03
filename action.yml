@@ -62,6 +62,9 @@ inputs:
     description: URL to upload the DDF bundles to
   upload-store-token:
     description: Token to use for the upload
+  upload-store-status:
+    description: Store system signature to use for the upload (alpha, beta, stable)
+    default: alpha
 
   upload-artifact-enabled:
     description: Upload the output path as an artifact

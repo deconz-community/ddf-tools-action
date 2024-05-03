@@ -182,12 +182,15 @@ function getValidationInputs(): BundlerValidationInputs {
 // #endregion
 
 // #region Upload
+export const STORE_BUNDLE_STATUSES = ['alpha', 'beta', 'stable'] as const
+export type StoreBundleStatus = typeof STORE_BUNDLE_STATUSES[number]
 export interface UploadInputs {
   store: {
     enabled: true
     inputPath?: string
     url: string
     token: string
+    status: StoreBundleStatus
   } | {
     enabled: false
   }
@@ -211,11 +214,17 @@ async function getUploadInputs(): Promise<UploadInputs> {
       if (!url || !token)
         throw core.setFailed('Both url and token must be provided for upload action')
 
+      const status = getInput('upload-store-status')
+
+      if (status && !STORE_BUNDLE_STATUSES.includes(status as StoreBundleStatus))
+        throw core.setFailed(`Unknown store status : ${status}`)
+
       return {
         enabled: true,
         inputPath: await getDirectoryInput('upload-store-input-path', true),
         url,
         token,
+        status: (status ?? STORE_BUNDLE_STATUSES[0]) as StoreBundleStatus,
       }
     })(),
     artifact: (() => {
