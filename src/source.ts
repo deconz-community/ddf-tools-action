@@ -70,13 +70,11 @@ export async function getSources(params: InputsParams, context: Context) {
     switch (params.bundler.fileModifiedMethod) {
       case 'gitlog': {
         const log = await git.log({ file: filePath })
-        core.info(`Git log for ${filePath}: ${JSON.stringify(log, null, 2)}`)
         const latestCommit = log.latest
         if (latestCommit === null) {
           core.warning(`No commit found for ${filePath}`)
           return new Date()
         }
-        core.info(`Last commit for ${filePath}: ${latestCommit.date} = ${new Date(latestCommit.date).toISOString()}`)
         return new Date(latestCommit.date)
       }
       case 'mtime': {
