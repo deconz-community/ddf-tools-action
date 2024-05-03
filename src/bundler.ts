@@ -87,6 +87,16 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
               path: ddfPath,
               data: ddfc,
             })
+            validationResult.push({
+              error: new Error('UUID is not defined in the DDFC file 2'),
+              path: ddfPath,
+              data: ddfc,
+            })
+            validationResult.push({
+              error: new Error('UUID is not defined in the DDFC file 3'),
+              path: ddfPath,
+              data: ddfc,
+            })
           }
 
           if (ddfc.ddfvalidate === false && bundler.validation.strict) {
