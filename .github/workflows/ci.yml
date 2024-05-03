@@ -36,7 +36,7 @@ jobs:
       - name: Build
         run: pnpm build
 
-      - name: Run Action
+      - name: Run DDF Push Action
         if: github.event_name == 'push'
         uses: ./
         with:
@@ -47,7 +47,7 @@ jobs:
           upload-store-url: ${{ secrets.UPLOAD_URL }}
           upload-store-token: ${{ secrets.UPLOAD_TOKEN }}
 
-      - name: Run DDF Interaction
+      - name: Run DDF Pull Request Interaction
         if: github.event_name == 'pull_request'
         uses: ./
         with:
@@ -58,6 +58,7 @@ jobs:
           upload-artifact-retention-days: 3
 
 #      - name: Create Release Pull Request or Publish
+#        if: github.event_name == 'push'
 #        id: changesets
 #        uses: changesets/action@v1
 #        with:
@@ -67,6 +68,7 @@ jobs:
 #          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 #
 #      - name: Update Release tags
+#        if: github.event_name == 'push'
 #        uses: JasonEtco/build-and-tag-action@v2
 #        if: steps.changesets.outcome == 'success' && steps.changesets.outputs.published == 'true'
 #        with:

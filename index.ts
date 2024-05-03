@@ -24,7 +24,9 @@ async function run() {
 
   const context = github.context
 
-  core.info(`context = ${JSON.stringify(context, null, 2)}`)
+  core.startGroup('Debug context')
+  core.info(`${JSON.stringify(context, null, 2)}`)
+  core.endGroup()
 
   if (params.mode === 'push')
     await runPush(params)
