@@ -6,14 +6,14 @@ This pull request is now merged. The new DDF bundles have been uploaded to the s
 {% if added_bundles.size > 0 %}
 ### Added
 {% for bundle in added_bundles %}
-- `{{ bundle.path }}` : {{ bundle.product }} {% if bundle.store_url > 0 %}[{{ bundle.hash | slice: -10,10 }}]({{ bundle.store_url }}store/bundle/{{ bundle.hash}}){% else %}{{ bundle.hash | slice: -10,10 }}{% endif %}
+- `{{ bundle.path }}` : {{ bundle.product }} : with hash {% if bundle.store_url %}([{{ bundle.hash | slice: -10,10 }}]({{ bundle.store_url }}store/bundle/{{ bundle.hash}})){% else %}({{ bundle.hash | slice: -10,10 }}){% endif %}
 {% endfor %}
 {% endif %}
 
 {% if modified_bundles.size > 0 %}
 ### Modified
 {% for bundle in modified_bundles %}
-- {{ bundle.path }} : {{ bundle.product }} {% if bundle.store_url > 0 %}[{{ bundle.hash | slice: -10,10 }}]({{ bundle.store_url }}store/bundle/{{ bundle.hash}}){% else %}{{ bundle.hash | slice: -10,10 }}{% endif %}
+- `{{ bundle.path }}` : {{ bundle.product }} : with hash {% if bundle.store_url %}([{{ bundle.hash | slice: -10,10 }}]({{ bundle.store_url }}store/bundle/{{ bundle.hash}})){% else %}({{ bundle.hash | slice: -10,10 }}){% endif %}
 {% endfor %}
 {% endif %}
 

@@ -19,7 +19,7 @@ Hey @{{ payload.pull_request.user.login }}, thanks for your pull request!
 {% if modified_bundles.size > 0 %}
 ### Modified
 {% for bundle in modified_bundles %}
-- {{ bundle.path }} : {{ bundle.product }} {{ bundle.validation_emoji }}
+- `{{ bundle.path }}` : {{ bundle.product }} {{ bundle.validation_emoji }}
 {% for message in bundle.messages %}  - {{ message }}{% endfor %}
 {% endfor %}
 {% endif %}
@@ -27,7 +27,7 @@ Hey @{{ payload.pull_request.user.login }}, thanks for your pull request!
 {% if deleted_bundles.size > 0 %}
 ### Deleted
 {% for bundle in deleted_bundles %}
-- {{ bundle.path }}
+- `{{ bundle.path }}`
 {% for message in bundle.messages %}  - {{ message }}{% endfor %}
 {% endfor %}
 {% endif %}
