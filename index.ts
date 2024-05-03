@@ -35,7 +35,7 @@ async function runAction(params: InputsParams) {
   const sources = await getSources(params, context)
   const bundlerResult = params.bundler.enabled
     ? await runBundler(params, sources)
-    : { memoryBundles: [], diskBundles: [] }
+    : { memoryBundles: [], diskBundles: [], validationErrors: [] }
 
   if (params.upload.artifact.enabled || params.upload.store.enabled)
     await runUploaders(params, bundlerResult)
