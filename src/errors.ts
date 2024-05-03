@@ -99,9 +99,8 @@ export function logsErrors(errors: ValidationError[]) {
       else {
         core.error(error.message, {
           file: error.file.replace(`${appRoot.path}/`, ''),
-          startLine: 0,
-          startColumn: 0,
-          title: 'Sample title',
+          // startLine: 0,
+          // startColumn: 0,
         })
       }
     }
@@ -110,7 +109,6 @@ export function logsErrors(errors: ValidationError[]) {
         file: error.file.replace(`${appRoot.path}/`, ''),
         startLine: error.line ?? 1,
         startColumn: error.column ?? 1,
-        title: 'Sample title',
       })
     }
   })
