@@ -21,7 +21,7 @@ Hey @{{ payload.pull_request.user.login }}, thanks for your pull request!
 {% for bundle in modified_bundles %}
 - {{ bundle.path }} : {{ bundle.product }} {{ bundle.validation_emoji }}
 {% for message in bundle.messages %}
-  - message
+  - {{ message }}
 {% endfor %}
 {% endfor %}
 {% endif %}
@@ -31,7 +31,7 @@ Hey @{{ payload.pull_request.user.login }}, thanks for your pull request!
 {% for bundle in deleted_bundles %}
 - {{ bundle.path }}
 {% for message in bundle.messages %}
-  - message
+  - {{ message }}
 {% endfor %}
 {% endfor %}
 {% endif %}
