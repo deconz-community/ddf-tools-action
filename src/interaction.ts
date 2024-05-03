@@ -109,10 +109,6 @@ export async function updateClosedPRInteraction(
     return comment.body?.startsWith('<!-- DDF-TOOLS-ACTION/merged-pr -->')
   })
 
-  bundler.memoryBundles.forEach((bundle) => {
-    core.info(`bundle=${JSON.stringify(bundle.bundle.data.validation?.result)}`)
-  })
-
   const store_url = params.upload.store.toolboxUrl
 
   const body = await parseTemplate('merged-pr', {

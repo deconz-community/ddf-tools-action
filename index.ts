@@ -25,7 +25,7 @@ async function run() {
 
   if (core.isDebug()) {
     core.startGroup('Debug context')
-    core.info(JSON.stringify(context, null, 2))
+    core.debug(JSON.stringify(context, null, 2))
     core.endGroup()
   }
 
@@ -65,15 +65,13 @@ async function runPush(params: InputsParams) {
 }
 
 async function runPullRequest(params: InputsParams) {
-  core.info('Running CI/PR mode')
   const context = github.context
 
   if (context.eventName !== 'pull_request')
-    throw new Error('This action is not supposed to run on pull_request event')
+    throw new Error('This action is supposed to run on pull_request event')
 
   const payload = context.payload as PullRequestEvent
-
-  core.info(`Current action = ${payload.action}`)
+  core.info(`Running Pull Request mode / ${payload.action}`)
 
   const sources = await getSources(params, context)
 
