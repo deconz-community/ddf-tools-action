@@ -46,6 +46,8 @@ jobs:
           upload-store-enabled: true
           upload-store-url: ${{ secrets.UPLOAD_URL }}
           upload-store-token: ${{ secrets.UPLOAD_TOKEN }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run DDF Pull Request Interaction
         if: github.event_name == 'pull_request'
@@ -56,6 +58,8 @@ jobs:
           source-ignore-pattern: '**/*([a-z_])(invalid|unused).(json|md)'
           upload-artifact-enabled: true
           upload-artifact-retention-days: 3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 #      - name: Create Release Pull Request or Publish
 #        if: github.event_name == 'push'
