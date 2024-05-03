@@ -5,7 +5,7 @@
   "uuid": "cf42e141-c6ef-4358-92c5-9d7912400bf9",
   "md:known_issues": ["../notes/kobold.md"],
   "modelid": "Kobold",
-  "product": "Kobold 2.0",
+  "product": "Kobold 3.0",
   "sleeper": false,
   "status": "Gold",
   "subdevices": [
