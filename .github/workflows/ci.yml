@@ -91,9 +91,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Update Release tags
-        if: github.event_name == 'push'
         uses: JasonEtco/build-and-tag-action@v2
-        if: steps.changesets.outcome == 'success' && steps.changesets.outputs.published == 'true'
+        if: github.event_name == 'push' && steps.changesets.outcome == 'success' && steps.changesets.outputs.published == 'true'
         with:
           tag_name: ${{ format('v{0}', fromJSON(steps.changesets.outputs.publishedPackages)[0].version) }}
         env:
