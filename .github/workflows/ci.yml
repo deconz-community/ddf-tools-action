@@ -45,9 +45,9 @@ jobs:
           mode: manual
           source-devices-path: 'tests'
           source-ignore-pattern: '**/*([a-z_])(invalid|unused).(json|md)'
-          upload-store-enabled: true
-          upload-store-url: ${{ secrets.UPLOAD_URL }}
-          upload-store-token: ${{ secrets.UPLOAD_TOKEN }}
+#          upload-store-enabled: true
+#          upload-store-url: ${{ secrets.UPLOAD_URL }}
+#          upload-store-token: ${{ secrets.UPLOAD_TOKEN }}
           upload-artifact-enabled: true
           upload-artifact-retention-days: 5
         env:
@@ -60,10 +60,10 @@ jobs:
           mode: push
           source-devices-path: 'tests'
           source-ignore-pattern: '**/*([a-z_])(invalid|unused).(json|md)'
-          upload-store-enabled: true
-          upload-store-status: 'beta'
-          upload-store-url: ${{ secrets.UPLOAD_URL }}
-          upload-store-token: ${{ secrets.UPLOAD_TOKEN }}
+#          upload-store-enabled: false
+#          upload-store-status: 'beta'
+#          upload-store-url: ${{ secrets.UPLOAD_URL }}
+#          upload-store-token: ${{ secrets.UPLOAD_TOKEN }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
