@@ -43,7 +43,7 @@ jobs:
         uses: ./
         with:
           mode: manual
-          source-devices-path: tests
+          source-devices-path: 'tests'
           source-ignore-pattern: '**/*([a-z_])(invalid|unused).(json|md)'
           upload-store-enabled: true
           upload-store-url: ${{ secrets.UPLOAD_URL }}
@@ -58,9 +58,10 @@ jobs:
         uses: ./
         with:
           mode: push
-          source-devices-path: tests
+          source-devices-path: 'tests'
           source-ignore-pattern: '**/*([a-z_])(invalid|unused).(json|md)'
           upload-store-enabled: true
+          upload-store-status: 'beta'
           upload-store-url: ${{ secrets.UPLOAD_URL }}
           upload-store-token: ${{ secrets.UPLOAD_TOKEN }}
         env:
@@ -71,7 +72,7 @@ jobs:
         uses: ./
         with:
           mode: pull_request
-          source-devices-path: tests
+          source-devices-path: 'tests'
           source-ignore-pattern: '**/*([a-z_])(invalid|unused).(json|md)'
           upload-artifact-enabled: true
           upload-artifact-filter: 'added,modified'
@@ -79,21 +80,21 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-#      - name: Create Release Pull Request or Publish
-#        if: github.event_name == 'push'
-#        id: changesets
-#        uses: changesets/action@v1
-#        with:
-#          # This expects you to have a script called release which does a build for your packages and calls changeset publish
-#          publish: pnpm release
-#        env:
-#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#
-#      - name: Update Release tags
-#        if: github.event_name == 'push'
-#        uses: JasonEtco/build-and-tag-action@v2
-#        if: steps.changesets.outcome == 'success' && steps.changesets.outputs.published == 'true'
-#        with:
-#          tag_name: ${{ format('v{0}', fromJSON(steps.changesets.outputs.publishedPackages)[0].version) }}
-#        env:
-#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create Release Pull Request or Publish
+        if: github.event_name == 'push'
+        id: changesets
+        uses: changesets/action@v1
+        with:
+          # This expects you to have a script called release which does a build for your packages and calls changeset publish
+          publish: pnpm release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update Release tags
+        if: github.event_name == 'push'
+        uses: JasonEtco/build-and-tag-action@v2
+        if: steps.changesets.outcome == 'success' && steps.changesets.outputs.published == 'true'
+        with:
+          tag_name: ${{ format('v{0}', fromJSON(steps.changesets.outputs.publishedPackages)[0].version) }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

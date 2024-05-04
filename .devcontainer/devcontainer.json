@@ -22,7 +22,8 @@
         "yoavbls.pretty-ts-errors",
         "christian-kohler.npm-intellisense",
         "MylesMurphy.prettify-ts",
-        "sissel.shopify-liquid"
+        "sissel.shopify-liquid",
+        "github.vscode-github-actions"
       ]
     }
   },
