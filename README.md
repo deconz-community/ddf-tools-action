@@ -27,3 +27,7 @@
 
 ### Quick edits
 - Issue template to add a model ID on a existing DDF that generate PR
+
+### UUID Managments
+- Add a UUID with a commit on PR
+- If can't generate a UUID, add a message on the PR
