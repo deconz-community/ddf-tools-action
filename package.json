@@ -1,6 +1,6 @@
 {
   "name": "@deconz-community/ddf-tools-action",
-  "version": "1.0.6",
+  "version": "0.0.1",
   "private": true,
   "packageManager": "pnpm@9.0.6",
   "description": "",
@@ -24,12 +24,10 @@
   },
   "main": "dist/index.js",
   "files": [
-    "dist/index.js",
-    "dist/licenses.txt",
-    "templates/"
+    "dist/index.js"
   ],
   "scripts": {
-    "build": "tsc && ncc build --source-map --license licenses.txt",
+    "build": "tsc && ncc build",
     "lint": "eslint src/**/*.ts",
     "taze": "taze",
     "release": "pnpm run build && changeset publish"
