@@ -1,5 +1,6 @@
 import path from 'node:path'
 import fs from 'node:fs/promises'
+import { tmpdir } from 'node:os'
 import * as core from '@actions/core'
 import { hexToBytes } from '@noble/hashes/utils'
 import { secp256k1 } from '@noble/curves/secp256k1'
@@ -145,7 +146,7 @@ async function getBundlerInputs(): Promise<BundlerInputs> {
   }
 
   const outputPath = (await getDirectoryInput('bundler-output-path', true, true))
-    ?? await fs.mkdtemp('ddf-bundler')
+    ?? await fs.mkdtemp(path.join(tmpdir(), 'ddf-bundler'))
 
   return {
     enabled,
