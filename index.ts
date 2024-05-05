@@ -1,3 +1,4 @@
+import path from 'node:path'
 import * as github from '@actions/github'
 import * as core from '@actions/core'
 import type { PullRequestEvent } from '@octokit/webhooks-types'
@@ -14,7 +15,7 @@ try {
 }
 catch (error) {
   core.setFailed('An error occurred while running the action.')
-  logsErrors(handleError(error))
+  logsErrors(path.resolve(), handleError(error))
 }
 
 async function run() {

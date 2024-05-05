@@ -73,7 +73,7 @@ export async function runStoreUploader(params: InputsParams, context: Context, b
   }
   catch (error) {
     core.setFailed('Failed to check server health, please check logs for more information')
-    throw logsErrors(handleError(error))
+    throw logsErrors(params.source.path.root, handleError(error))
   }
 
   const bulkSize = 10
@@ -123,7 +123,7 @@ export async function runStoreUploader(params: InputsParams, context: Context, b
     }
     catch (error) {
       core.setFailed('Failed to upload DDF bundles, please check logs for more information')
-      throw logsErrors(handleError(error))
+      throw logsErrors(params.source.path.root, handleError(error))
     }
   }
 

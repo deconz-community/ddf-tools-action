@@ -142,7 +142,7 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
           if (errors.length > 0) {
             const filePath = ddfPath.replace(source.path.devices, '')
             core.error(`Bundle validation error for DDF at ${filePath}`)
-            logsErrors(errors)
+            logsErrors(params.source.path.root, errors)
             validationErrors.push(...errors)
           }
 
@@ -208,7 +208,7 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
       const errors = handleError(err, ddfPath, await fileSource.stringData)
       const filePath = ddfPath.replace(source.path.devices, '')
       core.error(`Bundle creation error for DDF at ${filePath}`)
-      logsErrors(errors)
+      logsErrors(params.source.path.root, errors)
       validationErrors.push(...errors)
     }
   }))
@@ -262,7 +262,7 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
         const errors = handleError(error.error, error.path, await source.stringData)
         if (errors.length > 0) {
           core.error('Validation error for unused files')
-          logsErrors(errors)
+          logsErrors(params.source.path.root, errors)
           validationErrors.push(...errors)
         }
       }))

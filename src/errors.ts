@@ -87,19 +87,19 @@ export function handleError(error: ZodError | Error | unknown, file?: string, fi
   return errorsList
 }
 
-export function logsErrors(errors: ValidationError[], params: InputsParams) {
+export function logsErrors(root: string, errors: ValidationError[]) {
   if (errors.length === 0)
     return
 
   errors.forEach((error) => {
     if (error.type === 'simple') {
       core.error(error.message, {
-        file: error.file?.replace(`${params.source.path.root}`, ''),
+        file: error.file?.replace(root, ''),
       })
     }
     else if (error.type === 'code') {
       core.error(error.message, {
-        file: error.file.replace(`${params.source.path.root}`, ''),
+        file: error.file.replace(root, ''),
         startLine: error.line ?? 1,
         startColumn: error.column ?? 1,
       })
