@@ -1,4 +1,5 @@
 import fs from 'node:fs/promises'
+import { readFileSync } from 'node:fs'
 import path from 'node:path'
 import type { Context } from '@actions/github/lib/context'
 import { Octokit } from '@octokit/action'
@@ -58,6 +59,81 @@ interface Templates {
   }
 }
 
+const templatesData: Record<keyof Templates, string> = {
+  'modified-bundles': `<!-- DDF-TOOLS-ACTION/modified-bundles -->
+Hey @{{ payload.pull_request.user.login }}, thanks for your pull request!
+
+{% if artifact.enabled %}
+> [!TIP]
+> Modified bundles can be downloaded [here]({{ artifact.url}}).
+> ![Relative expire date](https://img.shields.io/date/{{ artifact.expires_at }}?label=file%20expiration)
+{% endif %}
+
+## DDF Bundles changes
+
+{% if added_bundles.size > 0 %}
+### Added
+{% for bundle in added_bundles %}
+- \`{{ bundle.path }}\` : {{ bundle.product }} {{ bundle.validation_emoji }}
+{% endfor %}
+{% endif %}
+
+{% if modified_bundles.size > 0 %}
+### Modified
+{% for bundle in modified_bundles %}
+- \`{{ bundle.path }}\` : {{ bundle.product }} {{ bundle.validation_emoji }}
+{% for message in bundle.messages %}  - {{ message }}{% endfor %}
+{% endfor %}
+{% endif %}
+
+{% if deleted_bundles.size > 0 %}
+### Deleted
+{% for bundle in deleted_bundles %}
+- \`{{ bundle.path }}\`
+{% for message in bundle.messages %}  - {{ message }}{% endfor %}
+{% endfor %}
+{% endif %}
+
+{% if validation.enabled %}
+## Validation
+
+{% if validation.result == 'success' %}
+> [!TIP]
+> Everything is fine !
+{% endif %}
+
+{% if validation.result == 'failure' %}
+> [!CAUTION]
+> Some errors have been reported. Please check the error annotations [here]({{ validation.files_url }}) and the logs [here]({{ validation.detail_url }}).
+{% endif %}
+{% endif %}
+
+<sub>{{ clock_emoji }} Updated for commit {{ payload.pull_request.head.sha }}</sub>
+`,
+
+  'merged-pr': `<!-- DDF-TOOLS-ACTION/merged-pr -->
+This pull request is now merged. The new DDF bundles have been uploaded to the store.
+
+## DDF Bundles
+
+{% if added_bundles.size > 0 %}
+### Added
+{% for bundle in added_bundles %}
+- \`{{ bundle.path }}\` : {{ bundle.product }} : with hash {% if bundle.store_url %}([{{ bundle.hash | slice: -10,10 }}]({{ bundle.store_url }}store/bundle/{{ bundle.hash}})){% else %}({{ bundle.hash | slice: -10,10 }}){% endif %}
+{% endfor %}
+{% endif %}
+
+{% if modified_bundles.size > 0 %}
+### Modified
+{% for bundle in modified_bundles %}
+- \`{{ bundle.path }}\` : {{ bundle.product }} : with hash {% if bundle.store_url %}([{{ bundle.hash | slice: -10,10 }}]({{ bundle.store_url }}store/bundle/{{ bundle.hash}})){% else %}({{ bundle.hash | slice: -10,10 }}){% endif %}
+{% endfor %}
+{% endif %}
+
+<sub>{{ clock_emoji }} Updated for commit {{ payload.pull_request.merge_commit_sha }}</sub>
+`,
+} as const
+
 const CLOCKS = [[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(hour => [`:clock${hour}:`, `:clock${hour}30:`]), ':duck:'].flat(5)
 
 export async function getExistingCommentsPR(
@@ -85,10 +161,8 @@ export async function parseTemplate<TemplateName extends keyof Templates>(
   name: TemplateName,
   data: Templates[TemplateName],
 ) {
-  const templatePath = path.resolve(params.source.path.root, `templates/${name}.liquid`)
-  const template = await fs.readFile(templatePath, 'utf-8')
   const engine = new Liquid()
-  return (await engine.parseAndRender(template, data))
+  return (await engine.parseAndRender(templatesData[name], data))
     .replace(/\n{3,}/g, '\n\n')
 }
 
