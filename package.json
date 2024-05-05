@@ -29,7 +29,7 @@
     "templates/"
   ],
   "scripts": {
-    "build": "tsc && ncc build --source-map --license licenses.txt && cp -r templates dist/template",
+    "build": "tsc && ncc build --source-map --license licenses.txt",
     "lint": "eslint src/**/*.ts",
     "taze": "taze",
     "release": "pnpm run build && changeset publish"
