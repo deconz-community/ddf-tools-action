@@ -1,5 +1,11 @@
 # @deconz-community/ddf-tools-action
 
+## 1.0.6
+
+### Patch Changes
+
+- 9e31903: Split build workflow
+
 ## 1.0.5
 
 ### Patch Changes
