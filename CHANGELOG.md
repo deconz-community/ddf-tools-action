@@ -1,5 +1,11 @@
 # @deconz-community/ddf-tools-action
 
+## 1.0.3
+
+### Patch Changes
+
+- c1c33be: Fix temp directory location
+
 ## 1.0.2
 
 ### Patch Changes
