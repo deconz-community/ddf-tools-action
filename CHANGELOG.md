@@ -1,5 +1,11 @@
 # @deconz-community/ddf-tools-action
 
+## 1.0.2
+
+### Patch Changes
+
+- 35c98d6: Fix build missing templates
+
 ## 1.0.1
 
 ### Patch Changes
