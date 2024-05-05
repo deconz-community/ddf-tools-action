@@ -1,6 +1,7 @@
 import path from 'node:path'
 import fs from 'node:fs/promises'
 import { Buffer } from 'node:buffer'
+import { tmpdir } from 'node:os'
 import * as core from '@actions/core'
 import type { Bundle, ValidationError } from '@deconz-community/ddf-bundler'
 import { buildFromFiles, createSignature, encode, generateHash } from '@deconz-community/ddf-bundler'
@@ -44,7 +45,7 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
 
   const bundlerOutputPath = bundler.outputPath
     ?? (upload.artifact.enabled
-      ? await fs.mkdtemp('ddf-bundler')
+      ? await fs.mkdtemp(path.join(tmpdir(), 'ddf-bundler'))
       : undefined)
 
   await Promise.all(sources.getDDFPaths().map(async (ddfPath) => {
