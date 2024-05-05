@@ -1,5 +1,11 @@
 # @deconz-community/ddf-tools-action
 
+## 1.0.4
+
+### Patch Changes
+
+- f926673: Disable changeset github releases
+
 ## 1.0.3
 
 ### Patch Changes
