@@ -8,7 +8,6 @@ import { Octokit } from '@octokit/action'
 import { simpleGit } from 'simple-git'
 
 import * as core from '@actions/core'
-import appRootPath from 'app-root-path'
 import type { InputsParams } from './input.js'
 
 export type FileStatus = 'added' | 'removed' | 'modified' | 'unchanged'
@@ -22,11 +21,33 @@ export type Sources = Awaited<ReturnType<typeof getSources>>
 
 export const MAX_MODIFIED_FILES_IN_PR = 2000
 
+async function findGitDirectory(filePath: string): Promise<string | undefined> {
+  const directoryPath = path.dirname(filePath)
+
+  try {
+    await fs.access(path.join(directoryPath, '.git'))
+    return directoryPath
+  }
+  catch {
+    const parentDirectory = path.dirname(directoryPath)
+    if (parentDirectory === directoryPath)
+      return undefined
+
+    return findGitDirectory(directoryPath)
+  }
+}
+
 export async function getSources(params: InputsParams, context: Context) {
   const ddf: Map<string, Source<BundlerSourceMetadata>> = new Map()
   const generic: Map<string, Source<BundlerSourceMetadata>> = new Map()
   const misc: Map<string, Source<BundlerSourceMetadata>> = new Map()
-  const git = simpleGit(appRootPath.path)
+
+  core.debug(`Get sources path : ${params.source.path.generic}`)
+
+  const gitDirectory = await findGitDirectory(params.source.path.devices)
+  core.debug(`Git directory : ${gitDirectory}`)
+
+  const git = simpleGit(gitDirectory)
 
   const fileStatus = context.eventName === 'pull_request'
     ? await getSourcesStatus(context)

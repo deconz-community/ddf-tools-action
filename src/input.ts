@@ -61,6 +61,7 @@ export interface SourceInputs {
   path: {
     devices: string
     generic: string
+    root: string
   }
   pattern: {
     search: string
@@ -81,6 +82,7 @@ async function getSourceInputs(): Promise<SourceInputs> {
     path: {
       devices,
       generic,
+      root: path.resolve(),
     },
     pattern: {
       search,

@@ -1,12 +1,12 @@
 import fs from 'node:fs/promises'
+import path from 'node:path'
 import type { Context } from '@actions/github/lib/context'
 import { Octokit } from '@octokit/action'
 import type { PullRequestEvent } from '@octokit/webhooks-types'
 import { Liquid } from 'liquidjs'
-import appRoot from 'app-root-path'
 import * as core from '@actions/core'
 import type { BundleData } from '@deconz-community/ddf-bundler'
-import { bytesToHex } from '@noble/hashes/utils'
+import { Input, bytesToHex } from '@noble/hashes/utils'
 import type { BundlerResult } from './bundler'
 import type { InputsParams } from './input'
 import type { UploaderResult } from './uploader'
@@ -81,10 +81,11 @@ export async function getExistingCommentsPR(
 }
 
 export async function parseTemplate<TemplateName extends keyof Templates>(
+  params: InputsParams,
   name: TemplateName,
   data: Templates[TemplateName],
 ) {
-  const templatePath = appRoot.resolve(`../templates/${name}.liquid`)
+  const templatePath = path.resolve(params.source.path.root, `templates/${name}.liquid`)
   const template = await fs.readFile(templatePath, 'utf-8')
   const engine = new Liquid()
   return (await engine.parseAndRender(template, data))
@@ -111,7 +112,7 @@ export async function updateClosedPRInteraction(
 
   const store_url = params.upload.store.toolboxUrl
 
-  const body = await parseTemplate('merged-pr', {
+  const body = await parseTemplate(params, 'merged-pr', {
     added_bundles: bundler.memoryBundles
       .filter(bundle => bundle.status === 'added')
       .map(bundle => ({
@@ -185,7 +186,7 @@ export async function updateModifiedBundleInteraction(
     }
   }
 
-  const body = await parseTemplate('modified-bundles', {
+  const body = await parseTemplate(params, 'modified-bundles', {
     added_bundles: bundler.memoryBundles
       .filter(bundle => bundle.status === 'added')
       .map(bundle => ({
