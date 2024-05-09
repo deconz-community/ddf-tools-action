@@ -1,5 +1,11 @@
 # @deconz-community/ddf-tools-action
 
+## 1.0.2
+
+### Patch Changes
+
+- ad94271: Update bundler version
+
 ## 1.0.1
 
 ### Patch Changes
