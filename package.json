@@ -36,7 +36,7 @@
     "@actions/artifact": "^2.1.7",
     "@actions/core": "^1.10.1",
     "@actions/github": "^6.0.0",
-    "@deconz-community/ddf-bundler": "^0.22.0",
+    "@deconz-community/ddf-bundler": "^0.23.0",
     "@deconz-community/ddf-validator": "^2.29.0",
     "@directus/sdk": "^16.0.0",
     "@noble/curves": "^1.4.0",
