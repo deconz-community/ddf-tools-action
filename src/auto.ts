@@ -87,7 +87,8 @@ export async function autoCommitUuid(params: InputsParams, sources: Sources): Pr
     // Insert the UUID line after the schema line
     filePart.splice(schemaLineIndex + 1, 0, filePart[schemaLineIndex].replace('schema', 'uuid').replace('devcap1.schema.json', newUUIDs.uuid[index]))
     // Write the file back
-    await fs.writeFile(path, filePart.join(newLineCharacter))
+
+    filesWithMissingUUID[index].content = filePart.join(newLineCharacter)
   }))
   // #endregion
 
