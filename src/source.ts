@@ -130,8 +130,6 @@ export async function getSources(params: InputsParams, context: Context) {
   }
 
   return {
-    haveModifiedDDF: sourcePaths.length > 0,
-    extraModifiedFilesStatus: fileStatus,
     getDDFPaths: () => Array.from(ddf.keys()),
     getGenericPaths: () => Array.from(generic.keys()),
     getMiscFilesPaths: () => Array.from(misc.keys()),
@@ -183,6 +181,7 @@ export async function getSources(params: InputsParams, context: Context) {
       }
     },
     updateContent: async (filePath: string, content: string) => {
+      core.info(`Updating content of ${filePath}`)
       const sourceMap = getSourceMap(filePath)
       const currentSource = sourceMap.get(filePath)
       const source = createSource<BundlerSourceMetadata>(

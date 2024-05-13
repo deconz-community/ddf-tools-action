@@ -55,9 +55,6 @@ async function runPush(params: InputsParams) {
   const context = github.context
   const sources = await getSources(params, context)
 
-  if (!sources.haveModifiedDDF)
-    return core.info('No files modified in the DDF folder, stopping the action')
-
   if (params.ci.autoCommitUuid) {
     try {
       await autoCommitUuid(params, sources)
@@ -87,9 +84,6 @@ async function runPullRequest(params: InputsParams) {
   core.info(`Running Pull Request mode / ${payload.action}`)
 
   const sources = await getSources(params, context)
-
-  if (!sources.haveModifiedDDF)
-    return core.info('No files modified in the DDF folder, stopping the action')
 
   const bundler = await runBundler(params, sources)
 
