@@ -21,16 +21,12 @@ export async function autoCommitUuid(params: InputsParams, sources: Sources): Pr
   }[] = []
 
   // #region Find all the files that are missing the UUID
-  sources.getDDFPaths().forEach(async (ddfPath) => {
-    core.debug(`Checking DDF file for UUID  at ${ddfPath}`)
+  await Promise.all(sources.getDDFPaths().map(async (ddfPath) => {
     try {
       const source = await sources.getSource(ddfPath)
-
       const decoded = await source.jsonData
-      core.debug(`File content  at ${ddfPath} = ${JSON.stringify(decoded)}`)
 
       if (!('uuid' in decoded)) {
-        core.debug(`File missing an UUID at ${ddfPath}`)
         filesWithMissingUUID.push({
           path: ddfPath,
           content: await source.stringData,
@@ -41,7 +37,7 @@ export async function autoCommitUuid(params: InputsParams, sources: Sources): Pr
       core.error(`Error while reading DDF file at ${ddfPath}`)
       core.setFailed('Something went wrong while reading DDF file while validating UUID')
     }
-  })
+  }))
 
   if (filesWithMissingUUID.length === 0) {
     core.info('No files are missing the UUID')
