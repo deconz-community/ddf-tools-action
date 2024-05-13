@@ -25,9 +25,6 @@ export async function autoCommitUuid(params: InputsParams, sources: Sources): Pr
     try {
       const source = await sources.getSource(ddfPath)
 
-      if (source.metadata.status === 'unchanged')
-        return
-
       const decoded = await source.jsonData
       if (!('uuid' in decoded)) {
         filesWithMissingUUID.push({
