@@ -281,7 +281,9 @@ export async function removeDuplicateUUIDs(sources: Sources) {
       const content = await source.stringData
       const newLineCharacter = content.includes('\r\n') ? '\r\n' : '\n'
       const filePart = content.split(newLineCharacter)
-      const newContent = filePart.filter(line => !line.includes(uuid)).join(newLineCharacter)
+      const regex = new RegExp(`"uuid"\\s*:\\s*"${uuid}"`)
+
+      const newContent = filePart.filter(line => !regex.test(line)).join(newLineCharacter)
       sources.updateContent(source.metadata.path, newContent)
     }))
 
