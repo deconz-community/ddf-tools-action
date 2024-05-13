@@ -12,7 +12,7 @@ export async function autoCommitUuid(params: InputsParams, sources: Sources): Pr
 
   const context = github.context
 
-  if (context.action !== 'push')
+  if (context.eventName !== 'push')
     throw core.setFailed('Not a push event, skipping the UUID auto-commit')
 
   const filesWithMissingUUID: {
