@@ -182,6 +182,20 @@ export async function getSources(params: InputsParams, context: Context) {
         return source
       }
     },
+    updateContent: async (filePath: string, content: string) => {
+      const sourceMap = getSourceMap(filePath)
+      const currentSource = sourceMap.get(filePath)
+      const source = createSource<BundlerSourceMetadata>(
+        new Blob([content]),
+        {
+          path: filePath,
+          last_modified: new Date(),
+          useCount: currentSource?.metadata.useCount ?? 0,
+          status: 'modified',
+        },
+      )
+      sourceMap.set(filePath, source)
+    },
   }
 }
 

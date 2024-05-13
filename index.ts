@@ -60,9 +60,7 @@ async function runPush(params: InputsParams) {
 
   if (params.ci.autoCommitUuid) {
     try {
-      const result = await autoCommitUuid(params, sources)
-      if (result)
-        return core.info('Some UUID were auto-commited, stopping the action')
+      await autoCommitUuid(params, sources)
     }
     catch (error) {
       logsErrors(path.resolve(), handleError(error))
