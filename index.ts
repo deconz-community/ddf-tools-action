@@ -65,8 +65,8 @@ async function runPush(params: InputsParams) {
         return core.info('Some UUID were auto-commited, stopping the action')
     }
     catch (error) {
-      core.error('An error occurred while auto-commiting UUID')
       logsErrors(path.resolve(), handleError(error))
+      core.setFailed('An error occurred while auto-commiting UUID')
       return
     }
   }

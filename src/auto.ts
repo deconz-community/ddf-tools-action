@@ -28,7 +28,7 @@ export async function autoCommitUuid(params: InputsParams, sources: Sources): Pr
 
       if (!('uuid' in decoded)) {
         filesWithMissingUUID.push({
-          path: ddfPath,
+          path: ddfPath.replace(params.source.path.root, ''),
           content: await source.stringData,
         })
       }
@@ -44,7 +44,9 @@ export async function autoCommitUuid(params: InputsParams, sources: Sources): Pr
     return false
   }
 
-  core.info(`Found ${filesWithMissingUUID.length} files missing the UUID`)
+  core.startGroup(`Found ${filesWithMissingUUID.length} files missing the UUID`)
+  filesWithMissingUUID.forEach(file => core.info(`- ${file.path}`))
+  core.endGroup()
 
   // #endregion
 
