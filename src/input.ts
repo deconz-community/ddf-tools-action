@@ -7,6 +7,7 @@ import { secp256k1 } from '@noble/curves/secp256k1'
 
 export interface InputsParams {
   mode: 'push' | 'manual' | 'pull_request'
+  ci: CIInputs
   source: SourceInputs
   bundler: BundlerInputs
   validation: BundlerValidationInputs
@@ -16,6 +17,7 @@ export interface InputsParams {
 export async function getParams(): Promise<InputsParams> {
   const params: Partial<InputsParams> = {
     mode: getMode(),
+    ci: await getCIInputs(),
     source: await getSourceInputs(),
     bundler: await getBundlerInputs(),
     upload: await getUploadInputs(),
@@ -54,6 +56,18 @@ function getMode(): Mode {
     core.debug(`Mode : ${mode}`)
 
   return mode
+}
+// #endregion
+
+// #region CI
+async function getCIInputs(): Promise<CIInputs> {
+  const autoCommitUuid = await getBooleanInput('auto-commit-uuid')
+
+  return { autoCommitUuid }
+}
+
+export interface CIInputs {
+  autoCommitUuid: boolean
 }
 // #endregion
 
@@ -198,6 +212,8 @@ export interface UploadInputs {
     toolboxUrl?: string
   } | {
     enabled: false
+    url?: string
+    token?: string
     toolboxUrl?: string
   }
   artifact: {
@@ -212,15 +228,17 @@ export interface UploadInputs {
 async function getUploadInputs(): Promise<UploadInputs> {
   return {
     store: await (async () => {
+      const url = getInput('upload-store-url')
+      const token = getInput('upload-store-token')
+
       if (!getBooleanInput('upload-store-enabled')) {
         return {
           enabled: false,
+          url,
+          token,
           toolboxUrl: getInput('upload-store-toolbox-url'),
         }
       }
-
-      const url = getInput('upload-store-url')
-      const token = getInput('upload-store-token')
 
       if (!url || !token)
         throw core.setFailed('Both url and token must be provided for upload action')
@@ -317,5 +335,8 @@ export function assertInputs(params: InputsParams) {
     if (!params.bundler.validation?.enabled)
       throw core.setFailed('Validator must be enabled in CI mode')
   }
+
+  if (params.ci.autoCommitUuid === true && (!params.upload.store.url || !params.upload.store.token))
+    throw core.setFailed('Auto commit UUID is enabled but store url or store token is missing')
 }
 // #endregion

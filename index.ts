@@ -9,6 +9,7 @@ import { runBundler } from './src/bundler.js'
 import { runUploaders } from './src/uploader.js'
 import { handleError, logsErrors } from './src/errors.js'
 import { updateClosedPRInteraction, updateModifiedBundleInteraction } from './src/interaction.js'
+import { autoCommitUuid } from './src/auto.js'
 
 try {
   run()
@@ -56,6 +57,12 @@ async function runPush(params: InputsParams) {
 
   if (!sources.haveModifiedDDF)
     return core.info('No files modified in the DDF folder, stopping the action')
+
+  if (params.ci.autoCommitUuid) {
+    const result = await autoCommitUuid(params, sources)
+    if (result)
+      return core.info('Some UUID were auto-commited, stopping the action')
+  }
 
   const bundlerResult = params.bundler.enabled
     ? await runBundler(params, sources)

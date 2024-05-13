@@ -20,6 +20,11 @@ inputs:
   source-ignore-pattern:
     description: ignore files that match this pattern
 
+  # # CI options
+  auto-commit-uuid:
+    description: Push a new commit to add a UUID on each bundle that is missing one
+    default: 'false'
+
   # # Bundler options
   bundler-enabled:
     description: Enable bundling of DDF files
