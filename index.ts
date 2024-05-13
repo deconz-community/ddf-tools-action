@@ -4,7 +4,7 @@ import * as core from '@actions/core'
 import type { PullRequestEvent } from '@octokit/webhooks-types'
 import type { InputsParams } from './src/input.js'
 import { getParams, logsParams } from './src/input.js'
-import { getSources } from './src/source.js'
+import { getSources, removeDuplicateUUIDs } from './src/source.js'
 import { runBundler } from './src/bundler.js'
 import { runUploaders } from './src/uploader.js'
 import { handleError, logsErrors } from './src/errors.js'
@@ -44,6 +44,18 @@ async function run() {
 async function runManual(params: InputsParams) {
   const context = github.context
   const sources = await getSources(params, context)
+
+  if (params.ci.autoCommitUuid) {
+    try {
+      await autoCommitUuid(params, sources)
+    }
+    catch (error) {
+      logsErrors(path.resolve(), handleError(error))
+      core.setFailed('An error occurred while auto-commiting UUID')
+      return
+    }
+  }
+
   const bundlerResult = params.bundler.enabled
     ? await runBundler(params, sources)
     : { memoryBundles: [], diskBundles: [], validationErrors: [] }

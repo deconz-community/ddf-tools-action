@@ -81,7 +81,17 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
           const validator = createValidator()
           const validationResult: FileDefinitionWithError[] = []
 
-          const ddfc = JSON.parse(bundle.data.ddfc)
+          const ddfcFile = bundle.data.files.find(file => file.type === 'DDFC')
+          if (!ddfcFile) {
+            validationResult.push({
+              error: new Error('No DDFC file found in the bundle'),
+              path: ddfPath,
+              data: null,
+            })
+            return
+          }
+
+          const ddfc = JSON.parse(ddfcFile.data)
           if (typeof ddfc !== 'object' || ddfc === null) {
             validationResult.push({
               error: new Error('Something went wrong while parsing the DDFC file'),

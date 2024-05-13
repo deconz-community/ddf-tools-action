@@ -243,3 +243,48 @@ export async function getSourcesStatus(context: Context) {
 
   return fileStatus
 }
+
+export async function removeDuplicateUUIDs(sources: Sources) {
+  const uuids: Record<string, string[]> = {}
+  await Promise.all(sources.getDDFPaths().map(async (ddfPath) => {
+    const source = await sources.getSource(ddfPath)
+    const decoded = await source.jsonData
+    if ('uuid' in decoded && typeof decoded.uuid === 'string') {
+      if (decoded.uuid in uuids)
+        uuids[decoded.uuid].push(ddfPath)
+      else
+        uuids[decoded.uuid] = [ddfPath]
+    }
+  }))
+
+  await Promise.all(Object.entries(uuids).map(async ([uuid, paths]) => {
+    if (paths.length === 1)
+      return
+
+    core.startGroup(`Removing duplicate UUID ${uuid}`)
+
+    const source_list = await Promise.all(paths.map(path => sources.getSource(path)))
+    source_list.sort((a, b) => {
+      const a_metadata = a.metadata
+      const b_metadata = b.metadata
+      if (a_metadata.last_modified < b_metadata.last_modified)
+        return -1
+      if (a_metadata.last_modified > b_metadata.last_modified)
+        return 1
+      return 0
+    })
+
+    core.info(`Keeping UUID for ${source_list[0].metadata.path}`)
+
+    await Promise.all(source_list.slice(1).map(async (source) => {
+      core.info(`Removing UUID for ${source.metadata.path}`)
+      const content = await source.stringData
+      const newLineCharacter = content.includes('\r\n') ? '\r\n' : '\n'
+      const filePart = content.split(newLineCharacter)
+      const newContent = filePart.filter(line => !line.includes(uuid)).join(newLineCharacter)
+      sources.updateContent(source.metadata.path, newContent)
+    }))
+
+    core.endGroup()
+  }))
+}

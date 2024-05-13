@@ -3,7 +3,7 @@ import { createDirectus, rest, staticToken } from '@directus/sdk'
 import { Octokit } from '@octokit/action'
 import * as github from '@actions/github'
 import type { InputsParams } from './input'
-import type { Sources } from './source'
+import { type Sources, removeDuplicateUUIDs } from './source'
 
 export async function autoCommitUuid(params: InputsParams, sources: Sources) {
   if (params.upload.store.url === undefined || params.upload.store.token === undefined)
@@ -13,6 +13,8 @@ export async function autoCommitUuid(params: InputsParams, sources: Sources) {
 
   if (context.eventName !== 'push')
     throw core.setFailed('Not a push event, skipping the UUID auto-commit')
+
+  await removeDuplicateUUIDs(sources)
 
   const filesWithMissingUUID: {
     path: string
