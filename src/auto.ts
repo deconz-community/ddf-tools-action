@@ -15,6 +15,8 @@ export async function autoCommitUuid(params: InputsParams, sources: Sources): Pr
   if (context.eventName !== 'push')
     throw core.setFailed('Not a push event, skipping the UUID auto-commit')
 
+  const { payload } = context
+
   const filesWithMissingUUID: {
     path: string
     content: string
@@ -94,16 +96,14 @@ export async function autoCommitUuid(params: InputsParams, sources: Sources): Pr
 
   // Get the current commit object
   const commit = await octokit.rest.repos.getCommit({
-    owner: context.repo.owner,
-    repo: context.repo.repo,
+    ...context.repo,
     ref: context.sha,
   })
 
   // Create a blob for each file
   const blobs = await Promise.all(filesWithMissingUUID.map(async (file) => {
     return octokit.rest.git.createBlob({
-      owner: context.repo.owner,
-      repo: context.repo.repo,
+      ...context.repo,
       content: file.content,
       encoding: 'utf-8',
     })
@@ -111,8 +111,7 @@ export async function autoCommitUuid(params: InputsParams, sources: Sources): Pr
 
   // Create tree with the blobs
   const tree = await octokit.rest.git.createTree({
-    owner: context.repo.owner,
-    repo: context.repo.repo,
+    ...context.repo,
     base_tree: commit.data.sha,
     tree: blobs.map((blob, index) => ({
       path: filesWithMissingUUID[index].path,
@@ -124,8 +123,7 @@ export async function autoCommitUuid(params: InputsParams, sources: Sources): Pr
 
   // Create a new commit
   const newCommit = await octokit.rest.git.createCommit({
-    owner: context.repo.owner,
-    repo: context.repo.repo,
+    ...context.repo,
     message: 'Add missing UUIDs',
     tree: tree.data.sha,
     parents: [commit.data.sha],
@@ -133,8 +131,7 @@ export async function autoCommitUuid(params: InputsParams, sources: Sources): Pr
 
   // Update the reference
   await octokit.rest.git.updateRef({
-    owner: context.repo.owner,
-    repo: context.repo.repo,
+    ...context.repo,
     ref: context.ref,
     sha: newCommit.data.sha,
   })
