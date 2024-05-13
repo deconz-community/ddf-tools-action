@@ -59,9 +59,16 @@ async function runPush(params: InputsParams) {
     return core.info('No files modified in the DDF folder, stopping the action')
 
   if (params.ci.autoCommitUuid) {
-    const result = await autoCommitUuid(params, sources)
-    if (result)
-      return core.info('Some UUID were auto-commited, stopping the action')
+    try {
+      const result = await autoCommitUuid(params, sources)
+      if (result)
+        return core.info('Some UUID were auto-commited, stopping the action')
+    }
+    catch (error) {
+      core.error('An error occurred while auto-commiting UUID')
+      logsErrors(path.resolve(), handleError(error))
+      return
+    }
   }
 
   const bundlerResult = params.bundler.enabled
