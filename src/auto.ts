@@ -132,7 +132,7 @@ export async function autoCommitUuid(params: InputsParams, sources: Sources): Pr
   // Update the reference
   await octokit.rest.git.updateRef({
     ...context.repo,
-    ref: context.ref,
+    ref: context.ref.replace('refs/', ''),
     sha: newCommit.data.sha,
   })
 
