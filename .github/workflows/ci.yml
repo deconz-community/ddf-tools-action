@@ -68,7 +68,7 @@ jobs:
           upload-store-url: ${{ secrets.UPLOAD_URL }}
           upload-store-token: ${{ secrets.UPLOAD_TOKEN }}
           upload-artifact-enabled: true
-          upload-artifact-filter: 'added,modified'
+          # upload-artifact-filter: 'added,modified'
           upload-artifact-retention-days: 3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
