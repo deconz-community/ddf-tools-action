@@ -152,8 +152,10 @@ export async function runArtifactUploader(params: InputsParams, context: Context
   const { filter } = artifactParams
 
   const bundlesToUpload = filter
-    ? bundlerResult.diskBundles.filter(bundle => filter.includes(bundle.path))
+    ? bundlerResult.diskBundles.filter(bundle => filter.includes(bundle.status))
     : bundlerResult.diskBundles
+
+  core.info(`Found ${bundlesToUpload.length}/${bundlerResult.diskBundles} bundles to upload as artifact`)
 
   if (bundlesToUpload.length > 0) {
     core.startGroup('Upload bundles as artifact')
@@ -177,5 +179,7 @@ export async function runArtifactUploader(params: InputsParams, context: Context
 
     return { id, size }
   }
+
+  core.info('Run artifact uploader done')
 }
 // #endregion
