@@ -1,5 +1,6 @@
 {
   "schema": "devcap1.schema.json",
+  "uuid": "f6e5e055-7e4b-4f97-b487-e26aac122a20",
   "$schema": "https://unpkg.com/@deconz-community/ddf-validator/dist/ddf-schema.json",
   "manufacturername": "$MF_DE",
   "md:known_issues": ["../notes/kobold.md"],
