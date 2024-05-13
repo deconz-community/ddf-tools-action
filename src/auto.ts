@@ -7,7 +7,7 @@ import type { InputsParams } from './input'
 import type { Sources } from './source'
 
 export async function autoCommitUuid(params: InputsParams, sources: Sources): Promise<boolean> {
-  if (!params.upload.store.enabled)
+  if (params.upload.store.url === undefined || params.upload.store.token === undefined)
     throw core.setFailed('Store info is missing, can\'t add UUID')
 
   const context = github.context

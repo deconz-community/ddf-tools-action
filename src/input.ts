@@ -336,7 +336,7 @@ export function assertInputs(params: InputsParams) {
       throw core.setFailed('Validator must be enabled in CI mode')
   }
 
-  if (params.ci.autoCommitUuid === true && (!params.upload.store.url || !params.upload.store.token))
+  if (params.ci.autoCommitUuid === true && (params.upload.store.url === undefined || params.upload.store.token === undefined))
     throw core.setFailed('Auto commit UUID is enabled but store url or store token is missing')
 }
 // #endregion
