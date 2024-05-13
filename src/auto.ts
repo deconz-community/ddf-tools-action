@@ -27,7 +27,7 @@ export async function autoCommitUuid(params: InputsParams, sources: Sources): Pr
       const source = await sources.getSource(ddfPath)
 
       const decoded = await source.jsonData
-      core.debug(`File content ${decoded}`)
+      core.debug(`File content  at ${ddfPath} = ${JSON.stringify(decoded)}`)
 
       if (!('uuid' in decoded)) {
         core.debug(`File missing an UUID at ${ddfPath}`)
