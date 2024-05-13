@@ -28,7 +28,7 @@ export async function autoCommitUuid(params: InputsParams, sources: Sources): Pr
 
       if (!('uuid' in decoded)) {
         filesWithMissingUUID.push({
-          path: ddfPath.replace(params.source.path.root, ''),
+          path: ddfPath.replace(`${params.source.path.root}/`, ''),
           content: await source.stringData,
         })
       }
