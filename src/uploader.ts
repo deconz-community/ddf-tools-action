@@ -32,6 +32,8 @@ export async function runUploaders(params: InputsParams, context: Context, bundl
 }
 
 export async function runStoreUploader(params: InputsParams, context: Context, bundlerResult: BundlerResult) {
+  core.info('Run store uploader')
+
   const storeParams = params.upload.store
 
   if (!storeParams.enabled)
@@ -140,6 +142,8 @@ export async function runStoreUploader(params: InputsParams, context: Context, b
 
 // #region Upload bundle as artifacts
 export async function runArtifactUploader(params: InputsParams, context: Context, bundlerResult: BundlerResult) {
+  core.info('Run artifact uploader')
+
   const artifactParams = params.upload.artifact
 
   if (!artifactParams.enabled || !params.bundler.enabled)

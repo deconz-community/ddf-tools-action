@@ -48,6 +48,8 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
       ? await fs.mkdtemp(path.join(tmpdir(), 'ddf-bundler'))
       : undefined)
 
+  core.info(`Bundler output path:${bundlerOutputPath ?? 'Memory'}`)
+
   await Promise.all(sources.getDDFPaths().map(async (ddfPath) => {
     core.debug(`[bundler] Bundling DDF ${ddfPath}`)
     try {
@@ -69,6 +71,8 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
           return source
         },
       )
+
+      core.debug(`[bundler] Bundle created for DDF ${ddfPath} with status ${status}`)
 
       // #region Validation
       // Anonymous function to use return and parent scope

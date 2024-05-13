@@ -180,7 +180,7 @@ export async function getSources(params: InputsParams, context: Context) {
         return source
       }
     },
-    updateContent: async (filePath: string, content: string) => {
+    updateContent: (filePath: string, content: string) => {
       core.info(`Updating content of ${filePath}`)
       const sourceMap = getSourceMap(filePath)
       const currentSource = sourceMap.get(filePath)
