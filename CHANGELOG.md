@@ -1,5 +1,11 @@
 # @deconz-community/ddf-tools-action
 
+## 1.1.2
+
+### Patch Changes
+
+- ad9060c: Fix workflow dispatch run
+
 ## 1.1.1
 
 ### Patch Changes
