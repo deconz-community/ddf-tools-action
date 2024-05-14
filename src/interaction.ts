@@ -136,6 +136,7 @@ const CLOCKS = [[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(hour => [`:clock${ho
 export async function getExistingCommentsPR(
   context: Context,
 ) {
+  core.info('Getting existing comments on PR')
   if (context.eventName !== 'pull_request')
     throw new Error('This action is not supposed to run on pull_request event')
 
@@ -169,6 +170,8 @@ export async function updateClosedPRInteraction(
   sources: Sources,
   bundler: BundlerResult,
 ) {
+  core.info('Update closed PR Interaction')
+
   if (context.eventName !== 'pull_request')
     throw new Error('This action is not supposed to run on pull_request event')
 
@@ -205,6 +208,7 @@ export async function updateClosedPRInteraction(
   })
 
   if (existingComment !== undefined) {
+    core.info('Interaction, Update closed PR Interaction')
     await octokit.rest.issues.updateComment({
       ...context.repo,
       comment_id: existingComment.id,
@@ -218,6 +222,7 @@ export async function updateClosedPRInteraction(
       body,
     })
   }
+  core.info('Update closed PR Interaction done')
 }
 
 export async function updateModifiedBundleInteraction(
@@ -227,6 +232,7 @@ export async function updateModifiedBundleInteraction(
   bundler: BundlerResult,
   uploader: UploaderResult,
 ) {
+  core.info('Update modified bundle interaction')
   if (context.eventName !== 'pull_request')
     throw new Error('This action is not supposed to run on pull_request event')
 
@@ -240,10 +246,6 @@ export async function updateModifiedBundleInteraction(
   })
 
   const retention_days = params.upload.artifact.enabled ? params.upload.artifact.retentionDays : 0
-
-  bundler.memoryBundles.forEach((bundle) => {
-    core.info(`bundle=${JSON.stringify(bundle.bundle.data.validation?.result)}`)
-  })
 
   const getResultEmoji = (result: Exclude<BundleData['validation'], undefined>['result'] | undefined) => {
     switch (result) {
@@ -300,6 +302,7 @@ export async function updateModifiedBundleInteraction(
   })
 
   if (existingComment !== undefined) {
+    core.info(`Update comment n°${existingComment.id}`)
     await octokit.rest.issues.updateComment({
       ...context.repo,
       comment_id: existingComment.id,
@@ -307,10 +310,12 @@ export async function updateModifiedBundleInteraction(
     })
   }
   else {
+    core.info('Add a new comment')
     octokit.rest.issues.createComment({
       ...context.repo,
       issue_number: payload.pull_request.number,
       body,
     })
   }
+  core.info('Update modified bundle interaction done')
 }
