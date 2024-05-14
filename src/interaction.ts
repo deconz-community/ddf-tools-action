@@ -311,7 +311,7 @@ export async function updateModifiedBundleInteraction(
   }
   else {
     core.info('Add a new comment')
-    octokit.rest.issues.createComment({
+    await octokit.rest.issues.createComment({
       ...context.repo,
       issue_number: payload.pull_request.number,
       body,

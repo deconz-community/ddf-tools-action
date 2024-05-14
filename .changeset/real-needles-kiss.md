@@ -1,0 +1,5 @@
+---
+"@deconz-community/ddf-tools-action": patch
+---
+
+Fix workflow dispatch run

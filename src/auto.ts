@@ -11,8 +11,8 @@ export async function autoCommitUuid(params: InputsParams, sources: Sources) {
 
   const context = github.context
 
-  if (context.eventName !== 'push')
-    throw core.setFailed('Not a push event, skipping the UUID auto-commit')
+  if (!['push', 'workflow_dispatch'].includes(context.eventName))
+    throw core.setFailed(`Got a ${context.eventName} instead of a push event, skipping the UUID auto-commit`)
 
   await removeDuplicateUUIDs(sources)
 
