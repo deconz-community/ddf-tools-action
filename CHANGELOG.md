@@ -1,5 +1,11 @@
 # @deconz-community/ddf-tools-action
 
+## 1.1.1
+
+### Patch Changes
+
+- c34e6c1: Cleanup logs
+
 ## 1.1.0
 
 ### Minor Changes
