@@ -1,3 +1,4 @@
+import fs from 'node:fs/promises'
 import type { Context } from '@actions/github/lib/context'
 import { Octokit } from '@octokit/action'
 import type { PullRequestEvent } from '@octokit/webhooks-types'
@@ -5,6 +6,7 @@ import { Liquid } from 'liquidjs'
 import * as core from '@actions/core'
 import type { BundleData } from '@deconz-community/ddf-bundler'
 import { bytesToHex } from '@noble/hashes/utils'
+import { DefaultArtifactClient } from '@actions/artifact'
 import type { BundlerResult } from './bundler'
 import type { InputsParams } from './input'
 import type { UploaderResult } from './uploader'
@@ -326,12 +328,23 @@ export async function sendOutputForModifiedBundleInteraction(
   }
   */
 
-  core.setOutput('interaction_data', [{
+  await fs.writeFile('interaction_data.json', JSON.stringify([{
     mode: 'upsert',
     prefix: '<!-- DDF-TOOLS-ACTION/modified-bundles -->',
     issue_number: payload.pull_request.number,
     body,
-  }])
+  }]), 'utf8')
+
+  const artifact = new DefaultArtifactClient()
+
+  await artifact.uploadArtifact(
+    'interaction_data',
+    ['interaction_data.json'],
+    '.',
+    {
+      retentionDays: 1,
+    },
+  )
 
   core.info('Update modified bundle interaction done')
 }
