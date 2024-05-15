@@ -59,11 +59,9 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
         `file://${ddfPath}`,
         async (filePath) => {
           try {
-            core.info(`Reading file: ${filePath.replace('file://', '')}`)
             const source = await sources.getSource(filePath.replace('file://', ''))
-            core.info(`Reading file: ${filePath.replace('file://', '')} with size : ${(await source.stringData).length}`)
 
-            if (source.metadata.status === 'unchanged')
+            if (source.metadata.status === 'unchanged' || source.metadata.status === 'missing')
               return source
 
             if (filePath === ddfPath && source.metadata.status === 'added')
@@ -120,8 +118,6 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
             })
           }
 
-          core.info(`Validating DDFC file ${ddfPath} with content${JSON.stringify(ddfc)}`)
-
           if (ddfc.ddfvalidate === false && !bundler.validation.strict) {
             core.warning(`[bundler] Skipping validation for bundle DDF ${ddfPath}`)
 
@@ -132,13 +128,20 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
             return
           }
 
-          core.info(`Starting bulkValidate DDFC file ${ddfPath}`)
+          bundle.data.files
+            .filter(file => file.data.length === 0)
+            .forEach(file => validationResult.push({
+              error: new Error('Empty file'),
+              path: file.path,
+              data: '',
+            }))
+
           validationResult.push(...validator.bulkValidate(
             // Generic files
             bundle.data.files
+              .filter(file => file.data.length !== 0)
               .filter(file => file.type === 'JSON')
               .map((file) => {
-                core.info(`Added generic file${file.path}`)
                 return {
                   path: file.path,
                   data: JSON.parse(file.data as string),
