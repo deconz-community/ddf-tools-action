@@ -4,11 +4,11 @@ import * as core from '@actions/core'
 import type { PullRequestEvent } from '@octokit/webhooks-types'
 import type { InputsParams } from './src/input.js'
 import { getParams, logsParams } from './src/input.js'
-import { getSources, removeDuplicateUUIDs } from './src/source.js'
+import { getSources } from './src/source.js'
 import { runBundler } from './src/bundler.js'
 import { runUploaders } from './src/uploader.js'
 import { handleError, logsErrors } from './src/errors.js'
-import { updateClosedPRInteraction, updateModifiedBundleInteraction } from './src/interaction.js'
+import { sendOutputForModifiedBundleInteraction } from './src/interaction.js'
 import { autoCommitUuid } from './src/auto.js'
 
 try {
@@ -105,10 +105,15 @@ async function runPullRequest(params: InputsParams) {
   }
 
   if (payload.action === 'closed') {
-    await updateClosedPRInteraction(params, context, sources, bundler)
+    /**
+     * Disabled for now, need to handle the case where the PR is just closed and not merged
+     * And also need to handle the case where the UUID was missing and a new one was generated
+     * In that case the hash will be different
+     */
+    // await updateClosedPRInteraction(params, context, sources, bundler)
   }
-  else {
+  else if (['opened', 'reopened', 'synchronize'].includes(payload.action)) {
     const uploader = await runUploaders(params, context, bundler)
-    await updateModifiedBundleInteraction(params, context, sources, bundler, uploader)
+    await sendOutputForModifiedBundleInteraction(params, context, sources, bundler, uploader)
   }
 }

@@ -133,12 +133,13 @@ This pull request is now merged. The new DDF bundles have been uploaded to the s
 
 const CLOCKS = [[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(hour => [`:clock${hour}:`, `:clock${hour}30:`]), ':duck:'].flat(5)
 
+/*
 export async function getExistingCommentsPR(
   context: Context,
 ) {
   core.info('Getting existing comments on PR')
   if (context.eventName !== 'pull_request')
-    throw new Error('This action is not supposed to run on pull_request event')
+    throw new Error(`This action is supposed to run on pull_request event, we got a ${context.eventName} event.`)
 
   const octokit = new Octokit()
   const payload = context.payload as PullRequestEvent
@@ -153,6 +154,7 @@ export async function getExistingCommentsPR(
       return comment.user?.login === 'github-actions[bot]'
     })
 }
+*/
 
 export async function parseTemplate<TemplateName extends keyof Templates>(
   params: InputsParams,
@@ -164,6 +166,7 @@ export async function parseTemplate<TemplateName extends keyof Templates>(
     .replace(/\n{3,}/g, '\n\n')
 }
 
+/*
 export async function updateClosedPRInteraction(
   params: InputsParams,
   context: Context,
@@ -173,7 +176,7 @@ export async function updateClosedPRInteraction(
   core.info('Update closed PR Interaction')
 
   if (context.eventName !== 'pull_request')
-    throw new Error('This action is not supposed to run on pull_request event')
+    throw new Error(`This action is supposed to run on pull_request event, we got a ${context.eventName} event.`)
 
   const octokit = new Octokit()
   const payload = context.payload as PullRequestEvent
@@ -224,8 +227,9 @@ export async function updateClosedPRInteraction(
   }
   core.info('Update closed PR Interaction done')
 }
+*/
 
-export async function updateModifiedBundleInteraction(
+export async function sendOutputForModifiedBundleInteraction(
   params: InputsParams,
   context: Context,
   sources: Sources,
@@ -234,18 +238,20 @@ export async function updateModifiedBundleInteraction(
 ) {
   core.info('Update modified bundle interaction')
   if (context.eventName !== 'pull_request')
-    throw new Error('This action is not supposed to run on pull_request event')
+    throw new Error(`This action is supposed to run on pull_request event, we got a ${context.eventName} event.`)
 
-  const octokit = new Octokit()
+  // const octokit = new Octokit()
   const payload = context.payload as PullRequestEvent
 
+  /*
   const existingComments = await getExistingCommentsPR(context)
 
   const existingComment = existingComments.find((comment) => {
     return comment.body?.startsWith('<!-- DDF-TOOLS-ACTION/modified-bundles -->')
   })
+  */
 
-  const retention_days = params.upload.artifact.enabled ? params.upload.artifact.retentionDays : 0
+  const retention_days = params.upload.artifact.enabled ? params.upload.artifact.retentionDays : 3
 
   const getResultEmoji = (result: Exclude<BundleData['validation'], undefined>['result'] | undefined) => {
     switch (result) {
@@ -301,6 +307,7 @@ export async function updateModifiedBundleInteraction(
     },
   })
 
+  /*
   if (existingComment !== undefined) {
     core.info(`Update comment n°${existingComment.id}`)
     await octokit.rest.issues.updateComment({
@@ -317,5 +324,14 @@ export async function updateModifiedBundleInteraction(
       body,
     })
   }
+  */
+
+  core.setOutput('interaction-data', [{
+    mode: 'upsert',
+    prefix: '<!-- DDF-TOOLS-ACTION/modified-bundles -->',
+    issue_number: payload.pull_request.number,
+    body,
+  }])
+
   core.info('Update modified bundle interaction done')
 }
