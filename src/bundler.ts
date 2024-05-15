@@ -58,25 +58,17 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
         `file://${source.path.generic}`,
         `file://${ddfPath}`,
         async (filePath) => {
-          core.info(`Reading file: ${filePath} for ${ddfPath}`)
+          const source = await sources.getSource(filePath.replace('file://', ''))
 
-          try {
-            const source = await sources.getSource(filePath.replace('file://', ''))
-
-            if (source.metadata.status === 'unchanged' || source.metadata.status === 'missing')
-              return source
-
-            if (filePath === ddfPath && source.metadata.status === 'added')
-              status = 'added'
-            else if (status === 'unchanged')
-              status = 'modified'
-
+          if (source.metadata.status === 'unchanged' || source.metadata.status === 'missing')
             return source
-          }
-          catch (err) {
-            core.error(`Error while reading file: ${filePath.replace('file://', '')}`)
-            return null as any
-          }
+
+          if (filePath === ddfPath && source.metadata.status === 'added')
+            status = 'added'
+          else if (status === 'unchanged')
+            status = 'modified'
+
+          return source
         },
       )
 
@@ -281,7 +273,6 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
         .filter(path => !unused.generic.includes(path))
         .map(async (path) => {
           try {
-            core.info(`Loading generic file ${path}`)
             const source = await sources.getSource(path)
             const data = JSON.parse(await source.stringData)
             validator.loadGeneric(data)
