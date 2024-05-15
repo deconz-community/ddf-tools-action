@@ -234,7 +234,7 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
     }
     catch (err) {
       core.error(`Error while creating bundle ${ddfPath}`)
-      const fileSource = await sources.getSource(ddfPath)
+      const fileSource = await sources.getSource(ddfPath, false)
       const errors = handleError(err, ddfPath, await fileSource.stringData)
       const filePath = ddfPath.replace(source.path.devices, '')
       core.error(`Bundle creation error for DDF at ${filePath}`)
@@ -244,86 +244,63 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
   }))
   // #endregion
 
-  // #region Validation of unused files
-  // Anonymous function to use return and parent scope
-  await (async () => {
-    if (bundler.validation.enabled) {
-      core.info('Validating unused files')
+  // #region Validation of all generic files
 
-      const unused = sources.getUnusedFiles()
+  if (bundler.validation.enabled) {
+    core.info('Re validating all generic files')
 
-      const validator = createValidator()
+    const validator = createValidator()
 
-      const genericFiles = await Promise.all(unused.generic.map(async (path) => {
-        const source = await sources.getSource(path)
-        return {
-          path,
-          data: JSON.parse(await source.stringData),
-        }
-      }))
-
-      // Re validate constants file because he was chopped before
-      const constantsPath = path.join(params.source.path.generic, 'constants.json')
-      core.info(`Re-validating constants file at ${constantsPath}`)
-      genericFiles.push({
-        path: constantsPath,
-        data: JSON.parse(await (await sources.getSource(constantsPath)).stringData),
-      })
-
-      // Load used generic files
-      await Promise.all(sources
-        .getGenericPaths()
-        .filter(path => !unused.generic.includes(path))
-        .map(async (path) => {
-          try {
-            const source = await sources.getSource(path)
-            const data = JSON.parse(await source.stringData)
-            validator.loadGeneric(data)
-          }
-          catch (err) {
-            // Ignore errors because they already have been validated before
-          }
-        }),
-      )
-
-      const validationResult = validator.bulkValidate(genericFiles, [])
-
-      await Promise.all(validationResult.map(async (error) => {
-        const source = await sources.getSource(error.path)
-        const errors = handleError(error.error, error.path, await source.stringData)
-        if (errors.length > 0) {
-          core.error(`${errors.length} validation errors for unused generic file at ${error.path}`)
-          core.startGroup(`Errors details for unused generic file at ${error.path}`)
-          logsErrors(params.source.path.root, errors)
-          core.endGroup()
-          validationErrors.push(...errors)
-        }
-      }))
-
-      if (bundler.validation.warnUnusedFiles) {
-        const messagesMap = {
-          ddf: 'Unused DDF file',
-          generic: 'Unused generic file',
-          misc: 'Unused misc file',
-        }
-        let inGroup = false
-        Object.entries(messagesMap).forEach(([key, message]) => {
-          unused[key].forEach((file) => {
-            if (inGroup === false) {
-              core.startGroup('Unused files')
-              inGroup = true
-            }
-            core.warning(`${message}:${file}`, { file })
-          })
-        })
-        if (inGroup)
-          core.endGroup()
-        else
-          core.info('No unused files found')
+    const genericFiles = await Promise.all(sources.getGenericPaths().map(async (path) => {
+      const source = await sources.getSource(path, false)
+      return {
+        path,
+        data: JSON.parse(await source.stringData),
       }
-    }
-  })()
+    }))
 
+    const validationResult = validator.bulkValidate(genericFiles, [])
+
+    await Promise.all(validationResult.map(async (error) => {
+      const source = await sources.getSource(error.path, false)
+      const errors = handleError(error.error, error.path, await source.stringData)
+      if (errors.length > 0) {
+        core.error(`${errors.length} validation errors for generic file at ${error.path}`)
+        core.startGroup(`Errors details for generic file at ${error.path}`)
+        logsErrors(params.source.path.root, errors)
+        core.endGroup()
+        validationErrors.push(...errors)
+      }
+    }))
+  }
+
+  // #endregion
+
+  // #region Report unused files
+  if (bundler.validation.enabled && bundler.validation.warnUnusedFiles) {
+    const messagesMap = {
+      ddf: 'Unused DDF file',
+      generic: 'Unused generic file',
+      misc: 'Unused misc file',
+    }
+
+    const unused = sources.getUnusedFiles()
+
+    let inGroup = false
+    Object.entries(messagesMap).forEach(([key, message]) => {
+      unused[key].forEach((file) => {
+        if (inGroup === false) {
+          core.startGroup('Unused files')
+          inGroup = true
+        }
+        core.warning(`${message}:${file}`, { file })
+      })
+    })
+    if (inGroup)
+      core.endGroup()
+    else
+      core.info('No unused files found')
+  }
   // #endregion
 
   if (validationErrors.length > 0)
