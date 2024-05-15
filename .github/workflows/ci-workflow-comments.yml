@@ -15,8 +15,6 @@ jobs:
         
         with:
           script: |
-            const core = require('@actions/core');
-
             let allArtifacts = await github.rest.actions.listWorkflowRunArtifacts({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -52,7 +50,6 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const core = require('@actions/core');
             const fs = require('fs');
 
             async function upsertComment(owner, repo, issue_number, marker, body) {
