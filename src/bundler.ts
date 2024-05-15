@@ -75,7 +75,7 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
           }
           catch (err) {
             core.error(`Error while reading file: ${filePath.replace('file://', '')}`)
-            return null
+            return null as any
           }
         },
       )
