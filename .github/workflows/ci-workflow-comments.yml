@@ -21,9 +21,9 @@ jobs:
             async function upsertComment(owner, repo, issue_number, marker, body) {
               const {data: comments} = await github.rest.issues.listComments(
                 {owner, repo, issue_number});
-
-              body = marker + "\n" + body;
-
+            
+              body = `${marker}\n${body}`;
+            
               const existing = comments.filter((c) => c.body.includes(marker));
               if (existing.length > 0) {
                 const last = existing[existing.length - 1];
@@ -38,28 +38,28 @@ jobs:
                 await github.rest.issues.createComment({issue_number, body, owner, repo});
               }
             }
-
+            
             async function run(){
               const {owner, repo} = context.repo;
-
+            
               core.info("Fetching artifacts list")
-              let allArtifacts = await github.rest.actions.listWorkflowRunArtifacts({
+              const allArtifacts = await github.rest.actions.listWorkflowRunArtifacts({
                 owner,
                 repo,
                 run_id: context.payload.workflow_run.id,
               });
-
-              let matchArtifact = allArtifacts.data.artifacts.filter((artifact) => {
-                return artifact.name == "interaction_data"
+            
+              const matchArtifact = allArtifacts.data.artifacts.filter((artifact) => {
+                return artifact.name === "interaction_data"
               })[0];
               
-              if(matchArtifact == undefined) {
+              if(matchArtifact === undefined) {
                 core.info("No artifact found, stopping the action")
                 return
               }
-
-              core.info("Downloading artifact #"+matchArtifact.id)
-              let download = await github.rest.actions.downloadArtifact({
+            
+              core.info(`Downloading artifact #${matchArtifact.id}`)
+              const download = await github.rest.actions.downloadArtifact({
                   owner,
                   repo,
                   artifact_id: matchArtifact.id,
@@ -67,21 +67,21 @@ jobs:
               });
               
               fs.writeFileSync(`${process.env.GITHUB_WORKSPACE}/interaction_data.zip`, Buffer.from(download.data));
-
+            
               await exec.exec(`unzip ${process.env.GITHUB_WORKSPACE}/interaction_data.zip`);
-
-              let interaction_data = JSON.parse(fs.readFileSync(${process.env.GITHUB_WORKSPACE}/interaction_data.json`));
-
+            
+              const interaction_data = JSON.parse(fs.readFileSync(`${process.env.GITHUB_WORKSPACE}/interaction_data.json`));
+            
               await Promise.all(interaction_data.map(async (data) => {
                 const {mode, marker, issue_number, body} = data;
-
-                if(mode === 'upsert'){
+            
+                if(mode === 'upsert')
                   await upsertComment(owner, repo, issue_number, marker, body);
-                }else if(mode === 'insert'){
+                else if(mode === 'insert')
                   await github.rest.issues.createComment({issue_number, body, owner, repo});
-                }
+                
               }));
             }
-
+            
             run();
 
