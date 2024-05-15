@@ -1,0 +1,12 @@
+on:
+  workflow_run:
+    workflows: ["Continuous integration"]
+    types:
+      - completed
+
+jobs:
+  use_output:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Use output
+        run: echo "${{ github.event.workflow_run.outputs.interaction_data }}"

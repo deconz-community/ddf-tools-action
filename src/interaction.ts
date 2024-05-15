@@ -326,7 +326,7 @@ export async function sendOutputForModifiedBundleInteraction(
   }
   */
 
-  core.setOutput('interaction-data', [{
+  core.setOutput('interaction_data', [{
     mode: 'upsert',
     prefix: '<!-- DDF-TOOLS-ACTION/modified-bundles -->',
     issue_number: payload.pull_request.number,
