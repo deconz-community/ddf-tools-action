@@ -12,3 +12,10 @@ jobs:
     steps:
       - name: Use output
         run: echo "${{ github.event.workflow_run }}"
+
+      - uses: actions/github-script@v7
+        id: my-script
+        with:
+          script: |
+            const output = ${{ github.event.workflow_run }};
+            console.log(`Output: ${JSON.stringify(output, null, 2)}`);
