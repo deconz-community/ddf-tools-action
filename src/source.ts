@@ -151,7 +151,7 @@ export async function getSources(params: InputsParams, context: Context) {
   // Load all the DDF sources
   await Promise.all(sourcePaths.map(async (sourcePath) => {
     const filePath = path.resolve(sourcePath)
-    return getSource(filePath, true)
+    return getSource(filePath, false)
   }))
 
   // List of modified files that are not in the sources, aka not DDF related files
@@ -257,7 +257,7 @@ export async function getSourcesStatus(context: Context) {
 export async function removeDuplicateUUIDs(sources: Sources) {
   const uuids: Record<string, string[]> = {}
   await Promise.all(sources.getDDFPaths().map(async (ddfPath) => {
-    const source = await sources.getSource(ddfPath)
+    const source = await sources.getSource(ddfPath, false)
     const decoded = await source.jsonData
     if ('uuid' in decoded && typeof decoded.uuid === 'string') {
       if (decoded.uuid in uuids)
@@ -273,7 +273,7 @@ export async function removeDuplicateUUIDs(sources: Sources) {
 
     core.startGroup(`Removing duplicate UUID ${uuid}`)
 
-    const source_list = await Promise.all(paths.map(path => sources.getSource(path)))
+    const source_list = await Promise.all(paths.map(path => sources.getSource(path, false)))
     source_list.sort((a, b) => {
       const a_metadata = a.metadata
       const b_metadata = b.metadata
