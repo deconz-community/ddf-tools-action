@@ -82,11 +82,10 @@ jobs:
               const {mode, marker, issue_number, body} = data;
 
               if(mode === 'upsert'){
-                await upsertComment(owner, repo, issue_number, marker, body);
+                upsertComment(owner, repo, issue_number, marker, body);
               }else if(mode === 'insert'){
-                await github.rest.issues.createComment({issue_number, body, owner, repo});
+                github.rest.issues.createComment({issue_number, body, owner, repo});
               }
-              
             });
 
             
