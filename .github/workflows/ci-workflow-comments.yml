@@ -39,9 +39,11 @@ jobs:
             let fs = require('fs');
             fs.writeFileSync(`${process.env.GITHUB_WORKSPACE}/interaction_data.zip`, Buffer.from(download.data));
 
-      - name: 'Unzip artifact'
-        if: ${{ steps.get_artifact.outputs.stop != 'true' }}
-        run: unzip interaction_data.zip
+
+
+#      - name: 'Unzip artifact'
+#        if: ${{ steps.get_artifact.outputs.stop != 'true' }}
+#        run: unzip interaction_data.zip
 
 
       - name: 'Comment on PR'
@@ -75,6 +77,8 @@ jobs:
 
 
             async function run(){
+              await exec.exec('unzip interaction_data.zip');
+
               
               const {owner, repo} = context.repo;
 
