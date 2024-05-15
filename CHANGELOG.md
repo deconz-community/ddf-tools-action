@@ -1,5 +1,12 @@
 # @deconz-community/ddf-tools-action
 
+## 1.1.3
+
+### Patch Changes
+
+- 1d6bc7b: Fix interaction updates
+- 1d6bc7b: Fix validation
+
 ## 1.1.2
 
 ### Patch Changes
