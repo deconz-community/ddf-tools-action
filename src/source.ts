@@ -10,7 +10,7 @@ import { simpleGit } from 'simple-git'
 import * as core from '@actions/core'
 import type { InputsParams } from './input.js'
 
-export type FileStatus = 'added' | 'removed' | 'modified' | 'unchanged'
+export type FileStatus = 'added' | 'removed' | 'modified' | 'unchanged' | 'missing'
 
 export type BundlerSourceMetadata = SourceMetadata & {
   useCount: number
@@ -109,20 +109,56 @@ export async function getSources(params: InputsParams, context: Context) {
     return new Date()
   }
 
+  const getSource = async (filePath: string, updateCount = true): Promise<Source<BundlerSourceMetadata>> => {
+    const sourceMap = getSourceMap(filePath)
+
+    const source = sourceMap.get(filePath)
+    if (source) {
+      if (updateCount)
+        source.metadata.useCount++
+      return source
+    }
+
+    try {
+      const source = createSource<BundlerSourceMetadata>(
+        new Blob([await fs.readFile(filePath)]),
+        {
+          path: filePath,
+          last_modified: await getLastModified(filePath),
+          useCount: updateCount ? 1 : 0,
+          status: getStatus(filePath),
+        },
+      )
+
+      sourceMap.set(filePath, source)
+      return source
+    }
+    catch (error) {
+      core.error(`Error while reading file at ${filePath}`)
+      core.error(String(error))
+
+      const source = createSource<BundlerSourceMetadata>(
+        new Blob([]),
+        {
+          path: filePath,
+          last_modified: new Date(0),
+          useCount: updateCount ? 1 : 0,
+          status: 'missing',
+        },
+      )
+
+      sourceMap.set(filePath, source)
+      return source
+    }
+  }
+
+  // Load all the DDF sources
   await Promise.all(sourcePaths.map(async (sourcePath) => {
     const filePath = path.resolve(sourcePath)
-
-    getSourceMap(filePath).set(filePath, createSource<BundlerSourceMetadata>(
-      new Blob([await fs.readFile(filePath)]),
-      {
-        path: filePath,
-        last_modified: await getLastModified(filePath),
-        useCount: 0,
-        status: getStatus(filePath),
-      },
-    ))
+    return getSource(filePath, true)
   }))
 
+  // List of modified files that are not in the sources, aka not DDF related files
   if (fileStatus.size > 0) {
     core.startGroup('Extra modified files status')
     fileStatus.forEach((status, path) => core.info(`[${status}] ${path}`))
@@ -157,31 +193,7 @@ export async function getSources(params: InputsParams, context: Context) {
 
       return unused
     },
-    getSource: async (filePath: string, updateCount = true): Promise<Source<BundlerSourceMetadata>> => {
-      core.info(`Getting source ${filePath}`)
-
-      const sourceMap = getSourceMap(filePath)
-
-      const source = sourceMap.get(filePath)
-      if (source) {
-        if (updateCount)
-          source.metadata.useCount++
-        return source
-      }
-      else {
-        const source = createSource<BundlerSourceMetadata>(
-          new Blob([await fs.readFile(filePath)]),
-          {
-            path: filePath,
-            last_modified: await getLastModified(filePath),
-            useCount: updateCount ? 1 : 0,
-            status: getStatus(filePath),
-          },
-        )
-        sourceMap.set(filePath, source)
-        return source
-      }
-    },
+    getSource,
     updateContent: (filePath: string, content: string) => {
       core.info(`Updating content of ${filePath}`)
       const sourceMap = getSourceMap(filePath)
