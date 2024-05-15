@@ -115,6 +115,7 @@ export async function getSources(params: InputsParams, context: Context) {
   }
 
   const getSource = async (filePath: string, updateCount = true): Promise<Source<BundlerSourceMetadata>> => {
+    core.info(`Getting SourceMap for ${filePath}`)
     const sourceMap = getSourceMap(filePath)
 
     const source = sourceMap.get(filePath)
