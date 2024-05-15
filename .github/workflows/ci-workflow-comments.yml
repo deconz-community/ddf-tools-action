@@ -17,5 +17,4 @@ jobs:
         id: my-script
         with:
           script: |
-            const output = ${{ github.event.workflow_run }};
-            console.log(`Output: ${JSON.stringify(output, null, 2)}`);
+            console.log(`Output: ${JSON.stringify(context, null, 2)}`);
