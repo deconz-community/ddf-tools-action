@@ -1,7 +1,7 @@
 {
   "schema": "subdevice1.schema.json",
-  "type": "$TYPE_DIMMABLE_LIGHT",
-  "name": "Dimmable light",
+  "type": "$TYPE_DIMMER_SWITCH",
+  "name": "Dimmer switch",
   "restapi": "/lights",
   "order": 11,
   "uuid": [
@@ -9,7 +9,6 @@
     "0x01"
   ],
   "items": [
-    "state/alert",
     "state/bri",
     "state/on",
     "state/reachable"
