@@ -58,6 +58,8 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
         `file://${source.path.generic}`,
         `file://${ddfPath}`,
         async (filePath) => {
+          core.info(`Getting getSource 2 for ${filePath.replace('file://', '')}`)
+
           const source = await sources.getSource(filePath.replace('file://', ''))
 
           if (source.metadata.status === 'unchanged' || source.metadata.status === 'missing')
@@ -162,6 +164,7 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
           const errors: ValidationError[] = []
 
           await Promise.all(validationResult.map(async (error) => {
+            core.info(`Getting getSource 3 for ${error.path}`)
             const sourceFile = await sources.getSource(error.path, false)
             errors.push(...handleError(error.error, error.path, await sourceFile.stringData))
           }))
@@ -234,6 +237,7 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
     }
     catch (err) {
       core.error(`Error while creating bundle ${ddfPath}`)
+      core.info(`Getting getSource 4 for ${ddfPath}`)
       const fileSource = await sources.getSource(ddfPath, false)
       const errors = handleError(err, ddfPath, await fileSource.stringData)
       const filePath = ddfPath.replace(source.path.devices, '')
@@ -252,6 +256,7 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
     const validator = createValidator()
 
     const genericFiles = await Promise.all(sources.getGenericPaths().map(async (path) => {
+      core.info(`Getting getSource 5 for ${path}`)
       const source = await sources.getSource(path, false)
       return {
         path,
@@ -262,6 +267,7 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
     const validationResult = validator.bulkValidate(genericFiles, [])
 
     await Promise.all(validationResult.map(async (error) => {
+      core.info(`Getting getSource 6 for ${error.path}`)
       const source = await sources.getSource(error.path, false)
       const errors = handleError(error.error, error.path, await source.stringData)
       if (errors.length > 0) {

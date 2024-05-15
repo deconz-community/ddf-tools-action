@@ -25,6 +25,7 @@ export async function autoCommitUuid(params: InputsParams, sources: Sources) {
   // #region Find all the files that are missing the UUID
   await Promise.all(sources.getDDFPaths().map(async (ddfPath) => {
     try {
+      core.info(`Getting getSource 1 for ${ddfPath}`)
       const source = await sources.getSource(ddfPath)
       const decoded = await source.jsonData
 
