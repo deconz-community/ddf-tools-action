@@ -114,8 +114,6 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
           }
 
           if (ddfc.ddfvalidate === false && !bundler.validation.strict) {
-            core.warning(`[bundler] Skipping validation for bundle DDF ${ddfPath}`)
-
             bundle.data.validation = {
               result: 'skipped',
               version: validator.version,
