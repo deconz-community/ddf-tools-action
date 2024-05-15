@@ -161,8 +161,9 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
 
           await Promise.all(validationResult.map(async (error) => {
             core.info(`Validation error for ${JSON.stringify(error)} `)
-            const sourceFile = await sources.getSource(error.path)
-            errors.push(...handleError(error.error, error.path, await sourceFile.stringData))
+            const realPath = bundle.data.name === error.path ? ddfPath : error.path
+            const sourceFile = await sources.getSource(realPath)
+            errors.push(...handleError(error.error, realPath, await sourceFile.stringData))
           }))
 
           if (errors.length > 0) {
