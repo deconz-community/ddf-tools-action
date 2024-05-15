@@ -1,16 +1,14 @@
 import path from 'node:path'
-import fs from 'node:fs/promises'
 import * as github from '@actions/github'
 import * as core from '@actions/core'
 import type { PullRequestEvent } from '@octokit/webhooks-types'
-import { DefaultArtifactClient } from '@actions/artifact'
 import type { InputsParams } from './src/input.js'
 import { getParams, logsParams } from './src/input.js'
 import { getSources } from './src/source.js'
 import { runBundler } from './src/bundler.js'
 import { runUploaders } from './src/uploader.js'
 import { handleError, logsErrors } from './src/errors.js'
-import { sendOutputForModifiedBundleInteraction } from './src/interaction.js'
+import { updateClosedPRInteraction, updateModifiedBundleInteraction } from './src/interaction.js'
 import { autoCommitUuid } from './src/auto.js'
 
 try {
@@ -86,24 +84,6 @@ async function runPush(params: InputsParams) {
 
   if (params.upload.artifact.enabled || params.upload.store.enabled)
     await runUploaders(params, context, bundlerResult)
-
-  await fs.writeFile('interaction_data.json', JSON.stringify([{
-    mode: 'upsert',
-    marker: '<!-- DDF-TOOLS-ACTION/modified-bundles -->',
-    issue_number: 21,
-    body: JSON.stringify({ hello: 'world' }),
-  }]), 'utf8')
-
-  const artifact = new DefaultArtifactClient()
-
-  await artifact.uploadArtifact(
-    'interaction_data',
-    ['interaction_data.json'],
-    '.',
-    {
-      retentionDays: 1,
-    },
-  )
 }
 
 async function runPullRequest(params: InputsParams) {
@@ -124,16 +104,14 @@ async function runPullRequest(params: InputsParams) {
     return
   }
 
-  if (payload.action === 'closed') {
-    /**
-     * Disabled for now, need to handle the case where the PR is just closed and not merged
-     * And also need to handle the case where the UUID was missing and a new one was generated
-     * In that case the hash will be different
-     */
-    // await updateClosedPRInteraction(params, context, sources, bundler)
+  if (payload.action === 'closed' && payload.pull_request.merged === true) {
+    // TODO: handle the case where the UUID was missing and a new one was generated
+    // In that case the hash will be different
+
+    await updateClosedPRInteraction(params, context, sources, bundler)
   }
   else if (['opened', 'reopened', 'synchronize'].includes(payload.action)) {
     const uploader = await runUploaders(params, context, bundler)
-    await sendOutputForModifiedBundleInteraction(params, context, sources, bundler, uploader)
+    await updateModifiedBundleInteraction(params, context, sources, bundler, uploader)
   }
 }

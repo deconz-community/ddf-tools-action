@@ -59,8 +59,7 @@ interface Templates {
 }
 
 const templatesData: Record<keyof Templates, string> = {
-  'modified-bundles': `<!-- DDF-TOOLS-ACTION/modified-bundles -->
-Hey @{{ payload.pull_request.user.login }}, thanks for your pull request!
+  'modified-bundles': `Hey @{{ payload.pull_request.user.login }}, thanks for your pull request!
 
 {% if artifact.enabled %}
 > [!TIP]
@@ -110,8 +109,7 @@ Hey @{{ payload.pull_request.user.login }}, thanks for your pull request!
 <sub>{{ clock_emoji }} Updated for commit {{ payload.pull_request.head.sha }}</sub>
 `,
 
-  'merged-pr': `<!-- DDF-TOOLS-ACTION/merged-pr -->
-This pull request is now merged. The new DDF bundles have been uploaded to the store.
+  'merged-pr': `This pull request is now merged. The new DDF bundles have been uploaded to the store.
 
 ## DDF Bundles
 
@@ -135,29 +133,6 @@ This pull request is now merged. The new DDF bundles have been uploaded to the s
 
 const CLOCKS = [[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(hour => [`:clock${hour}:`, `:clock${hour}30:`]), ':duck:'].flat(5)
 
-/*
-export async function getExistingCommentsPR(
-  context: Context,
-) {
-  core.info('Getting existing comments on PR')
-  if (context.eventName !== 'pull_request')
-    throw new Error(`This action is supposed to run on pull_request event, we got a ${context.eventName} event.`)
-
-  const octokit = new Octokit()
-  const payload = context.payload as PullRequestEvent
-
-  const comments = await octokit.rest.issues.listComments({
-    ...context.repo,
-    issue_number: payload.pull_request.number,
-  })
-
-  return comments.data
-    .filter((comment) => {
-      return comment.user?.login === 'github-actions[bot]'
-    })
-}
-*/
-
 export async function parseTemplate<TemplateName extends keyof Templates>(
   params: InputsParams,
   name: TemplateName,
@@ -168,70 +143,27 @@ export async function parseTemplate<TemplateName extends keyof Templates>(
     .replace(/\n{3,}/g, '\n\n')
 }
 
-/*
-export async function updateClosedPRInteraction(
-  params: InputsParams,
-  context: Context,
-  sources: Sources,
-  bundler: BundlerResult,
-) {
-  core.info('Update closed PR Interaction')
+async function uploadInteraction(marker: string, issue_number: number, body: string) {
+  await fs.writeFile('interaction_data.json', JSON.stringify([{
+    mode: 'upsert',
+    marker,
+    issue_number,
+    body,
+  }]), 'utf8')
 
-  if (context.eventName !== 'pull_request')
-    throw new Error(`This action is supposed to run on pull_request event, we got a ${context.eventName} event.`)
+  const artifact = new DefaultArtifactClient()
 
-  const octokit = new Octokit()
-  const payload = context.payload as PullRequestEvent
-
-  const existingComments = await getExistingCommentsPR(context)
-
-  const existingComment = existingComments.find((comment) => {
-    return comment.body?.startsWith('<!-- DDF-TOOLS-ACTION/merged-pr -->')
-  })
-
-  const store_url = params.upload.store.toolboxUrl
-
-  const body = await parseTemplate(params, 'merged-pr', {
-    added_bundles: bundler.memoryBundles
-      .filter(bundle => bundle.status === 'added')
-      .map(bundle => ({
-        path: bundle.path.replace(`${params.source.path.devices}/`, ''),
-        product: bundle.bundle.data.desc.product,
-        hash: bytesToHex(bundle.bundle.data.hash!),
-        store_url,
-      })),
-    modified_bundles: bundler.memoryBundles
-      .filter(bundle => bundle.status === 'modified')
-      .map(bundle => ({
-        path: bundle.path.replace(`${params.source.path.devices}/`, ''),
-        product: bundle.bundle.data.desc.product,
-        hash: bytesToHex(bundle.bundle.data.hash!),
-        store_url,
-      })),
-    payload,
-    clock_emoji: CLOCKS[Math.floor(Math.random() * CLOCKS.length)],
-  })
-
-  if (existingComment !== undefined) {
-    core.info('Interaction, Update closed PR Interaction')
-    await octokit.rest.issues.updateComment({
-      ...context.repo,
-      comment_id: existingComment.id,
-      body,
-    })
-  }
-  else {
-    octokit.rest.issues.createComment({
-      ...context.repo,
-      issue_number: payload.pull_request.number,
-      body,
-    })
-  }
-  core.info('Update closed PR Interaction done')
+  await artifact.uploadArtifact(
+    'interaction_data',
+    ['interaction_data.json'],
+    '.',
+    {
+      retentionDays: 1,
+    },
+  )
 }
-*/
 
-export async function sendOutputForModifiedBundleInteraction(
+export async function updateModifiedBundleInteraction(
   params: InputsParams,
   context: Context,
   sources: Sources,
@@ -244,14 +176,6 @@ export async function sendOutputForModifiedBundleInteraction(
 
   // const octokit = new Octokit()
   const payload = context.payload as PullRequestEvent
-
-  /*
-  const existingComments = await getExistingCommentsPR(context)
-
-  const existingComment = existingComments.find((comment) => {
-    return comment.body?.startsWith('<!-- DDF-TOOLS-ACTION/modified-bundles -->')
-  })
-  */
 
   const retention_days = params.upload.artifact.enabled ? params.upload.artifact.retentionDays : 3
 
@@ -309,42 +233,48 @@ export async function sendOutputForModifiedBundleInteraction(
     },
   })
 
-  /*
-  if (existingComment !== undefined) {
-    core.info(`Update comment n°${existingComment.id}`)
-    await octokit.rest.issues.updateComment({
-      ...context.repo,
-      comment_id: existingComment.id,
-      body,
-    })
-  }
-  else {
-    core.info('Add a new comment')
-    await octokit.rest.issues.createComment({
-      ...context.repo,
-      issue_number: payload.pull_request.number,
-      body,
-    })
-  }
-  */
-
-  await fs.writeFile('interaction_data.json', JSON.stringify([{
-    mode: 'upsert',
-    marker: '<!-- DDF-TOOLS-ACTION/modified-bundles -->',
-    issue_number: payload.pull_request.number,
-    body,
-  }]), 'utf8')
-
-  const artifact = new DefaultArtifactClient()
-
-  await artifact.uploadArtifact(
-    'interaction_data',
-    ['interaction_data.json'],
-    '.',
-    {
-      retentionDays: 1,
-    },
-  )
+  await uploadInteraction('<!-- DDF-TOOLS-ACTION/modified-bundles -->', payload.pull_request.number, body)
 
   core.info('Update modified bundle interaction done')
+}
+
+export async function updateClosedPRInteraction(
+  params: InputsParams,
+  context: Context,
+  sources: Sources,
+  bundler: BundlerResult,
+) {
+  core.info('Update closed PR Interaction')
+
+  if (context.eventName !== 'pull_request')
+    throw new Error(`This action is supposed to run on pull_request event, we got a ${context.eventName} event.`)
+
+  const payload = context.payload as PullRequestEvent
+
+  const store_url = params.upload.store.toolboxUrl
+
+  const body = await parseTemplate(params, 'merged-pr', {
+    added_bundles: bundler.memoryBundles
+      .filter(bundle => bundle.status === 'added')
+      .map(bundle => ({
+        path: bundle.path.replace(`${params.source.path.devices}/`, ''),
+        product: bundle.bundle.data.desc.product,
+        hash: bytesToHex(bundle.bundle.data.hash!),
+        store_url,
+      })),
+    modified_bundles: bundler.memoryBundles
+      .filter(bundle => bundle.status === 'modified')
+      .map(bundle => ({
+        path: bundle.path.replace(`${params.source.path.devices}/`, ''),
+        product: bundle.bundle.data.desc.product,
+        hash: bytesToHex(bundle.bundle.data.hash!),
+        store_url,
+      })),
+    payload,
+    clock_emoji: CLOCKS[Math.floor(Math.random() * CLOCKS.length)],
+  })
+
+  await uploadInteraction('<!-- DDF-TOOLS-ACTION/merged-pr -->', payload.pull_request.number, body)
+
+  core.info('Update closed PR Interaction done')
 }
