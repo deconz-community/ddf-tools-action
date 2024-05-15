@@ -116,4 +116,10 @@ async function runPullRequest(params: InputsParams) {
     const uploader = await runUploaders(params, context, bundler)
     await sendOutputForModifiedBundleInteraction(params, context, sources, bundler, uploader)
   }
+
+  core.setOutput('interaction_data', [{
+    mode: 'upsert',
+    prefix: '<!-- DDF-TOOLS-ACTION/modified-bundles -->',
+    hello: 'world',
+  }])
 }
