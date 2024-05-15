@@ -54,12 +54,11 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
     core.debug(`[bundler] Bundling DDF ${ddfPath}`)
     try {
       let status: FileStatus = 'unchanged'
+
       const bundle = await buildFromFiles(
         `file://${source.path.generic}`,
         `file://${ddfPath}`,
         async (filePath) => {
-          core.info(`Getting getSource 2 for ${filePath.replace('file://', '')}`)
-
           const source = await sources.getSource(filePath.replace('file://', ''))
 
           if (source.metadata.status === 'unchanged' || source.metadata.status === 'missing')
@@ -98,6 +97,8 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
           const ddfc = JSON.parse(ddfcFile.data)
 
           if (typeof ddfc !== 'object' || ddfc === null) {
+            core.info(`Error 4 with file ${ddfPath}`)
+
             validationResult.push({
               error: new Error('Something went wrong while parsing the DDFC file'),
               path: ddfPath,
@@ -107,6 +108,7 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
           }
 
           if (bundler.validation.enforceUUID && ddfc.uuid === undefined) {
+            core.info(`Error 3 with file ${ddfPath}`)
             validationResult.push({
               error: new Error('UUID is not defined in the DDFC file'),
               path: ddfPath,
@@ -126,11 +128,14 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
 
           bundle.data.files
             .filter(file => file.data.length === 0)
-            .forEach(file => validationResult.push({
-              error: new Error('Empty or missing file'),
-              path: file.path,
-              data: '',
-            }))
+            .forEach((file) => {
+              core.info(`Error 2 with file ${file.path}`)
+              validationResult.push({
+                error: new Error('Empty or missing file'),
+                path: file.path,
+                data: '',
+              })
+            })
 
           validationResult.push(...validator.bulkValidate(
             // Generic files
@@ -138,6 +143,7 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
               .filter(file => file.data.length !== 0)
               .filter(file => file.type === 'JSON')
               .map((file) => {
+                core.info(`Error 1 with file ${file.path}`)
                 return {
                   path: file.path,
                   data: JSON.parse(file.data as string),
@@ -164,10 +170,8 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
           const errors: ValidationError[] = []
 
           await Promise.all(validationResult.map(async (error) => {
-            const resolvedPath = path.join(params.source.path.devices, error.path)
-            core.info(`Getting getSource 3 for ${resolvedPath}`)
-            const sourceFile = await sources.getSource(resolvedPath, false)
-            errors.push(...handleError(error.error, resolvedPath, await sourceFile.stringData))
+            const sourceFile = await sources.getSource(error.path, false)
+            errors.push(...handleError(error.error, error.path, await sourceFile.stringData))
           }))
 
           if (errors.length > 0) {
@@ -238,7 +242,6 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
     }
     catch (err) {
       core.error(`Error while creating bundle ${ddfPath}`)
-      core.info(`Getting getSource 4 for ${ddfPath}`)
       const fileSource = await sources.getSource(ddfPath, false)
       const errors = handleError(err, ddfPath, await fileSource.stringData)
       const filePath = ddfPath.replace(source.path.devices, '')
@@ -257,7 +260,6 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
     const validator = createValidator()
 
     const genericFiles = await Promise.all(sources.getGenericPaths().map(async (path) => {
-      core.info(`Getting getSource 5 for ${path}`)
       const source = await sources.getSource(path, false)
       return {
         path,
@@ -268,7 +270,6 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
     const validationResult = validator.bulkValidate(genericFiles, [])
 
     await Promise.all(validationResult.map(async (error) => {
-      core.info(`Getting getSource 6 for ${error.path}`)
       const source = await sources.getSource(error.path, false)
       const errors = handleError(error.error, error.path, await source.stringData)
       if (errors.length > 0) {

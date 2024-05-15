@@ -157,7 +157,6 @@ export async function getSources(params: InputsParams, context: Context) {
   // Load all the DDF sources
   await Promise.all(sourcePaths.map(async (sourcePath) => {
     const filePath = path.resolve(sourcePath)
-    core.info(`Getting getSource 7 for ${filePath}`)
     return getSource(filePath, false)
   }))
 
@@ -264,7 +263,6 @@ export async function getSourcesStatus(context: Context) {
 export async function removeDuplicateUUIDs(sources: Sources) {
   const uuids: Record<string, string[]> = {}
   await Promise.all(sources.getDDFPaths().map(async (ddfPath) => {
-    core.info(`Getting getSource 8 for ${ddfPath}`)
     const source = await sources.getSource(ddfPath, false)
     const decoded = await source.jsonData
     if ('uuid' in decoded && typeof decoded.uuid === 'string') {
@@ -282,7 +280,6 @@ export async function removeDuplicateUUIDs(sources: Sources) {
     core.startGroup(`Removing duplicate UUID ${uuid}`)
 
     const source_list = await Promise.all(paths.map((path) => {
-      core.info(`Getting getSource 9 for ${path}`)
       return sources.getSource(path, false)
     }))
     source_list.sort((a, b) => {
