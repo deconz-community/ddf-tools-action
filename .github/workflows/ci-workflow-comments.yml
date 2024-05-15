@@ -10,8 +10,14 @@ jobs:
   use_output:
     runs-on: ubuntu-latest
     steps:
-      - name: Use output
-        run: echo "${{ github.event.workflow_run }}"
+      - name: Use output interaction_data_pull_request
+        run: echo "${{ github.event.workflow_run.outputs.interaction_data_pull_request }}"
+
+      - name: Use output interaction_data_push
+        run: echo "${{ github.event.worflow_run.outputs.interaction_data_push }}"
+      
+      - name: Use output interaction_data_workflow_dispatch
+        run: echo "${{ github.event.workflow_run.outputs.interaction_data_workflow_dispatch }}"
 
       - uses: actions/github-script@v7
         id: my-script
