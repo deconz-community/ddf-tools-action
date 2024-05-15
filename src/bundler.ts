@@ -116,10 +116,7 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
           core.info(`Validating DDFC file ${ddfPath} with content${JSON.stringify(ddfc)}`)
 
           if (ddfc.ddfvalidate === false && !bundler.validation.strict) {
-            core.info(`[bundler] Skipping validation for bundle DDF ${ddfPath}`)
-
-            if (bundler.validation.strict)
-              core.error('Strict mode enabled and validation is disabled in the DDFC file', { file: ddfPath })
+            core.warning(`[bundler] Skipping validation for bundle DDF ${ddfPath}`)
 
             bundle.data.validation = {
               result: 'skipped',
@@ -142,7 +139,7 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
             // DDF file
             [
               {
-                path: bundle.data.name,
+                path: ddfPath,
                 data: ddfc,
               },
             ],
@@ -160,10 +157,9 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
           const errors: ValidationError[] = []
 
           await Promise.all(validationResult.map(async (error) => {
-            core.info(`Validation error for ${JSON.stringify(error)} `)
-            const realPath = bundle.data.name === error.path ? ddfPath : error.path
-            const sourceFile = await sources.getSource(realPath)
-            errors.push(...handleError(error.error, realPath, await sourceFile.stringData))
+            core.info(`Validation error for ${error.path} ${JSON.stringify(error)} `)
+            const sourceFile = await sources.getSource(error.path)
+            errors.push(...handleError(error.error, error.path, await sourceFile.stringData))
           }))
 
           if (errors.length > 0) {
