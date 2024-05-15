@@ -58,8 +58,8 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
         `file://${source.path.generic}`,
         `file://${ddfPath}`,
         async (filePath) => {
-          core.info(`Reading file: ${filePath.replace('file://', '')}`)
           const source = await sources.getSource(filePath.replace('file://', ''))
+          core.info(`Reading file: ${filePath.replace('file://', '')} with size : ${(await source.stringData).length}`)
 
           if (source.metadata.status === 'unchanged')
             return source

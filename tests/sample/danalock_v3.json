@@ -1,6 +1,7 @@
 {
   "schema": "devcap1.schema.json",
   "uuid": "36df5973-1a5f-497e-9b3d-0078a5178432",
+  "ddfvalidate": false,
   "manufacturername": [
     "Danalock",
     "Danalock"
@@ -23,6 +24,59 @@
       "items": [
         {
           "name": "attr/manufacturername"
+        },
+        {
+          "name": "attr/modelid"
+        },
+        {
+          "name": "attr/swversion",
+          "refresh.interval": 84000,
+          "read": {
+            "cl": "0x0000",
+            "at": "0x0006",
+            "ep": 1,
+            "fn": "zcl:attr"
+          },
+          "parse": {
+            "cl": "0x0000",
+            "at": "0x0006",
+            "ep": 1,
+            "eval": "Item.val = Attr.val",
+            "fn": "zcl:attr"
+          }
+        },
+        {
+          "name": "config/pending",
+          "public": false
+        },
+        {
+          "name": "config/checkin",
+          "awake": true
+        },
+        {
+          "name": "state/alert",
+          "default": "none"
+        },
+        {
+          "name": "state/reachable"
+        },
+        {
+          "name": "state/on",
+          "read": {
+            "cl": "0x0101",
+            "at": "0x0000",
+            "ep": 1,
+            "fn": "zcl:attr"
+          },
+          "parse": {
+            "cl": "0x0101",
+            "at": "0x0000",
+            "ep": 1,
+            "eval": "Item.val = (Attr.val === 1)",
+            "fn": "zcl:attr"
+          },
+          "refresh.interval": 600,
+          "awake": true
         }
       ]
     },
