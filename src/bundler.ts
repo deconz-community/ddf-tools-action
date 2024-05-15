@@ -131,6 +131,7 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
             bundle.data.files
               .filter(file => file.type === 'JSON')
               .map((file) => {
+                core.info(`Added generic file${file.path}`)
                 return {
                   path: file.path,
                   data: JSON.parse(file.data as string),
