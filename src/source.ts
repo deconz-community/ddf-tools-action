@@ -137,6 +137,8 @@ export async function getSources(params: InputsParams, context: Context) {
       core.error(`Error while reading file at ${filePath}`)
       core.error(String(error))
 
+      throw error
+
       const source = createSource<BundlerSourceMetadata>(
         new Blob([]),
         {
