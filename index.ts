@@ -1,7 +1,9 @@
 import path from 'node:path'
+import fs from 'node:fs/promises'
 import * as github from '@actions/github'
 import * as core from '@actions/core'
 import type { PullRequestEvent } from '@octokit/webhooks-types'
+import { DefaultArtifactClient } from '@actions/artifact'
 import type { InputsParams } from './src/input.js'
 import { getParams, logsParams } from './src/input.js'
 import { getSources } from './src/source.js'
@@ -117,9 +119,21 @@ async function runPullRequest(params: InputsParams) {
     await sendOutputForModifiedBundleInteraction(params, context, sources, bundler, uploader)
   }
 
-  core.setOutput('interaction_data', [{
+  await fs.writeFile('interaction_data.json', JSON.stringify([{
     mode: 'upsert',
     prefix: '<!-- DDF-TOOLS-ACTION/modified-bundles -->',
-    hello: 'world',
-  }])
+    issue_number: 5,
+    body: { hello: 'world' },
+  }]), 'utf8')
+
+  const artifact = new DefaultArtifactClient()
+
+  await artifact.uploadArtifact(
+    'interaction_data',
+    ['interaction_data.json'],
+    '.',
+    {
+      retentionDays: 1,
+    },
+  )
 }
