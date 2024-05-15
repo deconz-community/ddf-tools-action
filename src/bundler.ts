@@ -115,7 +115,7 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
 
           core.info(`Validating DDFC file ${ddfPath} with content${JSON.stringify(ddfc)}`)
 
-          if (ddfc.ddfvalidate === false && bundler.validation.strict) {
+          if (ddfc.ddfvalidate === false && !bundler.validation.strict) {
             core.info(`[bundler] Skipping validation for bundle DDF ${ddfPath}`)
 
             if (bundler.validation.strict)
