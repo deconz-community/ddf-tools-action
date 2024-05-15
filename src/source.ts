@@ -75,12 +75,17 @@ export async function getSources(params: InputsParams, context: Context) {
   )
 
   const getSourceMap = (filePath: string) => {
-    if (!filePath.endsWith('.json'))
+    if (!filePath.endsWith('.json')) {
+      core.info(`${filePath} is a misc file`)
       return misc
+    }
 
-    if (filePath.startsWith(params.source.path.generic))
+    if (filePath.startsWith(params.source.path.generic)) {
+      core.info(`${filePath} is a generic file because it's in the directory ${params.source.path.generic}`)
       return generic
+    }
 
+    core.info(`${filePath} is a ddf file`)
     return ddf
   }
 
