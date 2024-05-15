@@ -9,12 +9,6 @@
     "0x01",
     "0x0101"
   ],
-  "items": [
-    "config/lock",
-    "state/open",
-    "state/lockstate"
-  ],
-  "items_optional": [
-    "state/reachable"
-  ]
+  "items": [],
+  "items_optional": []
 }
