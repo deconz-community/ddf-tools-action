@@ -11,4 +11,4 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Use output
-        run: echo "${{ github.event.workflow_run.outputs.interaction_data }}"
+        run: echo "${{ github.event.workflow_run }}"

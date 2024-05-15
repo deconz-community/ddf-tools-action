@@ -108,4 +108,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     outputs:
-      interaction_data: ${{ steps.ddf_ci_pull_request.outputs.interaction_data }}
+      interaction_data_pull_request: ${{ steps.ddf_ci_pull_request.outputs.interaction_data }}
+      interaction_data_push: ${{ steps.ddf_ci_push.outputs.interaction_data }}
+      interaction_data_workflow_dispatch: ${{ steps.ddf_ci_workflow_dispatch.outputs.interaction_data }}
