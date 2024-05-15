@@ -79,6 +79,8 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
       // Anonymous function to use return and parent scope
       await (async () => {
         if (bundler.validation.enabled) {
+          core.debug(`[bundler] Validating bundle DDF ${ddfPath}`)
+
           const validator = createValidator()
           const validationResult: FileDefinitionWithError[] = []
 
@@ -93,6 +95,7 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
           }
 
           const ddfc = JSON.parse(ddfcFile.data)
+
           if (typeof ddfc !== 'object' || ddfc === null) {
             validationResult.push({
               error: new Error('Something went wrong while parsing the DDFC file'),
@@ -111,6 +114,8 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
           }
 
           if (ddfc.ddfvalidate === false && bundler.validation.strict) {
+            core.debug(`[bundler] Skipping validation for bundle DDF ${ddfPath}`)
+
             if (bundler.validation.strict)
               core.error('Strict mode enabled and validation is disabled in the DDFC file', { file: ddfPath })
 
@@ -141,6 +146,7 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
           ))
 
           if (validationResult.length === 0) {
+            core.debug(`[bundler] Validating success for bundle DDF ${ddfPath}`)
             bundle.data.validation = {
               result: 'success',
               version: validator.version,
@@ -162,6 +168,7 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
             validationErrors.push(...errors)
           }
 
+          core.debug(`[bundler] Validating done with errors ${ddfPath} with ${errors.length} errors;${JSON.stringify(errors)}`)
           bundle.data.validation = {
             result: 'error',
             version: validator.version,
@@ -169,6 +176,7 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
           }
         }
       })()
+      core.debug(`[bundler] End validation for ${ddfPath}`)
       // #endregion
 
       // #region Hash & Signatures
