@@ -84,6 +84,10 @@ inputs:
     description: Duration of the artifact in days
     default: '3'
 
+outputs:
+  interaction_data:
+    description: Comment data about the result of the action
+
 runs:
   using: node20
   main: dist/index.js

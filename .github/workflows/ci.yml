@@ -40,6 +40,7 @@ jobs:
 
       - name: Run DDF Workflow Dispatch
         if: github.event_name == 'workflow_dispatch'
+        id: ddf_ci_workflow_dispatch
         uses: ./
         with:
           mode: manual
@@ -58,6 +59,7 @@ jobs:
 
       - name: Run DDF Push Action
         if: github.event_name == 'push'
+        id: ddf_ci_push
         uses: ./
         with:
           mode: push
@@ -74,6 +76,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Run DDF Pull Request Interaction
+        id: ddf_ci_pull_request
         if: github.event_name == 'pull_request'
         uses: ./
         with:
@@ -103,3 +106,6 @@ jobs:
           tag_name: ${{ format('v{0}', fromJSON(steps.changesets.outputs.publishedPackages)[0].version) }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    outputs:
+      interaction_data: ${{ steps.ddf_ci_pull_request.outputs.interaction_data }}
