@@ -1,3 +1,5 @@
+name: Continuous integration Add comments
+
 on:
   workflow_run:
     workflows: ["Continuous integration"]
