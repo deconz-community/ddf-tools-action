@@ -11,44 +11,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/github-script@v7
-        id: get_artifact
-        
-        with:
-          script: |
-            let allArtifacts = await github.rest.actions.listWorkflowRunArtifacts({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              run_id: context.payload.workflow_run.id,
-            });
+        name: 'Comment on PR'
 
-            let matchArtifact = allArtifacts.data.artifacts.filter((artifact) => {
-              return artifact.name == "interaction_data"
-            })[0];
-            
-            if(matchArtifact == undefined) {
-              console.log("No artifact found")
-              core.setOutput('stop', 'true');
-            }
-
-            let download = await github.rest.actions.downloadArtifact({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                artifact_id: matchArtifact.id,
-                archive_format: 'zip',
-            });
-            let fs = require('fs');
-            fs.writeFileSync(`${process.env.GITHUB_WORKSPACE}/interaction_data.zip`, Buffer.from(download.data));
-
-
-
-#      - name: 'Unzip artifact'
-#        if: ${{ steps.get_artifact.outputs.stop != 'true' }}
-#        run: unzip interaction_data.zip
-
-
-      - name: 'Comment on PR'
-        if: ${{ steps.get_artifact.outputs.stop != 'true' }}
-        uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
@@ -75,14 +39,38 @@ jobs:
               }
             }
 
-
             async function run(){
-              await exec.exec('unzip interaction_data.zip');
-
-              
               const {owner, repo} = context.repo;
 
-              let interaction_data = JSON.parse(fs.readFileSync('./interaction_data.json'));
+              core.info("Fetching artifacts list")
+              let allArtifacts = await github.rest.actions.listWorkflowRunArtifacts({
+                owner,
+                repo,
+                run_id: context.payload.workflow_run.id,
+              });
+
+              let matchArtifact = allArtifacts.data.artifacts.filter((artifact) => {
+                return artifact.name == "interaction_data"
+              })[0];
+              
+              if(matchArtifact == undefined) {
+                core.info("No artifact found, stopping the action")
+                return
+              }
+
+              core.info("Downloading artifact #"+matchArtifact.id)
+              let download = await github.rest.actions.downloadArtifact({
+                  owner,
+                  repo,
+                  artifact_id: matchArtifact.id,
+                  archive_format: 'zip',
+              });
+              
+              fs.writeFileSync(`${process.env.GITHUB_WORKSPACE}/interaction_data.zip`, Buffer.from(download.data));
+
+              await exec.exec(`unzip ${process.env.GITHUB_WORKSPACE}/interaction_data.zip`);
+
+              let interaction_data = JSON.parse(fs.readFileSync(${process.env.GITHUB_WORKSPACE}/interaction_data.json`));
 
               await Promise.all(interaction_data.map(async (data) => {
                 const {mode, marker, issue_number, body} = data;
@@ -96,7 +84,4 @@ jobs:
             }
 
             run();
-
-            
-
 
