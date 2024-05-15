@@ -58,19 +58,25 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
         `file://${source.path.generic}`,
         `file://${ddfPath}`,
         async (filePath) => {
-          core.info(`Reading file: ${filePath.replace('file://', '')}`)
-          const source = await sources.getSource(filePath.replace('file://', ''))
-          core.info(`Reading file: ${filePath.replace('file://', '')} with size : ${(await source.stringData).length}`)
+          try {
+            core.info(`Reading file: ${filePath.replace('file://', '')}`)
+            const source = await sources.getSource(filePath.replace('file://', ''))
+            core.info(`Reading file: ${filePath.replace('file://', '')} with size : ${(await source.stringData).length}`)
 
-          if (source.metadata.status === 'unchanged')
+            if (source.metadata.status === 'unchanged')
+              return source
+
+            if (filePath === ddfPath && source.metadata.status === 'added')
+              status = 'added'
+            else if (status === 'unchanged')
+              status = 'modified'
+
             return source
-
-          if (filePath === ddfPath && source.metadata.status === 'added')
-            status = 'added'
-          else if (status === 'unchanged')
-            status = 'modified'
-
-          return source
+          }
+          catch (err) {
+            core.error(`Error while reading file: ${filePath.replace('file://', '')}`)
+            return null
+          }
         },
       )
 
