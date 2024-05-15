@@ -285,6 +285,8 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
       const validationResult = validator.bulkValidate(genericFiles, [])
 
       await Promise.all(validationResult.map(async (error) => {
+        core.info(`Validation error for ${error.path}`)
+
         const source = await sources.getSource(error.path)
         const errors = handleError(error.error, error.path, await source.stringData)
         if (errors.length > 0) {
