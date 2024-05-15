@@ -164,9 +164,10 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
           const errors: ValidationError[] = []
 
           await Promise.all(validationResult.map(async (error) => {
+            const resolvedPath = path.resolve(error.path)
             core.info(`Getting getSource 3 for ${error.path}`)
-            const sourceFile = await sources.getSource(error.path, false)
-            errors.push(...handleError(error.error, error.path, await sourceFile.stringData))
+            const sourceFile = await sources.getSource(resolvedPath, false)
+            errors.push(...handleError(error.error, resolvedPath, await sourceFile.stringData))
           }))
 
           if (errors.length > 0) {
