@@ -261,6 +261,7 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
 
       // Re validate constants file because he was chopped before
       const constantsPath = path.join(params.source.path.generic, 'constants.json')
+      core.info(`Re-validating constants file at ${constantsPath}`)
       genericFiles.push({
         path: constantsPath,
         data: JSON.parse(await (await sources.getSource(constantsPath)).stringData),
@@ -272,6 +273,7 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
         .filter(path => !unused.generic.includes(path))
         .map(async (path) => {
           try {
+            core.info(`Loading generic file ${path}`)
             const source = await sources.getSource(path)
             const data = JSON.parse(await source.stringData)
             validator.loadGeneric(data)
@@ -285,12 +287,12 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
       const validationResult = validator.bulkValidate(genericFiles, [])
 
       await Promise.all(validationResult.map(async (error) => {
-        core.info(`Validation error for ${error.path}`)
+        core.info(`134 Validation error for ${error.path}`)
 
         const source = await sources.getSource(error.path)
         const errors = handleError(error.error, error.path, await source.stringData)
         if (errors.length > 0) {
-          core.error('Validation error for unused files')
+          core.error('46546 Validation error for unused files')
           logsErrors(params.source.path.root, errors)
           validationErrors.push(...errors)
         }
