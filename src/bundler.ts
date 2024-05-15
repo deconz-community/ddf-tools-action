@@ -97,8 +97,6 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
           const ddfc = JSON.parse(ddfcFile.data)
 
           if (typeof ddfc !== 'object' || ddfc === null) {
-            core.info(`Error 4 with file ${ddfPath}`)
-
             validationResult.push({
               error: new Error('Something went wrong while parsing the DDFC file'),
               path: ddfPath,
@@ -108,7 +106,6 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
           }
 
           if (bundler.validation.enforceUUID && ddfc.uuid === undefined) {
-            core.info(`Error 3 with file ${ddfPath}`)
             validationResult.push({
               error: new Error('UUID is not defined in the DDFC file'),
               path: ddfPath,
@@ -129,7 +126,6 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
           bundle.data.files
             .filter(file => file.data.length === 0)
             .forEach((file) => {
-              core.info(`Error 2 with file ${file.path}`)
               validationResult.push({
                 error: new Error('Empty or missing file'),
                 path: file.path,
@@ -144,7 +140,6 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
               .filter(file => file.type === 'JSON')
               .map((file) => {
                 const realPath = path.join(path.dirname(path.dirname(ddfPath)), file.path)
-                core.info(`Error 1 with file ${realPath}`)
                 return {
                   path: realPath,
                   data: JSON.parse(file.data as string),
