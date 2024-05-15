@@ -250,13 +250,7 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
     if (bundler.validation.enabled) {
       core.info('Validating unused files')
 
-      // const unused = sources.getUnusedFiles()
-
-      const unused = {
-        ddf: sources.getDDFPaths(),
-        generic: sources.getGenericPaths(),
-        misc: sources.getMiscFilesPaths(),
-      }
+      const unused = sources.getUnusedFiles()
 
       const validator = createValidator()
 

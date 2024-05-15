@@ -173,18 +173,18 @@ export async function getSources(params: InputsParams, context: Context) {
       }
 
       ddf.forEach((source, filePath) => {
-        if (source.metadata.useCount === 0)
-          unused.ddf.push(filePath)
+        // if (source.metadata.useCount === 0)
+        unused.ddf.push(filePath)
       })
 
       generic.forEach((source, filePath) => {
-        if (source.metadata.useCount === 0)
-          unused.generic.push(filePath)
+        // if (source.metadata.useCount === 0)
+        unused.generic.push(filePath)
       })
 
       misc.forEach((source, filePath) => {
-        if (source.metadata.useCount === 0)
-          unused.misc.push(filePath)
+        // if (source.metadata.useCount === 0)
+        unused.misc.push(filePath)
       })
 
       return unused
