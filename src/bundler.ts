@@ -133,12 +133,10 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
           bundle.data.files
             .filter(file => file.data.length === 0)
             .forEach(file => validationResult.push({
-              error: new Error('Empty file'),
+              error: new Error('Empty or missing file'),
               path: file.path,
               data: '',
             }))
-
-          core.error(`[LOLO] ${bundle.data.files.filter(file => file.data.length === 0).length} empty files`)
 
           validationResult.push(...validator.bulkValidate(
             // Generic files
@@ -177,13 +175,10 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
           }))
 
           if (errors.length > 0) {
-            const filePath = ddfPath.replace(source.path.devices, '')
-            core.error(`[TITI] Bundle validation error for DDF at ${filePath}`)
             logsErrors(params.source.path.root, errors)
             validationErrors.push(...errors)
           }
 
-          core.debug(`[bundler] Validating done with errors ${ddfPath} with ${errors.length} errors;${JSON.stringify(errors)}`)
           bundle.data.validation = {
             result: 'error',
             version: validator.version,
