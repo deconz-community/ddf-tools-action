@@ -167,7 +167,10 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
           }))
 
           if (errors.length > 0) {
+            core.error(`${errors.length} validation errors for DDF ${ddfPath}`)
+            core.startGroup(`Errors details for DDF ${ddfPath}`)
             logsErrors(params.source.path.root, errors)
+            core.endGroup()
             validationErrors.push(...errors)
           }
 
@@ -286,13 +289,13 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
       const validationResult = validator.bulkValidate(genericFiles, [])
 
       await Promise.all(validationResult.map(async (error) => {
-        core.error(`[TUTU] Validation error for ${error.path}`)
-
         const source = await sources.getSource(error.path)
         const errors = handleError(error.error, error.path, await source.stringData)
         if (errors.length > 0) {
-          core.error('[TATA] Validation error for unused files')
+          core.error(`${errors.length} validation errors for unused generic file at ${error.path}`)
+          core.startGroup(`Errors details for unused generic file at ${error.path}`)
           logsErrors(params.source.path.root, errors)
+          core.endGroup()
           validationErrors.push(...errors)
         }
       }))
