@@ -74,19 +74,24 @@ jobs:
             }
 
 
-            const {owner, repo} = context.repo;
+            async function run(){
+              
+              const {owner, repo} = context.repo;
 
-            let interaction_data = JSON.parse(fs.readFileSync('./interaction_data.json'));
+              let interaction_data = JSON.parse(fs.readFileSync('./interaction_data.json'));
 
-            interaction_data.foreach((data)=>{
-              const {mode, marker, issue_number, body} = data;
+              await Promise.all(interaction_data.map(async (data) => {
+                const {mode, marker, issue_number, body} = data;
 
-              if(mode === 'upsert'){
-                upsertComment(owner, repo, issue_number, marker, body);
-              }else if(mode === 'insert'){
-                github.rest.issues.createComment({issue_number, body, owner, repo});
-              }
-            });
+                if(mode === 'upsert'){
+                  await upsertComment(owner, repo, issue_number, marker, body);
+                }else if(mode === 'insert'){
+                  await github.rest.issues.createComment({issue_number, body, owner, repo});
+                }
+              }));
+            }
+
+            run();
 
             
 
