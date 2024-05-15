@@ -154,7 +154,9 @@ export async function getSources(params: InputsParams, context: Context) {
 
   // Load all the DDF sources
   await Promise.all(sourcePaths.map(async (sourcePath) => {
+    core.info(`Loading source sourcePath=${sourcePath}`)
     const filePath = path.resolve(sourcePath)
+    core.info(`Loading source filePath=${filePath}`)
     return getSource(filePath, true)
   }))
 
