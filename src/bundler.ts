@@ -113,8 +113,10 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
             })
           }
 
+          core.info(`Validating DDFC file ${ddfPath} with content${JSON.stringify(ddfc)}`)
+
           if (ddfc.ddfvalidate === false && bundler.validation.strict) {
-            core.debug(`[bundler] Skipping validation for bundle DDF ${ddfPath}`)
+            core.info(`[bundler] Skipping validation for bundle DDF ${ddfPath}`)
 
             if (bundler.validation.strict)
               core.error('Strict mode enabled and validation is disabled in the DDFC file', { file: ddfPath })
@@ -126,6 +128,7 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
             return
           }
 
+          core.info(`Starting bulkValidate DDFC file ${ddfPath}`)
           validationResult.push(...validator.bulkValidate(
             // Generic files
             bundle.data.files
@@ -212,6 +215,7 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
         const encoded = encode(bundle)
         const data = Buffer.from(await encoded.arrayBuffer())
         fs.mkdir(path.dirname(outputPath), { recursive: true })
+        core.debug(`[bundler] Writing bundle to disk ${outputPath}`)
         await fs.writeFile(outputPath, data)
         diskBundles.push({
           path: outputPath,
