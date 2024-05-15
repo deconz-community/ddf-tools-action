@@ -86,6 +86,24 @@ async function runPush(params: InputsParams) {
 
   if (params.upload.artifact.enabled || params.upload.store.enabled)
     await runUploaders(params, context, bundlerResult)
+
+  await fs.writeFile('interaction_data.json', JSON.stringify([{
+    mode: 'upsert',
+    prefix: '<!-- DDF-TOOLS-ACTION/modified-bundles -->',
+    issue_number: 5,
+    body: { hello: 'world' },
+  }]), 'utf8')
+
+  const artifact = new DefaultArtifactClient()
+
+  await artifact.uploadArtifact(
+    'interaction_data',
+    ['interaction_data.json'],
+    '.',
+    {
+      retentionDays: 1,
+    },
+  )
 }
 
 async function runPullRequest(params: InputsParams) {
@@ -118,22 +136,4 @@ async function runPullRequest(params: InputsParams) {
     const uploader = await runUploaders(params, context, bundler)
     await sendOutputForModifiedBundleInteraction(params, context, sources, bundler, uploader)
   }
-
-  await fs.writeFile('interaction_data.json', JSON.stringify([{
-    mode: 'upsert',
-    prefix: '<!-- DDF-TOOLS-ACTION/modified-bundles -->',
-    issue_number: 5,
-    body: { hello: 'world' },
-  }]), 'utf8')
-
-  const artifact = new DefaultArtifactClient()
-
-  await artifact.uploadArtifact(
-    'interaction_data',
-    ['interaction_data.json'],
-    '.',
-    {
-      retentionDays: 1,
-    },
-  )
 }
