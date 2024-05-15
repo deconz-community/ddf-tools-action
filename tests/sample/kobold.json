@@ -4,6 +4,7 @@
   "manufacturername": "dresden elektronik",
   "modelid": "Kobold",
   "product": "Kobold",
+  "md:known_issues": ["../notes/kobold.md"],
   "sleeper": false,
   "supportsMgmtBind": true,
   "status": "Gold",
