@@ -133,12 +133,7 @@ export async function getSources(params: InputsParams, context: Context) {
       sourceMap.set(filePath, source)
       return source
     }
-    catch (error) {
-      core.error(`Error while reading file at ${filePath}`)
-      core.error(String(error))
-
-      throw error
-
+    catch {
       const source = createSource<BundlerSourceMetadata>(
         new Blob([]),
         {
@@ -148,7 +143,6 @@ export async function getSources(params: InputsParams, context: Context) {
           status: 'missing',
         },
       )
-
       sourceMap.set(filePath, source)
       return source
     }

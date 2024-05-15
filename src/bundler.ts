@@ -170,14 +170,14 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
           const errors: ValidationError[] = []
 
           await Promise.all(validationResult.map(async (error) => {
-            core.info(`Validation error for ${error.path} ${JSON.stringify(error)} `)
+            core.info(`[TOTO] Validation error for ${error.path} ${JSON.stringify(error)} `)
             const sourceFile = await sources.getSource(error.path)
             errors.push(...handleError(error.error, error.path, await sourceFile.stringData))
           }))
 
           if (errors.length > 0) {
             const filePath = ddfPath.replace(source.path.devices, '')
-            core.error(`Bundle validation error for DDF at ${filePath}`)
+            core.error(`[TITI] Bundle validation error for DDF at ${filePath}`)
             logsErrors(params.source.path.root, errors)
             validationErrors.push(...errors)
           }
@@ -299,12 +299,12 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
       const validationResult = validator.bulkValidate(genericFiles, [])
 
       await Promise.all(validationResult.map(async (error) => {
-        core.info(`134 Validation error for ${error.path}`)
+        core.error(`[TUTU] Validation error for ${error.path}`)
 
         const source = await sources.getSource(error.path)
         const errors = handleError(error.error, error.path, await source.stringData)
         if (errors.length > 0) {
-          core.error('46546 Validation error for unused files')
+          core.error('[TATA] Validation error for unused files')
           logsErrors(params.source.path.root, errors)
           validationErrors.push(...errors)
         }
