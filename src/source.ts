@@ -75,17 +75,12 @@ export async function getSources(params: InputsParams, context: Context) {
   )
 
   const getSourceMap = (filePath: string) => {
-    if (!filePath.endsWith('.json')) {
-      core.info(`${filePath} is a misc file`)
+    if (!filePath.endsWith('.json'))
       return misc
-    }
 
-    if (filePath.startsWith(params.source.path.generic)) {
-      core.info(`${filePath} is a generic file because it's in the directory ${params.source.path.generic}`)
+    if (filePath.startsWith(params.source.path.generic))
       return generic
-    }
 
-    core.info(`${filePath} is a ddf file`)
     return ddf
   }
 
@@ -115,7 +110,6 @@ export async function getSources(params: InputsParams, context: Context) {
   }
 
   const getSource = async (filePath: string, updateCount = true): Promise<Source<BundlerSourceMetadata>> => {
-    core.info(`Getting SourceMap for ${filePath}`)
     const sourceMap = getSourceMap(filePath)
 
     const source = sourceMap.get(filePath)
