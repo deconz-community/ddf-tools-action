@@ -143,9 +143,10 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
               .filter(file => file.data.length !== 0)
               .filter(file => file.type === 'JSON')
               .map((file) => {
-                core.info(`Error 1 with file ${file.path}`)
+                const realPath = path.join(path.dirname(ddfPath), file.path)
+                core.info(`Error 1 with file ${realPath}`)
                 return {
-                  path: file.path,
+                  path: realPath,
                   data: JSON.parse(file.data as string),
                 }
               }),
