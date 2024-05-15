@@ -330,7 +330,7 @@ export async function sendOutputForModifiedBundleInteraction(
 
   await fs.writeFile('interaction_data.json', JSON.stringify([{
     mode: 'upsert',
-    prefix: '<!-- DDF-TOOLS-ACTION/modified-bundles -->',
+    marker: '<!-- DDF-TOOLS-ACTION/modified-bundles -->',
     issue_number: payload.pull_request.number,
     body,
   }]), 'utf8')

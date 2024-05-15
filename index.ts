@@ -89,9 +89,9 @@ async function runPush(params: InputsParams) {
 
   await fs.writeFile('interaction_data.json', JSON.stringify([{
     mode: 'upsert',
-    prefix: '<!-- DDF-TOOLS-ACTION/modified-bundles -->',
-    issue_number: 5,
-    body: { hello: 'world' },
+    marker: '<!-- DDF-TOOLS-ACTION/modified-bundles -->',
+    issue_number: 21,
+    body: JSON.stringify({ hello: 'world' }),
   }]), 'utf8')
 
   const artifact = new DefaultArtifactClient()
