@@ -1,5 +1,11 @@
 # @deconz-community/ddf-tools-action
 
+## 1.1.4
+
+### Patch Changes
+
+- ff18f32: Disable unused file warning
+
 ## 1.1.3
 
 ### Patch Changes
