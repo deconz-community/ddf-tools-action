@@ -295,7 +295,7 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
           core.startGroup('Unused files')
           inGroup = true
         }
-        core.warning(`${message}:${file}`, { file })
+        core.info(`${message}:${file.replace(source.path.root, '')}`)
       })
     })
     if (inGroup)
