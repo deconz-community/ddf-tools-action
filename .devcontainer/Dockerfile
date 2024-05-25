@@ -1,5 +1,6 @@
-ARG VARIANT="18-bullseye"
-FROM mcr.microsoft.com/vscode/devcontainers/typescript-node:${VARIANT}
+ARG VARIANT="20-bullseye"
+
+FROM mcr.microsoft.com/devcontainers/typescript-node:${VARIANT}
 
 # Install basic development tools
 RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
