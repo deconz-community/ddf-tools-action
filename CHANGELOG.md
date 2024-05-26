@@ -1,5 +1,11 @@
 # @deconz-community/ddf-tools-action
 
+## 1.1.5
+
+### Patch Changes
+
+- c50bfdf: Update deps
+
 ## 1.1.4
 
 ### Patch Changes
