@@ -1,5 +1,11 @@
 # @deconz-community/ddf-tools-action
 
+## 1.1.6
+
+### Patch Changes
+
+- 41139e9: Update deps
+
 ## 1.1.5
 
 ### Patch Changes
