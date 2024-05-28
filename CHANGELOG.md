@@ -1,5 +1,12 @@
 # @deconz-community/ddf-tools-action
 
+## 1.1.7
+
+### Patch Changes
+
+- 9ed4b8e: Fix directory creation for output bundles
+- c1fc2c8: Update deps
+
 ## 1.1.6
 
 ### Patch Changes
