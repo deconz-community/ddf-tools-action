@@ -232,12 +232,13 @@ export async function getSourcesStatus(context: Context) {
     pull_number: payload.pull_request.number,
   })
 
-  const files: RestEndpointMethodTypes['pulls']['listFiles']['response'] = await octokit.paginate(options) as any
+  // TODO: Check if there is a better way to type that
+  const files = await octokit.paginate(options) as RestEndpointMethodTypes['pulls']['listFiles']['response']['data']
 
   if (core.isDebug())
     core.debug(`Pull request files list = ${JSON.stringify(files, null, 2)}`)
 
-  files.data.forEach((file) => {
+  files.forEach((file) => {
     const filePath = path.resolve(file.filename)
     switch (file.status) {
       case 'modified':
