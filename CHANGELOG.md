@@ -1,5 +1,11 @@
 # @deconz-community/ddf-tools-action
 
+## 1.1.8
+
+### Patch Changes
+
+- 38498b4: Add support for PR with more than 100 modified files
+
 ## 1.1.7
 
 ### Patch Changes
