@@ -4,6 +4,7 @@ import glob from 'fast-glob'
 import { type Source, type SourceMetadata, createSource } from '@deconz-community/ddf-bundler'
 import type { Context } from '@actions/github/lib/context.js'
 import type { PullRequestEvent } from '@octokit/webhooks-types'
+import type { RestEndpointMethodTypes } from '@octokit/action'
 import { Octokit } from '@octokit/action'
 import { simpleGit } from 'simple-git'
 
@@ -226,11 +227,12 @@ export async function getSourcesStatus(context: Context) {
 
   const fileStatus: Map<string, FileStatus> = new Map()
 
-  const files = await octokit.rest.pulls.listFiles({
+  const options = octokit.rest.pulls.listFiles.endpoint.merge({
     ...context.repo,
-    per_page: MAX_MODIFIED_FILES_IN_PR,
     pull_number: payload.pull_request.number,
   })
+
+  const files: RestEndpointMethodTypes['pulls']['listFiles']['response'] = await octokit.paginate(options) as any
 
   if (core.isDebug())
     core.debug(`Pull request files list = ${JSON.stringify(files, null, 2)}`)
