@@ -246,16 +246,6 @@ export async function updateClosedPRInteraction(
 ) {
   core.info('Update closed PR Interaction')
 
-  const octokit = new Octokit()
-
-  const result = await octokit.rest.repos.listPullRequestsAssociatedWithCommit({
-    owner: context.repo.owner,
-    repo: context.repo.repo,
-    commit_sha: context.sha,
-  })
-
-  const pullRequestIds = result.data.map(pr => pr.number)
-
   const payload = context.payload as PushEvent
 
   const store_url = params.upload.store.toolboxUrl
@@ -281,8 +271,8 @@ export async function updateClosedPRInteraction(
     clock_emoji: CLOCKS[Math.floor(Math.random() * CLOCKS.length)],
   })
 
-  for (const pullRequestId of pullRequestIds) {
-    await uploadInteractionAsArtifact('<!-- DDF-TOOLS-ACTION/merged-pr -->', pullRequestId, body)
+  for (const id of params.context.related_pr) {
+    await uploadInteractionAsArtifact('<!-- DDF-TOOLS-ACTION/merged-pr -->', id, body)
   }
 
   core.info('Update closed PR Interaction done')

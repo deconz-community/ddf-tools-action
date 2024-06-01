@@ -2,7 +2,6 @@ import path from 'node:path'
 import * as github from '@actions/github'
 import * as core from '@actions/core'
 import type { PullRequestEvent } from '@octokit/webhooks-types'
-import { Octokit } from '@octokit/action'
 import type { InputsParams } from './src/input.js'
 import { getParams, logsParams } from './src/input.js'
 import { getSources } from './src/source.js'
@@ -21,10 +20,10 @@ catch (error) {
 }
 
 async function run() {
-  const params = await getParams()
-  logsParams(params)
-
   const context = github.context
+  const params = await getParams(context)
+
+  logsParams(params)
 
   if (core.isDebug()) {
     core.startGroup('Debug context')

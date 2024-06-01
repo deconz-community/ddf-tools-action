@@ -20,8 +20,6 @@ export type BundlerSourceMetadata = SourceMetadata & {
 
 export type Sources = Awaited<ReturnType<typeof getSources>>
 
-export const MAX_MODIFIED_FILES_IN_PR = 2000
-
 async function findGitDirectory(filePath: string): Promise<string | undefined> {
   const directoryPath = path.dirname(filePath)
 
@@ -50,9 +48,7 @@ export async function getSources(params: InputsParams, context: Context) {
 
   const git = simpleGit(gitDirectory)
 
-  const fileStatus = context.eventName === 'pull_request'
-    ? await getSourcesStatus(context)
-    : new Map<string, FileStatus>()
+  const fileStatus = await getSourcesStatusForPr(context, params.context.related_pr)
 
   const getStatus = (filePath: string) => {
     const status = fileStatus.get(filePath)
@@ -209,50 +205,42 @@ export async function getSources(params: InputsParams, context: Context) {
   }
 }
 
-export async function getSourcesStatus(context: Context) {
-  if (context.eventName !== 'pull_request')
-    throw new Error('This action is not supposed to run on pull_request event')
-
-  const payload = context.payload as PullRequestEvent
-
-  if (payload.pull_request.changed_files > MAX_MODIFIED_FILES_IN_PR) {
-    throw new Error(
-      `Too many files changed in this PR. `
-      + `When I made this tool I did not think that was `
-      + `possible to have more than ${MAX_MODIFIED_FILES_IN_PR} files modified`,
-    )
-  }
+export async function getSourcesStatusForPr(context: Context, pull_numbers: number[]) {
+  if (pull_numbers.length === 0)
+    return new Map()
 
   const octokit = new Octokit()
 
   const fileStatus: Map<string, FileStatus> = new Map()
 
-  const options = octokit.rest.pulls.listFiles.endpoint.merge({
-    ...context.repo,
-    pull_number: payload.pull_request.number,
-  })
+  for (const pull_number of pull_numbers) {
+    const options = octokit.rest.pulls.listFiles.endpoint.merge({
+      ...context.repo,
+      pull_number,
+    })
 
-  // TODO: Check if there is a better way to type that
-  const files = await octokit.paginate(options) as RestEndpointMethodTypes['pulls']['listFiles']['response']['data']
+    // TODO: Check if there is a better way to type that
+    const files = await octokit.paginate(options) as RestEndpointMethodTypes['pulls']['listFiles']['response']['data']
 
-  if (core.isDebug())
-    core.debug(`Pull request files list = ${JSON.stringify(files, null, 2)}`)
+    if (core.isDebug())
+      core.debug(`Pull request files list = ${JSON.stringify(files, null, 2)}`)
 
-  files.forEach((file) => {
-    const filePath = path.resolve(file.filename)
-    switch (file.status) {
-      case 'modified':
-      case 'added':
-      case 'removed':
-        fileStatus.set(filePath, file.status)
-        break
-      case 'renamed':
-        fileStatus.set(filePath, 'unchanged')
-        break
-      default:
-        throw new Error(`Unknown file status: ${file.status}`)
-    }
-  })
+    files.forEach((file) => {
+      const filePath = path.resolve(file.filename)
+      switch (file.status) {
+        case 'modified':
+        case 'added':
+        case 'removed':
+          fileStatus.set(filePath, file.status)
+          break
+        case 'renamed':
+          fileStatus.set(filePath, 'unchanged')
+          break
+        default:
+          throw new Error(`Unknown file status: ${file.status}`)
+      }
+    })
+  }
 
   return fileStatus
 }

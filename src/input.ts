@@ -4,6 +4,9 @@ import { tmpdir } from 'node:os'
 import * as core from '@actions/core'
 import { hexToBytes } from '@noble/hashes/utils'
 import { secp256k1 } from '@noble/curves/secp256k1'
+import type { Context } from '@actions/github/lib/context'
+import { Octokit } from '@octokit/action'
+import type { PullRequestEvent } from '@octokit/webhooks-types'
 
 export interface InputsParams {
   mode: 'push' | 'manual' | 'pull_request'
@@ -12,15 +15,17 @@ export interface InputsParams {
   bundler: BundlerInputs
   validation: BundlerValidationInputs
   upload: UploadInputs
+  context: ContextInputs
 }
 
-export async function getParams(): Promise<InputsParams> {
+export async function getParams(context: Context): Promise<InputsParams> {
   const params: Partial<InputsParams> = {
     mode: getMode(),
     ci: await getCIInputs(),
     source: await getSourceInputs(),
     bundler: await getBundlerInputs(),
     upload: await getUploadInputs(),
+    context: await getContextInputs(context),
   }
 
   assertInputs(params as InputsParams)
@@ -269,6 +274,45 @@ async function getUploadInputs(): Promise<UploadInputs> {
     })(),
   }
 }
+// #endregion
+
+// #region Context
+type ContextInputs = Awaited<ReturnType<typeof getContextInputs>>
+export const MAX_MODIFIED_FILES_IN_PR = 2000
+
+async function getContextInputs(context: Context) {
+  const octokit = new Octokit()
+
+  const related_pr: number[] = []
+
+  if (context.eventName === 'pull_request') {
+    const payload = context.payload as PullRequestEvent
+
+    if (payload.pull_request.changed_files > MAX_MODIFIED_FILES_IN_PR) {
+      throw new Error(
+        `Too many files changed in this PR. `
+        + `When I made this tool I did not think that was `
+        + `possible to have more than ${MAX_MODIFIED_FILES_IN_PR} files modified`,
+      )
+    }
+
+    related_pr.push(payload.pull_request.number)
+  }
+  else if (context.eventName === 'push') {
+    const result = await octokit.rest.repos.listPullRequestsAssociatedWithCommit({
+      owner: context.repo.owner,
+      repo: context.repo.repo,
+      commit_sha: context.sha,
+    })
+
+    result.data.forEach(pr => related_pr.push(pr.number))
+  }
+
+  return {
+    related_pr,
+  }
+}
+
 // #endregion
 
 // #region Utils
