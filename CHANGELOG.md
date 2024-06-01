@@ -1,5 +1,11 @@
 # @deconz-community/ddf-tools-action
 
+## 1.1.9
+
+### Patch Changes
+
+- 22f2cf8: Fix invalid bundle hash for merged PR
+
 ## 1.1.8
 
 ### Patch Changes
