@@ -2,6 +2,7 @@ import path from 'node:path'
 import * as github from '@actions/github'
 import * as core from '@actions/core'
 import type { PullRequestEvent } from '@octokit/webhooks-types'
+import { Octokit } from '@octokit/action'
 import type { InputsParams } from './src/input.js'
 import { getParams, logsParams } from './src/input.js'
 import { getSources } from './src/source.js'
@@ -84,6 +85,18 @@ async function runPush(params: InputsParams) {
 
   if (params.upload.artifact.enabled || params.upload.store.enabled)
     await runUploaders(params, context, bundlerResult)
+
+  const octokit = new Octokit()
+
+  const result = await octokit.rest.repos.listPullRequestsAssociatedWithCommit({
+    owner: context.repo.owner,
+    repo: context.repo.repo,
+    commit_sha: context.sha,
+  })
+
+  core.info(`Found ${result.data.length} pull requests associated with the commit`)
+  core.info(`Pull requests: ${result.data.map(pr => pr.number).join(', ')}`)
+  core.info(JSON.stringify(result, null, 2))
 }
 
 async function runPullRequest(params: InputsParams) {
