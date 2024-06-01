@@ -7,7 +7,7 @@ name: Continuous integration
 
 on:
   pull_request:
-    types: [opened, synchronize, closed]
+    types: [opened, synchronize]
   push:
     branches:
       - main
@@ -67,6 +67,7 @@ jobs:
           source-ignore-pattern: '**/*([a-z_])(invalid|unused).(json|md)'
           auto-commit-uuid: 'true'
           bundler-validation-enforce-uuid: 'false'
+          upload-store-enabled: true
           upload-store-url: ${{ secrets.UPLOAD_URL }}
           upload-store-token: ${{ secrets.UPLOAD_TOKEN }}
           # upload-artifact-enabled: true

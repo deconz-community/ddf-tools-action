@@ -86,17 +86,7 @@ async function runPush(params: InputsParams) {
   if (params.upload.artifact.enabled || params.upload.store.enabled)
     await runUploaders(params, context, bundlerResult)
 
-  const octokit = new Octokit()
-
-  const result = await octokit.rest.repos.listPullRequestsAssociatedWithCommit({
-    owner: context.repo.owner,
-    repo: context.repo.repo,
-    commit_sha: context.sha,
-  })
-
-  core.info(`Found ${result.data.length} pull requests associated with the commit`)
-  core.info(`Pull requests: ${result.data.map(pr => pr.number).join(', ')}`)
-  core.info(JSON.stringify(result, null, 2))
+  await updateClosedPRInteraction(params, context, sources, bundlerResult)
 }
 
 async function runPullRequest(params: InputsParams) {
@@ -117,13 +107,7 @@ async function runPullRequest(params: InputsParams) {
     return
   }
 
-  if (payload.action === 'closed' && payload.pull_request.merged === true) {
-    // TODO: handle the case where the UUID was missing and a new one was generated
-    // In that case the hash will be different
-
-    await updateClosedPRInteraction(params, context, sources, bundler)
-  }
-  else if (['opened', 'reopened', 'synchronize'].includes(payload.action)) {
+  if (['opened', 'reopened', 'synchronize'].includes(payload.action)) {
     const uploader = await runUploaders(params, context, bundler)
     await updateModifiedBundleInteraction(params, context, sources, bundler, uploader)
   }

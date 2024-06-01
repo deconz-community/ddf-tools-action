@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises'
 import type { Context } from '@actions/github/lib/context'
 import { Octokit } from '@octokit/action'
-import type { PullRequestEvent } from '@octokit/webhooks-types'
+import type { PullRequestEvent, PushEvent } from '@octokit/webhooks-types'
 import { Liquid } from 'liquidjs'
 import * as core from '@actions/core'
 import type { BundleData } from '@deconz-community/ddf-bundler'
@@ -51,7 +51,7 @@ interface Templates {
     }
   }
   'merged-pr': {
-    payload: PullRequestEvent
+    payload: PushEvent
     added_bundles: UploadedBundleInfo[]
     modified_bundles: UploadedBundleInfo[]
     clock_emoji: string
@@ -127,7 +127,7 @@ const templatesData: Record<keyof Templates, string> = {
 {% endfor %}
 {% endif %}
 
-<sub>{{ clock_emoji }} Updated for commit {{ payload.pull_request.merge_commit_sha }}</sub>
+<sub>{{ clock_emoji }} Updated for commit {{ payload.head_commit.id }}</sub>
 `,
 } as const
 
@@ -143,7 +143,7 @@ export async function parseTemplate<TemplateName extends keyof Templates>(
     .replace(/\n{3,}/g, '\n\n')
 }
 
-async function uploadInteraction(marker: string, issue_number: number, body: string) {
+async function uploadInteractionAsArtifact(marker: string, issue_number: number, body: string) {
   await fs.writeFile('interaction_data.json', JSON.stringify([{
     mode: 'upsert',
     marker,
@@ -233,7 +233,7 @@ export async function updateModifiedBundleInteraction(
     },
   })
 
-  await uploadInteraction('<!-- DDF-TOOLS-ACTION/modified-bundles -->', payload.pull_request.number, body)
+  await uploadInteractionAsArtifact('<!-- DDF-TOOLS-ACTION/modified-bundles -->', payload.pull_request.number, body)
 
   core.info('Update modified bundle interaction done')
 }
@@ -246,10 +246,17 @@ export async function updateClosedPRInteraction(
 ) {
   core.info('Update closed PR Interaction')
 
-  if (context.eventName !== 'pull_request')
-    throw new Error(`This action is supposed to run on pull_request event, we got a ${context.eventName} event.`)
+  const octokit = new Octokit()
 
-  const payload = context.payload as PullRequestEvent
+  const result = await octokit.rest.repos.listPullRequestsAssociatedWithCommit({
+    owner: context.repo.owner,
+    repo: context.repo.repo,
+    commit_sha: context.sha,
+  })
+
+  const pullRequestIds = result.data.map(pr => pr.number)
+
+  const payload = context.payload as PushEvent
 
   const store_url = params.upload.store.toolboxUrl
 
@@ -274,7 +281,9 @@ export async function updateClosedPRInteraction(
     clock_emoji: CLOCKS[Math.floor(Math.random() * CLOCKS.length)],
   })
 
-  await uploadInteraction('<!-- DDF-TOOLS-ACTION/merged-pr -->', payload.pull_request.number, body)
+  for (const pullRequestId of pullRequestIds) {
+    await uploadInteractionAsArtifact('<!-- DDF-TOOLS-ACTION/merged-pr -->', pullRequestId, body)
+  }
 
   core.info('Update closed PR Interaction done')
 }
