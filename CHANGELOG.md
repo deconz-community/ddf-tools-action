@@ -1,5 +1,11 @@
 # @deconz-community/ddf-tools-action
 
+## 1.2.0
+
+### Minor Changes
+
+- e293984: Update bundle extension to .ddb
+
 ## 1.1.9
 
 ### Patch Changes
