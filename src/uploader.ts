@@ -51,7 +51,7 @@ export async function runStoreUploader(params: InputsParams, context: Context, b
   }
   else {
     core.info(`Looking for bundles at ${storeParams.inputPath}`)
-    const fileList = await glob(`${storeParams.inputPath}**/*.ddf`, { onlyFiles: true })
+    const fileList = await glob(`${storeParams.inputPath}**/*.ddb`, { onlyFiles: true })
     core.info(`Found ${fileList.length} bundles on the disk to upload`)
     for (const file of fileList) {
       const fileContent = await readFile(file)
@@ -115,16 +115,16 @@ export async function runStoreUploader(params: InputsParams, context: Context, b
         }
         else if (value.code === 'bundle_hash_already_exists') {
           resultCount.alreadyExists++
-          core.info(`DDF Bundle '${bundleName}' already exists on the store. Do nothing.`)
+          core.info(`DDB file '${bundleName}' already exists on the store. Do nothing.`)
         }
         else {
           resultCount.failed++
-          core.error(`Failed to upload DDF bundle '${bundleName}' with code ${value.code}: ${value.message}`)
+          core.error(`Failed to upload DDB file '${bundleName}' with code ${value.code}: ${value.message}`)
         }
       })
     }
     catch (error) {
-      core.setFailed('Failed to upload DDF bundles, please check logs for more information')
+      core.setFailed('Failed to upload DDB files, please check logs for more information')
       throw logsErrors(params.source.path.root, handleError(error))
     }
   }
@@ -134,7 +134,7 @@ export async function runStoreUploader(params: InputsParams, context: Context, b
   core.info(`Uploaded ${resultCount.success} new bundles, ${resultCount.alreadyExists} already exists and ${resultCount.failed} failed`)
 
   if (resultCount.failed > 0)
-    throw core.setFailed('Failed to upload DDF bundles, please check logs for more information')
+    throw core.setFailed('Failed to upload DDB files, please check logs for more information')
 
   return resultCount
   // #endregion

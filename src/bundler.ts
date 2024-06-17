@@ -79,7 +79,7 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
       // Anonymous function to use return and parent scope
       await (async () => {
         if (bundler.validation.enabled) {
-          core.debug(`[bundler] Validating bundle DDF ${ddfPath}`)
+          core.debug(`[bundler] Validating DDB file ${ddfPath}`)
 
           const validator = createValidator()
           const validationResult: FileDefinitionWithError[] = []
@@ -98,7 +98,7 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
 
           if (typeof ddfc !== 'object' || ddfc === null) {
             validationResult.push({
-              error: new Error('Something went wrong while parsing the DDFC file'),
+              error: new Error('Something went wrong while parsing the DDF file'),
               path: ddfPath,
               data: ddfc,
             })
@@ -107,7 +107,7 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
 
           if (bundler.validation.enforceUUID && ddfc.uuid === undefined) {
             validationResult.push({
-              error: new Error('UUID is not defined in the DDFC file'),
+              error: new Error('UUID is not defined in the DDF file'),
               path: ddfPath,
               data: ddfc,
             })
@@ -153,7 +153,7 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
           ))
 
           if (validationResult.length === 0) {
-            core.debug(`[bundler] Validating success for bundle DDF ${ddfPath}`)
+            core.debug(`[bundler] Validating success for DDB file ${ddfPath}`)
             bundle.data.validation = {
               result: 'success',
               version: validator.version,
@@ -169,8 +169,8 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
           }))
 
           if (errors.length > 0) {
-            core.error(`${errors.length} validation errors for DDF ${ddfPath}`)
-            core.startGroup(`Errors details for DDF ${ddfPath}`)
+            core.error(`${errors.length} validation errors for DDB ${ddfPath}`)
+            core.startGroup(`Errors details for DDB ${ddfPath}`)
             logsErrors(params.source.path.root, errors)
             core.endGroup()
             validationErrors.push(...errors)
@@ -211,7 +211,7 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
         else if (bundler.outputFileFormat === 'hash')
           parsedPath.name = bytesToHex(bundle.data.hash)
 
-        parsedPath.ext = '.ddf'
+        parsedPath.ext = '.ddb'
         parsedPath.base = `${parsedPath.name}${parsedPath.ext}`
 
         const outputPath = path.resolve(path.join(bundlerOutputPath, path.format(parsedPath)))

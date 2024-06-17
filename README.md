@@ -4,7 +4,7 @@
 
 ### Single action
 - Validate DDF files
-- Bundle DDF files
+- Bundle DDF files to DDB files
 - Upload bundles as github artifact
 - Upload bundles to the store
 

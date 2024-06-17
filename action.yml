@@ -30,7 +30,7 @@ inputs:
     description: Enable bundling of DDF files
     default: 'true'
   bundler-output-path:
-    description: output path of bundled DDF files if not provided will keep them in memory before uploading if enabled
+    description: output path of bundled DDB files if not provided will keep them in memory before uploading if enabled
   bundler-output-directory-format:
     description: 'Format of the output directory structure (source-tree, flat)'
     default: flat
@@ -45,7 +45,7 @@ inputs:
 
   # # Bundler Validation options
   bundler-validation-enabled:
-    description: Enable validation of DDF files
+    description: Enable validation of DDB files
     default: 'true'
   bundler-validation-strict:
     description: Validate all files even if they have the ddfvalidate option to false
@@ -59,12 +59,12 @@ inputs:
 
   # # Upload options
   upload-store-enabled:
-    description: Enable upload of DDF bundles
+    description: Enable upload of DDB files
     default: 'false'
   upload-store-input-path:
-    description: input path of DDF bundles to upload if not provided will use the output bundles of the bundler
+    description: input path of DDB files to upload if not provided will use the output bundles of the bundler
   upload-store-url:
-    description: URL to upload the DDF bundles to
+    description: URL to upload the DDB files to
   upload-store-token:
     description: Token to use for the upload
   upload-store-status:

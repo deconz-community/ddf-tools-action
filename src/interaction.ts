@@ -67,7 +67,7 @@ const templatesData: Record<keyof Templates, string> = {
 > ![Relative expire date](https://img.shields.io/date/{{ artifact.expires_at }}?label=file%20expiration)
 {% endif %}
 
-## DDF Bundles changes
+## DDB changes
 
 {% if added_bundles.size > 0 %}
 ### Added
@@ -109,9 +109,9 @@ const templatesData: Record<keyof Templates, string> = {
 <sub>{{ clock_emoji }} Updated for commit {{ payload.pull_request.head.sha }}</sub>
 `,
 
-  'merged-pr': `This pull request is now merged. The new DDF bundles have been uploaded to the store.
+  'merged-pr': `This pull request is now merged. The new DDB files have been uploaded to the store.
 
-## DDF Bundles
+## DDB Files
 
 {% if added_bundles.size > 0 %}
 ### Added
