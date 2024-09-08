@@ -31,3 +31,6 @@
 ### UUID Managments
 - Add a UUID with a commit on PR
 - If can't generate a UUID, add a message on the PR
+
+## TODO List
+- Do a better handling for https://github.com/dresden-elektronik/deconz-rest-plugin/pull/7847
