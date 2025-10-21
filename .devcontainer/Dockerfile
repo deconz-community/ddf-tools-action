@@ -1,4 +1,4 @@
-ARG VARIANT="20-bullseye"
+ARG VARIANT="22-trixie"
 
 FROM mcr.microsoft.com/devcontainers/typescript-node:${VARIANT}
 

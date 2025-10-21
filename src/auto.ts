@@ -1,9 +1,9 @@
+import type { InputsParams } from './input'
 import * as core from '@actions/core'
+import * as github from '@actions/github'
 import { createDirectus, rest, staticToken } from '@directus/sdk'
 import { Octokit } from '@octokit/action'
-import * as github from '@actions/github'
-import type { InputsParams } from './input'
-import { type Sources, removeDuplicateUUIDs } from './source'
+import { removeDuplicateUUIDs, type Sources } from './source'
 
 export async function autoCommitUuid(params: InputsParams, sources: Sources) {
   if (params.upload.store.url === undefined || params.upload.store.token === undefined)

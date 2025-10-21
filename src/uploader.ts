@@ -1,13 +1,13 @@
+import type { Context } from '@actions/github/lib/context'
+import type { BundlerResult } from './bundler'
+import type { InputsParams } from './input'
 import { readFile } from 'node:fs/promises'
-import { encode } from '@deconz-community/ddf-bundler'
+import { DefaultArtifactClient } from '@actions/artifact'
 import * as core from '@actions/core'
+import { encode } from '@deconz-community/ddf-bundler'
 import { createDirectus, rest, serverHealth, staticToken } from '@directus/sdk'
 import { glob } from 'fast-glob'
-import { DefaultArtifactClient } from '@actions/artifact'
-import type { Context } from '@actions/github/lib/context'
-import type { InputsParams } from './input'
 import { handleError, logsErrors } from './errors'
-import type { BundlerResult } from './bundler'
 
 type UploadResponse = Record<string, {
   success: true

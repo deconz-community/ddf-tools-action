@@ -1,16 +1,15 @@
-import fs from 'node:fs/promises'
 import type { Context } from '@actions/github/lib/context'
-import { Octokit } from '@octokit/action'
-import type { PullRequestEvent, PushEvent } from '@octokit/webhooks-types'
-import { Liquid } from 'liquidjs'
-import * as core from '@actions/core'
 import type { BundleData } from '@deconz-community/ddf-bundler'
-import { bytesToHex } from '@noble/hashes/utils'
-import { DefaultArtifactClient } from '@actions/artifact'
+import type { PullRequestEvent, PushEvent } from '@octokit/webhooks-types'
 import type { BundlerResult } from './bundler'
 import type { InputsParams } from './input'
-import type { UploaderResult } from './uploader'
 import type { Sources } from './source'
+import type { UploaderResult } from './uploader'
+import fs from 'node:fs/promises'
+import { DefaultArtifactClient } from '@actions/artifact'
+import * as core from '@actions/core'
+import { bytesToHex } from '@noble/hashes/utils.js'
+import { Liquid } from 'liquidjs'
 
 interface ModifiedBundleInfo {
   path: string
@@ -212,11 +211,9 @@ export async function updateModifiedBundleInteraction(
           ? bundle.bundle.data.validation.errors.map(error => error.message)
           : [],
       })),
-    deleted_bundles: sources.getUnusedFiles().ddf
-      .filter(path => path.startsWith(params.source.path.devices))
-      .map(path => ({
-        path: path.replace(`${params.source.path.devices}/`, ''),
-      })),
+    deleted_bundles: sources.getUnusedFiles().ddf.filter(path => path.startsWith(params.source.path.devices)).map(path => ({
+      path: path.replace(`${params.source.path.devices}/`, ''),
+    })),
     payload,
     clock_emoji: CLOCKS[Math.floor(Math.random() * CLOCKS.length)],
     artifact: {

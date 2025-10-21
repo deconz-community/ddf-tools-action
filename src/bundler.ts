@@ -1,16 +1,16 @@
-import path from 'node:path'
-import fs from 'node:fs/promises'
-import { Buffer } from 'node:buffer'
-import { tmpdir } from 'node:os'
-import * as core from '@actions/core'
 import type { Bundle, ValidationError } from '@deconz-community/ddf-bundler'
-import { buildFromFiles, createSignature, encode, generateHash } from '@deconz-community/ddf-bundler'
 import type { FileDefinitionWithError } from '@deconz-community/ddf-validator'
-import { createValidator } from '@deconz-community/ddf-validator'
-import { bytesToHex } from '@noble/hashes/utils'
-import { secp256k1 } from '@noble/curves/secp256k1'
 import type { InputsParams } from './input'
 import type { FileStatus, Sources } from './source'
+import { Buffer } from 'node:buffer'
+import fs from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import path from 'node:path'
+import * as core from '@actions/core'
+import { buildFromFiles, createSignature, encode, generateHash } from '@deconz-community/ddf-bundler'
+import { createValidator } from '@deconz-community/ddf-validator'
+import { bytesToHex } from '@noble/hashes/utils.js'
+import { getPublicKey } from '@noble/secp256k1'
 import { handleError, logsErrors } from './errors'
 
 export interface MemoryBundle {
@@ -191,7 +191,7 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
 
       bundler.signKeys.forEach((privateKey) => {
         bundle.data.signatures.push({
-          key: secp256k1.getPublicKey(privateKey),
+          key: getPublicKey(privateKey),
           signature: createSignature(bundle.data.hash!, privateKey),
         })
       })

@@ -1,12 +1,12 @@
-import path from 'node:path'
+import type { Context } from '@actions/github/lib/context'
+import type { PullRequestEvent } from '@octokit/webhooks-types'
 import fs from 'node:fs/promises'
 import { tmpdir } from 'node:os'
+import path from 'node:path'
 import * as core from '@actions/core'
-import { hexToBytes } from '@noble/hashes/utils'
-import { secp256k1 } from '@noble/curves/secp256k1'
-import type { Context } from '@actions/github/lib/context'
+import { hexToBytes } from '@noble/hashes/utils.js'
+import { getPublicKey } from '@noble/secp256k1'
 import { Octokit } from '@octokit/action'
-import type { PullRequestEvent } from '@octokit/webhooks-types'
 
 export interface InputsParams {
   mode: 'push' | 'manual' | 'pull_request'
@@ -37,7 +37,7 @@ export function logsParams(params: InputsParams) {
   core.startGroup(`Current mode : ${params.mode}`)
   const cloneParam = structuredClone(params)
   if (cloneParam.bundler.enabled)
-    cloneParam.bundler.signKeys = Array(cloneParam.bundler.signKeys.length).fill('***')
+    cloneParam.bundler.signKeys = Array.from({ length: cloneParam.bundler.signKeys.length }).fill(Uint8Array.from([0])) as Uint8Array[]
 
   if (cloneParam.upload.store.enabled) {
     cloneParam.upload.store.url = '***'
@@ -157,7 +157,7 @@ async function getBundlerInputs(): Promise<BundlerInputs> {
   try {
     signKeys = getArrayInput('bundler-sign-keys').map(hexToBytes)
     signKeys.forEach((key) => {
-      secp256k1.getPublicKey(key)
+      getPublicKey(key)
     })
   }
   catch (e) {

@@ -1,15 +1,14 @@
+import type { Context } from '@actions/github/lib/context.js'
+import type { RestEndpointMethodTypes } from '@octokit/action'
+import type { InputsParams } from './input.js'
 import fs from 'node:fs/promises'
 import path from 'node:path'
-import glob from 'fast-glob'
-import { type Source, type SourceMetadata, createSource } from '@deconz-community/ddf-bundler'
-import type { Context } from '@actions/github/lib/context.js'
-import type { PullRequestEvent } from '@octokit/webhooks-types'
-import type { RestEndpointMethodTypes } from '@octokit/action'
-import { Octokit } from '@octokit/action'
-import { simpleGit } from 'simple-git'
-
 import * as core from '@actions/core'
-import type { InputsParams } from './input.js'
+import { createSource, type Source, type SourceMetadata } from '@deconz-community/ddf-bundler'
+import { Octokit } from '@octokit/action'
+
+import glob from 'fast-glob'
+import { simpleGit } from 'simple-git'
 
 export type FileStatus = 'added' | 'removed' | 'modified' | 'unchanged' | 'missing'
 
@@ -62,8 +61,8 @@ export async function getSources(params: InputsParams, context: Context) {
     params.source.path.generic.startsWith(params.source.path.devices)
       ? `${params.source.path.devices}/${params.source.pattern.search}`
       : [
-        `${params.source.path.generic}/${params.source.pattern.search}`,
-        `${params.source.path.devices}/${params.source.pattern.search}`,
+          `${params.source.path.generic}/${params.source.pattern.search}`,
+          `${params.source.path.devices}/${params.source.pattern.search}`,
         ],
     {
       ignore: params.source.pattern.ignore ? [params.source.pattern.ignore] : [],

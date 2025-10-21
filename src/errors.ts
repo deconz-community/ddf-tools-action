@@ -1,9 +1,8 @@
-import { ZodError } from 'zod'
-import { visit } from 'jsonc-parser'
+import type { ValidationError } from '@deconz-community/ddf-bundler'
 import * as core from '@actions/core'
 
-import type { ValidationError } from '@deconz-community/ddf-bundler'
-import type { InputsParams } from './input'
+import { visit } from 'jsonc-parser'
+import { ZodError } from 'zod'
 
 export function handleError(error: ZodError | Error | unknown, file?: string, fileContent?: string): ValidationError[] {
   if (typeof error === 'object' && error !== null && 'errors' in error && Array.isArray(error.errors))
