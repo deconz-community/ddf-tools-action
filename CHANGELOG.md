@@ -1,5 +1,11 @@
 # @deconz-community/ddf-tools-action
 
+## 1.3.1
+
+### Patch Changes
+
+- ca3988a: Update dependencies
+
 ## 1.3.0
 
 ### Minor Changes
