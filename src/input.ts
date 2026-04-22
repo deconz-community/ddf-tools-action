@@ -1,4 +1,4 @@
-import type { Context } from '@actions/github/lib/context'
+import type { context as githubContext } from '@actions/github'
 import type { PullRequestEvent } from '@octokit/webhooks-types'
 import fs from 'node:fs/promises'
 import { tmpdir } from 'node:os'
@@ -7,6 +7,8 @@ import * as core from '@actions/core'
 import { hexToBytes } from '@noble/hashes/utils.js'
 import { getPublicKey } from '@noble/secp256k1'
 import { Octokit } from '@octokit/action'
+
+type Context = typeof githubContext
 
 export interface InputsParams {
   mode: 'push' | 'manual' | 'pull_request'

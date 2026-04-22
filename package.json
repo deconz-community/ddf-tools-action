@@ -37,7 +37,7 @@
     "@actions/core": "^3.0.1",
     "@actions/github": "^9.1.1",
     "@deconz-community/ddf-bundler": "^0.34.0",
-    "@deconz-community/ddf-validator": "^2.36.0",
+    "@deconz-community/ddf-validator": "^2.36.1",
     "@directus/sdk": "^21.2.2",
     "@noble/curves": "^2.2.0",
     "@noble/hashes": "^2.2.0",

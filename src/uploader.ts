@@ -1,4 +1,4 @@
-import type { Context } from '@actions/github/lib/context'
+import type { context as githubContext } from '@actions/github'
 import type { BundlerResult } from './bundler'
 import type { InputsParams } from './input'
 import { readFile } from 'node:fs/promises'
@@ -8,6 +8,8 @@ import { encode } from '@deconz-community/ddf-bundler'
 import { createDirectus, rest, serverHealth, staticToken } from '@directus/sdk'
 import { glob } from 'fast-glob'
 import { handleError, logsErrors } from './errors'
+
+type Context = typeof githubContext
 
 type UploadResponse = Record<string, {
   success: true

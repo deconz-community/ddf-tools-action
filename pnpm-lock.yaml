@@ -21,8 +21,8 @@ importers:
         specifier: ^0.34.0
         version: 0.34.0
       '@deconz-community/ddf-validator':
-        specifier: ^2.36.0
-        version: 2.36.0
+        specifier: ^2.36.1
+        version: 2.36.1
       '@directus/sdk':
         specifier: ^21.2.2
         version: 21.2.2
@@ -333,8 +333,8 @@ packages:
   '@deconz-community/ddf-bundler@0.34.0':
     resolution: {integrity: sha512-aPH2O8Tz7/KFLQ4FtLpbkDoj+asVBFBiGJZH0Vpyx9gtBNlVkzGF+nikc3FsxLqrkoI5lSB4Eu06smvQnW0Vdw==}
 
-  '@deconz-community/ddf-validator@2.36.0':
-    resolution: {integrity: sha512-QR9eVvXtvLtcxfqLzGsbZXaJHvLq0TB4JQjzY3BslBxIiZLAw+b/3M8Rb9juEe6vr7m/SrLJCMklzudhJyvs7g==}
+  '@deconz-community/ddf-validator@2.36.1':
+    resolution: {integrity: sha512-iGz+BOFu7thJq92yfRy6/wkJdnXvEJa+4L1lcL4mtHf90Jz+C4Z5Lk2801JGN3o+J+C0iKx6L2/qL3+m2GKXaQ==}
     engines: {node: '>=16.0.0', pnpm: '>=8.6.8'}
 
   '@directus/sdk@21.2.2':
@@ -4256,7 +4256,7 @@ snapshots:
       '@noble/curves': 2.2.0
       '@noble/hashes': 2.2.0
 
-  '@deconz-community/ddf-validator@2.36.0':
+  '@deconz-community/ddf-validator@2.36.1':
     dependencies:
       zod: 4.3.6
 

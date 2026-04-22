@@ -1,4 +1,4 @@
-import type { Context } from '@actions/github/lib/context'
+import type { context as githubContext } from '@actions/github'
 import type { BundleData } from '@deconz-community/ddf-bundler'
 import type { PullRequestEvent, PushEvent } from '@octokit/webhooks-types'
 import type { BundlerResult } from './bundler'
@@ -10,6 +10,8 @@ import { DefaultArtifactClient } from '@actions/artifact'
 import * as core from '@actions/core'
 import { bytesToHex } from '@noble/hashes/utils.js'
 import { Liquid } from 'liquidjs'
+
+type Context = typeof githubContext
 
 interface ModifiedBundleInfo {
   path: string

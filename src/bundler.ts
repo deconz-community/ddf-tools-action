@@ -13,6 +13,122 @@ import { bytesToHex } from '@noble/hashes/utils.js'
 import { getPublicKey } from '@noble/secp256k1'
 import { handleError, logsErrors } from './errors'
 
+const BUNDLER_CONCURRENCY = 8
+
+type ParsedValidationFile = {
+  path: string
+  data: Record<string, unknown>
+}
+
+type GlobalValidationState = {
+  errorsByPath: Map<string, ValidationError[]>
+  skippedDDFPaths: Set<string>
+  version: string
+}
+
+async function parseValidationFile(sources: Sources, filePath: string): Promise<ParsedValidationFile | FileDefinitionWithError> {
+  const source = await sources.getSource(filePath, false)
+  const rawData = await source.stringData
+
+  try {
+    const data = JSON.parse(rawData)
+
+    if (typeof data !== 'object' || data === null) {
+      return {
+        error: new Error('Something went wrong while parsing the DDF file'),
+        path: filePath,
+        data,
+      }
+    }
+
+    return {
+      path: filePath,
+      data,
+    }
+  }
+  catch (error) {
+    return {
+      error: error as Error,
+      path: filePath,
+      data: null,
+    }
+  }
+}
+
+async function createGlobalValidationState(params: InputsParams, sources: Sources, validationErrors: ValidationError[]): Promise<GlobalValidationState> {
+  const { bundler } = params
+
+  const validator = createValidator()
+  const errorsByPath: Map<string, ValidationError[]> = new Map()
+  const skippedDDFPaths: Set<string> = new Set()
+  const validationResult: FileDefinitionWithError[] = []
+
+  core.info('Pre-validating source files')
+
+  const genericFiles = await Promise.all(sources.getGenericPaths().map(filePath => parseValidationFile(sources, filePath)))
+  const ddfFiles = await Promise.all(sources.getDDFPaths().map(filePath => parseValidationFile(sources, filePath)))
+
+  const parsedGenericFiles: ParsedValidationFile[] = []
+  genericFiles.forEach((file) => {
+    if ('error' in file)
+      validationResult.push(file)
+    else
+      parsedGenericFiles.push(file)
+  })
+
+  const parsedDDFFiles: ParsedValidationFile[] = []
+  ddfFiles.forEach((file) => {
+    if ('error' in file) {
+      validationResult.push(file)
+      return
+    }
+
+    if (bundler.enabled && bundler.validation.enabled){
+      if (file.data.ddfvalidate === false && !bundler.validation.strict) {
+        skippedDDFPaths.add(file.path)
+        return
+      }
+
+      if (bundler.validation.enforceUUID && file.data.uuid === undefined) {
+        validationResult.push({
+          error: new Error('UUID is not defined in the DDF file'),
+          path: file.path,
+          data: file.data,
+        })
+      }
+    }
+
+    parsedDDFFiles.push(file)
+  })
+
+  validationResult.push(...validator.bulkValidate(parsedGenericFiles, parsedDDFFiles))
+
+  await Promise.all(validationResult.map(async (validationError) => {
+    const source = await sources.getSource(validationError.path, false)
+    const handledErrors = handleError(validationError.error, validationError.path, await source.stringData)
+    if (handledErrors.length === 0)
+      return
+
+    const currentErrors = errorsByPath.get(validationError.path) ?? []
+    currentErrors.push(...handledErrors)
+    errorsByPath.set(validationError.path, currentErrors)
+  }))
+
+  errorsByPath.forEach((errors, filePath) => {
+    core.error(`${errors.length} validation errors for source file at ${filePath}`)
+    core.startGroup(`Errors details for source file at ${filePath}`)
+    logsErrors(params.source.path.root, errors)
+    core.endGroup()
+    validationErrors.push(...errors)
+  })
+
+  return {
+    errorsByPath,
+    skippedDDFPaths,
+    version: validator.version,
+  }
+}
+
 export interface MemoryBundle {
   bundle: ReturnType<typeof Bundle>
   path: string
@@ -48,234 +164,164 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
       ? await fs.mkdtemp(path.join(tmpdir(), 'ddf-bundler'))
       : undefined)
 
+  const validationState = bundler.validation.enabled
+    ? await createGlobalValidationState(params, sources, validationErrors)
+    : undefined
+
   core.info(`Bundler output path:${bundlerOutputPath ?? 'Memory'}`)
 
-  await Promise.all(sources.getDDFPaths().map(async (ddfPath) => {
-    core.debug(`[bundler] Bundling DDF ${ddfPath}`)
-    try {
-      let status: FileStatus = 'unchanged'
+  const ddfPaths = sources.getDDFPaths()
+  let processedBundles = 0
 
-      const bundle = await buildFromFiles(
-        `file://${source.path.generic}`,
-        `file://${ddfPath}`,
-        async (filePath) => {
-          const source = await sources.getSource(filePath.replace('file://', ''))
+  for (let index = 0; index < ddfPaths.length; index += BUNDLER_CONCURRENCY) {
+    const batch = ddfPaths.slice(index, index + BUNDLER_CONCURRENCY)
 
-          if (source.metadata.status === 'unchanged' || source.metadata.status === 'missing')
-            return source
+    await Promise.all(batch.map(async (ddfPath) => {
+      core.debug(`[bundler] Bundling DDF ${ddfPath}`)
+      try {
+        let status: FileStatus = 'unchanged'
 
-          if (filePath === ddfPath && source.metadata.status === 'added')
-            status = 'added'
-          else if (status === 'unchanged')
-            status = 'modified'
+        const bundle = await buildFromFiles(
+          `file://${source.path.generic}`,
+          `file://${ddfPath}`,
+          async (filePath) => {
+            const currentSource = await sources.getSource(filePath.replace('file://', ''))
 
-          return source
-        },
-      )
+            if (currentSource.metadata.status === 'unchanged' || currentSource.metadata.status === 'missing')
+              return currentSource
 
-      core.debug(`[bundler] Bundle created for DDF ${ddfPath} with status ${status}`)
+            if (filePath === ddfPath && currentSource.metadata.status === 'added')
+              status = 'added'
+            else if (status === 'unchanged')
+              status = 'modified'
 
-      // #region Validation
-      // Anonymous function to use return and parent scope
-      await (async () => {
-        if (bundler.validation.enabled) {
-          core.debug(`[bundler] Validating DDB file ${ddfPath}`)
+            return currentSource
+          },
+        )
 
-          const validator = createValidator()
-          const validationResult: FileDefinitionWithError[] = []
+        core.debug(`[bundler] Bundle created for DDF ${ddfPath} with status ${status}`)
 
-          const ddfcFile = bundle.data.files.find(file => file.type === 'DDFC')
-          if (!ddfcFile) {
-            validationResult.push({
-              error: new Error('No DDFC file found in the bundle'),
-              path: ddfPath,
-              data: null,
-            })
-            return
-          }
+        if (validationState) {
+          core.debug(`[bundler] Projecting validation for DDB file ${ddfPath}`)
 
-          const ddfc = JSON.parse(ddfcFile.data)
-
-          if (typeof ddfc !== 'object' || ddfc === null) {
-            validationResult.push({
-              error: new Error('Something went wrong while parsing the DDF file'),
-              path: ddfPath,
-              data: ddfc,
-            })
-            return
-          }
-
-          if (bundler.validation.enforceUUID && ddfc.uuid === undefined) {
-            validationResult.push({
-              error: new Error('UUID is not defined in the DDF file'),
-              path: ddfPath,
-              data: ddfc,
-            })
-          }
-
-          if (ddfc.ddfvalidate === false && !bundler.validation.strict) {
+          if (validationState.skippedDDFPaths.has(ddfPath)) {
             bundle.data.validation = {
               result: 'skipped',
-              version: validator.version,
+              version: validationState.version,
             }
-            return
           }
+          else {
+            const bundleValidationPaths: Map<string, string> = new Map([[ddfPath, ddfPath]])
+            const bundleRootPath = path.dirname(path.dirname(ddfPath))
+            const errors: ValidationError[] = []
 
-          bundle.data.files
-            .filter(file => file.data.length === 0)
-            .forEach((file) => {
-              validationResult.push({
-                error: new Error('Empty or missing file'),
-                path: file.path,
-                data: '',
-              })
+            bundle.data.files.forEach((file) => {
+              const absoluteFilePath = path.join(bundleRootPath, file.path)
+
+              if (file.data.length === 0) {
+                errors.push({
+                  type: 'simple',
+                  message: 'Empty or missing file',
+                  file: absoluteFilePath,
+                })
+              }
+
+              if (file.type === 'JSON') {
+                bundleValidationPaths.set(absoluteFilePath, absoluteFilePath)
+
+                if (file.path === 'generic/constants_min.json') {
+                  bundleValidationPaths.set(
+                    path.join(bundleRootPath, 'generic/constants.json'),
+                    absoluteFilePath,
+                  )
+                }
+              }
             })
 
-          validationResult.push(...validator.bulkValidate(
-            // Generic files
-            bundle.data.files
-              .filter(file => file.data.length !== 0)
-              .filter(file => file.type === 'JSON')
-              .map((file) => {
-                const realPath = path.join(path.dirname(path.dirname(ddfPath)), file.path)
-                return {
-                  path: realPath,
-                  data: JSON.parse(file.data as string),
+            bundleValidationPaths.forEach((bundleFilePath, validationFilePath) => {
+              const fileErrors = validationState.errorsByPath.get(validationFilePath)
+              if (!fileErrors)
+                return
+
+              errors.push(...fileErrors.map(error => ({ ...error, file: bundleFilePath })))
+            })
+
+            bundle.data.validation = errors.length === 0
+              ? {
+                  result: 'success',
+                  version: validationState.version,
                 }
-              }),
-            // DDF file
-            [
-              {
-                path: ddfPath,
-                data: ddfc,
-              },
-            ],
-          ))
+              : {
+                  result: 'error',
+                  version: validationState.version,
+                  errors,
+                }
 
-          if (validationResult.length === 0) {
-            core.debug(`[bundler] Validating success for DDB file ${ddfPath}`)
-            bundle.data.validation = {
-              result: 'success',
-              version: validator.version,
-            }
-            return
-          }
-
-          const errors: ValidationError[] = []
-
-          await Promise.all(validationResult.map(async (error) => {
-            const sourceFile = await sources.getSource(error.path, false)
-            errors.push(...handleError(error.error, error.path, await sourceFile.stringData))
-          }))
-
-          if (errors.length > 0) {
-            core.error(`${errors.length} validation errors for DDB ${ddfPath}`)
-            core.startGroup(`Errors details for DDB ${ddfPath}`)
-            logsErrors(params.source.path.root, errors)
-            core.endGroup()
-            validationErrors.push(...errors)
-          }
-
-          bundle.data.validation = {
-            result: 'error',
-            version: validator.version,
-            errors,
+            if (errors.length > 0)
+              validationErrors.push(...errors)
           }
         }
-      })()
-      core.debug(`[bundler] End validation for ${ddfPath}`)
-      // #endregion
+        core.debug(`[bundler] End validation for ${ddfPath}`)
 
-      // #region Hash & Signatures
-      bundle.data.hash = await generateHash(bundle.data)
+        bundle.data.hash = await generateHash(bundle.data)
 
-      bundler.signKeys.forEach((privateKey) => {
-        bundle.data.signatures.push({
-          key: getPublicKey(privateKey),
-          signature: createSignature(bundle.data.hash!, privateKey),
+        bundler.signKeys.forEach((privateKey) => {
+          bundle.data.signatures.push({
+            key: getPublicKey(privateKey),
+            signature: createSignature(bundle.data.hash!, privateKey),
+          })
         })
-      })
-      // #endregion
 
-      // #region Write bundle to disk
-      if (bundlerOutputPath) {
-        const parsedPath = path.parse(ddfPath)
+        if (bundlerOutputPath) {
+          const parsedPath = path.parse(ddfPath)
 
-        if (bundler.outputDirectoryFormat === 'source-tree')
-          parsedPath.dir = parsedPath.dir.replace(source.path.devices, '')
-        else if (bundler.outputDirectoryFormat === 'flat')
-          parsedPath.dir = ''
+          if (bundler.outputDirectoryFormat === 'source-tree')
+            parsedPath.dir = parsedPath.dir.replace(source.path.devices, '')
+          else if (bundler.outputDirectoryFormat === 'flat')
+            parsedPath.dir = ''
 
-        if (bundler.outputFileFormat === 'name-hash')
-          parsedPath.name = `${parsedPath.name}-${bytesToHex(bundle.data.hash)}`
-        else if (bundler.outputFileFormat === 'hash')
-          parsedPath.name = bytesToHex(bundle.data.hash)
+          if (bundler.outputFileFormat === 'name-hash')
+            parsedPath.name = `${parsedPath.name}-${bytesToHex(bundle.data.hash)}`
+          else if (bundler.outputFileFormat === 'hash')
+            parsedPath.name = bytesToHex(bundle.data.hash)
 
-        parsedPath.ext = '.ddb'
-        parsedPath.base = `${parsedPath.name}${parsedPath.ext}`
+          parsedPath.ext = '.ddb'
+          parsedPath.base = `${parsedPath.name}${parsedPath.ext}`
 
-        const outputPath = path.resolve(path.join(bundlerOutputPath, path.format(parsedPath)))
+          const outputPath = path.resolve(path.join(bundlerOutputPath, path.format(parsedPath)))
 
-        const encoded = encode(bundle)
-        const data = Buffer.from(await encoded.arrayBuffer())
-        await fs.mkdir(path.dirname(outputPath), { recursive: true })
-        core.debug(`[bundler] Writing bundle to disk ${outputPath}`)
-        await fs.writeFile(outputPath, data)
-        diskBundles.push({
-          path: outputPath,
+          const encoded = encode(bundle)
+          const data = Buffer.from(await encoded.arrayBuffer())
+          await fs.mkdir(path.dirname(outputPath), { recursive: true })
+          core.debug(`[bundler] Writing bundle to disk ${outputPath}`)
+          await fs.writeFile(outputPath, data)
+          diskBundles.push({
+            path: outputPath,
+            status,
+          })
+        }
+
+        memoryBundles.push({
+          bundle,
+          path: ddfPath,
           status,
         })
       }
-      // #endregion
-
-      memoryBundles.push({
-        bundle,
-        path: ddfPath,
-        status,
-      })
-    }
-    catch (err) {
-      core.error(`Error while creating bundle ${ddfPath}`)
-      const fileSource = await sources.getSource(ddfPath, false)
-      const errors = handleError(err, ddfPath, await fileSource.stringData)
-      const filePath = ddfPath.replace(source.path.devices, '')
-      core.error(`Bundle creation error for DDF at ${filePath}`)
-      logsErrors(params.source.path.root, errors)
-      validationErrors.push(...errors)
-    }
-  }))
-  // #endregion
-
-  // #region Validation of all generic files
-
-  if (bundler.validation.enabled) {
-    core.info('Re validating all generic files')
-
-    const validator = createValidator()
-
-    const genericFiles = await Promise.all(sources.getGenericPaths().map(async (path) => {
-      const source = await sources.getSource(path, false)
-      return {
-        path,
-        data: JSON.parse(await source.stringData),
-      }
-    }))
-
-    const validationResult = validator.bulkValidate(genericFiles, [])
-
-    await Promise.all(validationResult.map(async (error) => {
-      const source = await sources.getSource(error.path, false)
-      const errors = handleError(error.error, error.path, await source.stringData)
-      if (errors.length > 0) {
-        core.error(`${errors.length} validation errors for generic file at ${error.path}`)
-        core.startGroup(`Errors details for generic file at ${error.path}`)
+      catch (err) {
+        core.error(`Error while creating bundle ${ddfPath}`)
+        const fileSource = await sources.getSource(ddfPath, false)
+        const errors = handleError(err, ddfPath, await fileSource.stringData)
+        const filePath = ddfPath.replace(source.path.devices, '')
+        core.error(`Bundle creation error for DDF at ${filePath}`)
         logsErrors(params.source.path.root, errors)
-        core.endGroup()
         validationErrors.push(...errors)
+      }
+      finally {
+        processedBundles++
+        core.info(`Bundling progress: ${processedBundles}/${ddfPaths.length}`)
       }
     }))
   }
-
   // #endregion
 
   // #region Report unused files

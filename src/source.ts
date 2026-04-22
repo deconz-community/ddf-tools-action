@@ -1,4 +1,4 @@
-import type { Context } from '@actions/github/lib/context.js'
+import type { context as githubContext } from '@actions/github'
 import type { Source, SourceMetadata } from '@deconz-community/ddf-bundler'
 import type { RestEndpointMethodTypes } from '@octokit/action'
 import type { InputsParams } from './input.js'
@@ -10,6 +10,8 @@ import { Octokit } from '@octokit/action'
 
 import glob from 'fast-glob'
 import { simpleGit } from 'simple-git'
+
+type Context = typeof githubContext
 
 export type FileStatus = 'added' | 'removed' | 'modified' | 'unchanged' | 'missing'
 
@@ -40,13 +42,20 @@ export async function getSources(params: InputsParams, context: Context) {
   const ddf: Map<string, Source<BundlerSourceMetadata>> = new Map()
   const generic: Map<string, Source<BundlerSourceMetadata>> = new Map()
   const misc: Map<string, Source<BundlerSourceMetadata>> = new Map()
+  const ddfInFlight: Map<string, Promise<Source<BundlerSourceMetadata>>> = new Map()
+  const genericInFlight: Map<string, Promise<Source<BundlerSourceMetadata>>> = new Map()
+  const miscInFlight: Map<string, Promise<Source<BundlerSourceMetadata>>> = new Map()
+  const lastModifiedByFile: Map<string, Date> = new Map()
+  const modifiedFiles: Set<string> = new Set()
 
   core.debug(`Get sources path : ${params.source.path.generic}`)
 
   const gitDirectory = await findGitDirectory(params.source.path.devices)
+  const gitRoot = gitDirectory ?? params.source.path.root
   core.debug(`Git directory : ${gitDirectory}`)
 
   const git = simpleGit(gitDirectory)
+  let gitMetadataPromise: Promise<void> | undefined
 
   const fileStatus = await getSourcesStatusForPr(context, params.context.related_pr)
 
@@ -81,25 +90,82 @@ export async function getSources(params: InputsParams, context: Context) {
     return ddf
   }
 
+  const getSourceInFlightMap = (filePath: string) => {
+    if (!filePath.endsWith('.json'))
+      return miscInFlight
+
+    if (filePath.startsWith(params.source.path.generic))
+      return genericInFlight
+
+    return ddfInFlight
+  }
+
+  const ensureGitMetadata = async () => {
+    if (!params.bundler.enabled || params.bundler.fileModifiedMethod !== 'gitlog')
+      return
+
+    if (!gitMetadataPromise) {
+      gitMetadataPromise = (async () => {
+        const [logOutput, status] = await Promise.all([
+          git.raw(['log', '--name-only', '--format=__COMMIT__%cI']),
+          git.status(),
+        ])
+
+        let currentCommitDate: Date | undefined
+
+        logOutput.split('\n').forEach((line) => {
+          const trimmed = line.trim()
+
+          if (trimmed.length === 0)
+            return
+
+          if (trimmed.startsWith('__COMMIT__')) {
+            currentCommitDate = new Date(trimmed.slice('__COMMIT__'.length))
+            return
+          }
+
+          if (!currentCommitDate)
+            return
+
+          const resolvedPath = path.resolve(gitRoot, trimmed)
+          if (!lastModifiedByFile.has(resolvedPath))
+            lastModifiedByFile.set(resolvedPath, currentCommitDate)
+        })
+
+        status.files.forEach((file) => {
+          modifiedFiles.add(path.resolve(gitRoot, file.path))
+        })
+      })()
+    }
+
+    await gitMetadataPromise
+  }
+
   const getLastModified = async (filePath: string) => {
     if (!params.bundler.enabled)
       throw new Error('getLastModified is not supported when bundler is enabled')
 
     switch (params.bundler.fileModifiedMethod) {
       case 'gitlog': {
-        const log = await git.log({ file: filePath })
-        const latestCommit = log.latest
-        if (latestCommit === null) {
+        await ensureGitMetadata()
+
+        if (modifiedFiles.has(filePath))
+          return new Date()
+
+        const latestCommitDate = lastModifiedByFile.get(filePath)
+
+        if (!latestCommitDate) {
           core.warning(`No commit found for ${filePath}`)
           return new Date()
         }
-        return new Date(latestCommit.date)
+
+        return latestCommitDate
       }
       case 'mtime': {
         return (await fs.stat(filePath)).mtime
       }
       case 'ctime': {
-        return (await fs.stat(filePath)).atime
+        return (await fs.stat(filePath)).ctime
       }
     }
 
@@ -108,6 +174,7 @@ export async function getSources(params: InputsParams, context: Context) {
 
   const getSource = async (filePath: string, updateCount = true): Promise<Source<BundlerSourceMetadata>> => {
     const sourceMap = getSourceMap(filePath)
+    const inFlightMap = getSourceInFlightMap(filePath)
 
     const source = sourceMap.get(filePath)
     if (source) {
@@ -116,33 +183,49 @@ export async function getSources(params: InputsParams, context: Context) {
       return source
     }
 
-    try {
-      const source = createSource<BundlerSourceMetadata>(
-        new Blob([await fs.readFile(filePath)]),
-        {
-          path: filePath,
-          last_modified: await getLastModified(filePath),
-          useCount: updateCount ? 1 : 0,
-          status: getStatus(filePath),
-        },
-      )
+    const inFlightSource = inFlightMap.get(filePath)
+    if (inFlightSource) {
+      const pendingSource = await inFlightSource
+      if (updateCount)
+        pendingSource.metadata.useCount++
+      return pendingSource
+    }
 
-      sourceMap.set(filePath, source)
-      return source
-    }
-    catch {
-      const source = createSource<BundlerSourceMetadata>(
-        new Blob([]),
-        {
-          path: filePath,
-          last_modified: new Date(0),
-          useCount: updateCount ? 1 : 0,
-          status: 'missing',
-        },
-      )
-      sourceMap.set(filePath, source)
-      return source
-    }
+    const sourcePromise = (async () => {
+      try {
+        const source = createSource<BundlerSourceMetadata>(
+          new Blob([await fs.readFile(filePath)]),
+          {
+            path: filePath,
+            last_modified: await getLastModified(filePath),
+            useCount: updateCount ? 1 : 0,
+            status: getStatus(filePath),
+          },
+        )
+
+        sourceMap.set(filePath, source)
+        return source
+      }
+      catch {
+        const source = createSource<BundlerSourceMetadata>(
+          new Blob([]),
+          {
+            path: filePath,
+            last_modified: new Date(0),
+            useCount: updateCount ? 1 : 0,
+            status: 'missing',
+          },
+        )
+        sourceMap.set(filePath, source)
+        return source
+      }
+      finally {
+        inFlightMap.delete(filePath)
+      }
+    })()
+
+    inFlightMap.set(filePath, sourcePromise)
+    return sourcePromise
   }
 
   // Load all the DDF sources
@@ -190,6 +273,7 @@ export async function getSources(params: InputsParams, context: Context) {
     updateContent: (filePath: string, content: string) => {
       core.info(`Updating content of ${filePath}`)
       const sourceMap = getSourceMap(filePath)
+      const inFlightMap = getSourceInFlightMap(filePath)
       const currentSource = sourceMap.get(filePath)
       const source = createSource<BundlerSourceMetadata>(
         new Blob([content]),
@@ -201,6 +285,7 @@ export async function getSources(params: InputsParams, context: Context) {
         },
       )
       sourceMap.set(filePath, source)
+      inFlightMap.delete(filePath)
     },
   }
 }
@@ -219,7 +304,6 @@ export async function getSourcesStatusForPr(context: Context, pull_numbers: numb
       pull_number,
     })
 
-    // TODO: Check if there is a better way to type that
     const files = await octokit.paginate(options) as RestEndpointMethodTypes['pulls']['listFiles']['response']['data']
 
     if (core.isDebug())
