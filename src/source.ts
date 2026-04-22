@@ -299,12 +299,20 @@ export async function getSourcesStatusForPr(context: Context, pull_numbers: numb
   const fileStatus: Map<string, FileStatus> = new Map()
 
   for (const pull_number of pull_numbers) {
-    const options = octokit.rest.pulls.listFiles.endpoint.merge({
-      ...context.repo,
-      pull_number,
-    })
-
-    const files = await octokit.paginate(options) as RestEndpointMethodTypes['pulls']['listFiles']['response']['data']
+    let files: RestEndpointMethodTypes['pulls']['listFiles']['response']['data']
+    try {
+      files = await octokit.paginate('GET /repos/{owner}/{repo}/pulls/{pull_number}/files', {
+        ...context.repo,
+        pull_number,
+      })
+    }
+    catch (error) {
+      if (typeof error === 'object' && error !== null && 'status' in error && error.status === 401) {
+        core.warning(`Unable to fetch files for PR #${pull_number}: bad GitHub credentials. Continuing without PR file status.`)
+        continue
+      }
+      throw error
+    }
 
     if (core.isDebug())
       core.debug(`Pull request files list = ${JSON.stringify(files, null, 2)}`)

@@ -17,6 +17,9 @@ jobs:
   ci:
     name: Continuous integration
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
 
     steps:
       - name: Checkout Repo
@@ -55,7 +58,7 @@ jobs:
           upload-artifact-enabled: true
           upload-artifact-retention-days: 5
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
 
       - name: Run DDF Push Action
         if: github.event_name == 'push'
@@ -74,7 +77,7 @@ jobs:
           # upload-artifact-filter: 'added,modified'
           # upload-artifact-retention-days: 3
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
 
       - name: Run DDF Pull Request Interaction
         id: ddf_ci_pull_request
@@ -88,7 +91,7 @@ jobs:
           upload-artifact-filter: 'added,modified'
           upload-artifact-retention-days: 3
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
 
       - name: Create Release Pull Request or Publish
         if: github.event_name == 'push'
@@ -98,7 +101,7 @@ jobs:
           # This expects you to have a script called release which does a build for your packages and calls changeset publish
           publish: pnpm release
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
 
       - name: Update Release tags
         uses: JasonEtco/build-and-tag-action@v2
@@ -106,4 +109,4 @@ jobs:
         with:
           tag_name: ${{ format('v{0}', fromJSON(steps.changesets.outputs.publishedPackages)[0].version) }}
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
