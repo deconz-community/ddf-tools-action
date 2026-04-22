@@ -301,13 +301,21 @@ async function getContextInputs(context: Context) {
     related_pr.push(payload.pull_request.number)
   }
   else if (context.eventName === 'push') {
-    const result = await octokit.rest.repos.listPullRequestsAssociatedWithCommit({
-      owner: context.repo.owner,
-      repo: context.repo.repo,
-      commit_sha: context.sha,
-    })
+    try {
+      const result = await octokit.rest.repos.listPullRequestsAssociatedWithCommit({
+        owner: context.repo.owner,
+        repo: context.repo.repo,
+        commit_sha: context.sha,
+      })
 
-    result.data.forEach(pr => related_pr.push(pr.number))
+      result.data.forEach(pr => related_pr.push(pr.number))
+    }
+    catch (error) {
+      if (typeof error === 'object' && error !== null && 'status' in error && error.status === 401)
+        core.warning('Unable to list pull requests associated with this commit: bad GitHub credentials. Continuing without related PR context.')
+      else
+        throw error
+    }
   }
 
   return {
