@@ -1,5 +1,12 @@
 # @deconz-community/ddf-tools-action
 
+## 1.5.0
+
+### Minor Changes
+
+- 8838eee: Update workflow
+- 6671cef: Update to node 24
+
 ## 1.4.0
 
 ### Minor Changes
