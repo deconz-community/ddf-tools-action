@@ -1,5 +1,11 @@
 # @deconz-community/ddf-tools-action
 
+## 1.5.1
+
+### Patch Changes
+
+- 431b380: Add permission for ci and ignore if can't access pr info
+
 ## 1.5.0
 
 ### Minor Changes
