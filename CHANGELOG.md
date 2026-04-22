@@ -1,5 +1,12 @@
 # @deconz-community/ddf-tools-action
 
+## 1.4.0
+
+### Minor Changes
+
+- 491b62a: Update deps
+- 0221441: Made bundler faster
+
 ## 1.3.1
 
 ### Patch Changes
