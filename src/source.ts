@@ -1,10 +1,11 @@
 import type { Context } from '@actions/github/lib/context.js'
+import type { Source, SourceMetadata } from '@deconz-community/ddf-bundler'
 import type { RestEndpointMethodTypes } from '@octokit/action'
 import type { InputsParams } from './input.js'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import * as core from '@actions/core'
-import { createSource, type Source, type SourceMetadata } from '@deconz-community/ddf-bundler'
+import { createSource } from '@deconz-community/ddf-bundler'
 import { Octokit } from '@octokit/action'
 
 import glob from 'fast-glob'

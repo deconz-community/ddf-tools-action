@@ -338,7 +338,7 @@ async function getDirectoryInput<Optional extends boolean = false>(
   name: string,
   optional: Optional = false as Optional,
   autoCreate = false,
-): Promise<Optional extends true ? (string | undefined) : string > {
+): Promise<Optional extends true ? (string | undefined) : string> {
   const inputPath = getInput(name)
   return getDirectory(inputPath, name, optional, autoCreate)
 }
@@ -348,7 +348,7 @@ export async function getDirectory<Optional extends boolean = false>(
   name: string,
   optional: Optional = false as Optional,
   autoCreate = false,
-): Promise<Optional extends true ? (string | undefined) : string > {
+): Promise<Optional extends true ? (string | undefined) : string> {
   if (!inputPath) {
     if (optional === true)
       return undefined as any

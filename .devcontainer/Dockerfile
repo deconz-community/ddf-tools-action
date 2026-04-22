@@ -4,7 +4,7 @@ FROM mcr.microsoft.com/devcontainers/typescript-node:${VARIANT}
 
 # Install basic development tools
 RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
-     && apt-get -y install --no-install-recommends python g++ build-essential
+     && apt-get -y install --no-install-recommends python-is-python3 python3 g++ build-essential
 
 # Ensure default `node` user has access to `sudo`
 ARG USERNAME=node
