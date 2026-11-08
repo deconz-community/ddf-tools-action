@@ -11,13 +11,12 @@ import { updateClosedPRInteraction, updateModifiedBundleInteraction } from './sr
 import { getSources } from './src/source.js'
 import { runUploaders } from './src/uploader.js'
 
-try {
-  run()
-}
-catch (error) {
+run().catch((error) => {
   core.setFailed('An error occurred while running the action.')
-  logsErrors(path.resolve(), handleError(error))
-}
+  // `throw core.setFailed(...)` throws undefined, those errors are already reported
+  if (error !== undefined)
+    logsErrors(path.resolve(), handleError(error))
+})
 
 async function run() {
   const context = github.context

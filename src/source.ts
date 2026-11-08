@@ -57,7 +57,7 @@ export async function getSources(params: InputsParams, context: Context) {
   const git = simpleGit(gitDirectory)
   let gitMetadataPromise: Promise<void> | undefined
 
-  const fileStatus = await getSourcesStatusForPr(context, params.context.related_pr)
+  const fileStatus: Map<string, FileStatus> = await getSourcesStatusForPr(context, params.context.related_pr)
 
   const getStatus = (filePath: string) => {
     const status = fileStatus.get(filePath)
@@ -142,10 +142,10 @@ export async function getSources(params: InputsParams, context: Context) {
   }
 
   const getLastModified = async (filePath: string) => {
-    if (!params.bundler.enabled)
-      throw new Error('getLastModified is not supported when bundler is enabled')
+    // Without the bundler there is no configured method, the date is only used to order duplicated UUIDs
+    const method = params.bundler.enabled ? params.bundler.fileModifiedMethod : 'mtime'
 
-    switch (params.bundler.fileModifiedMethod) {
+    switch (method) {
       case 'gitlog': {
         await ensureGitMetadata()
 
@@ -206,7 +206,11 @@ export async function getSources(params: InputsParams, context: Context) {
         sourceMap.set(filePath, source)
         return source
       }
-      catch {
+      catch (error) {
+        // Only a missing file is expected here, anything else must not be hidden
+        if (!(error instanceof Error && 'code' in error && error.code === 'ENOENT'))
+          throw error
+
         const source = createSource<BundlerSourceMetadata>(
           new Blob([]),
           {
@@ -269,6 +273,9 @@ export async function getSources(params: InputsParams, context: Context) {
 
       return unused
     },
+    getRemovedFiles: () => Array.from(fileStatus)
+      .filter(([, status]) => status === 'removed')
+      .map(([filePath]) => filePath),
     getSource,
     updateContent: (filePath: string, content: string) => {
       core.info(`Updating content of ${filePath}`)

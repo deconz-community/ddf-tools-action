@@ -4,7 +4,7 @@ import type { InputsParams } from './input'
 import { readFile } from 'node:fs/promises'
 import { DefaultArtifactClient } from '@actions/artifact'
 import * as core from '@actions/core'
-import { encode } from '@deconz-community/ddf-bundler'
+import { decode, encode } from '@deconz-community/ddf-bundler'
 import { createStoreClient, uploadBundles } from '@deconz-community/store-api-client'
 import { glob } from 'fast-glob'
 import { handleError, logsErrors } from './errors'
@@ -34,23 +34,33 @@ export async function runStoreUploader(params: InputsParams, context: Context, b
 
   // #region Packing bundles
   const bundles: { name: string, content: Blob }[] = []
+  // Bundles with validation errors must never be sent to the store
+  const invalidBundles: string[] = []
 
   if (storeParams.inputPath === undefined) {
     core.info('Using memory bundles')
     bundlerResult.memoryBundles.forEach(({ bundle, path }) => {
-      bundles.push({ name: path, content: encode(bundle) })
+      if (bundle.data.validation?.result === 'error')
+        invalidBundles.push(path)
+      else
+        bundles.push({ name: path, content: encode(bundle) })
     })
     core.info(`${bundles.length} bundles packed`)
   }
   else {
     core.info(`Looking for bundles at ${storeParams.inputPath}`)
-    const fileList = await glob(`${storeParams.inputPath}**/*.ddb`, { onlyFiles: true })
+    const fileList = await glob('**/*.ddb', { cwd: storeParams.inputPath, absolute: true, onlyFiles: true })
     core.info(`Found ${fileList.length} bundles on the disk to upload`)
     for (const file of fileList) {
-      const fileContent = await readFile(file)
-      bundles.push({ name: file, content: new Blob([fileContent]) })
+      const content = new Blob([await readFile(file)])
+      if ((await decode(content)).data.validation?.result === 'error')
+        invalidBundles.push(file)
+      else
+        bundles.push({ name: file, content })
     }
   }
+
+  invalidBundles.forEach(name => core.error(`Bundle '${name}' has validation errors, it will not be uploaded to the store.`))
   // #endregion
 
   // #region Store Upload
@@ -112,6 +122,9 @@ export async function runStoreUploader(params: InputsParams, context: Context, b
 
   core.info(`Uploaded ${resultCount.success} new bundles, ${resultCount.alreadyExists} already exists and ${resultCount.failed} failed`)
 
+  if (invalidBundles.length > 0)
+    core.setFailed(`${invalidBundles.length} bundles have not been uploaded because of validation errors`)
+
   if (resultCount.failed > 0)
     throw core.setFailed('Failed to upload DDB files, please check logs for more information')
 
@@ -139,7 +152,7 @@ export async function runArtifactUploader(params: InputsParams, context: Context
   if (bundlesToUpload.length > 0) {
     core.startGroup('Upload bundles as artifact')
 
-    if (!params.bundler.outputPath)
+    if (!bundlerResult.outputPath)
       throw new Error('Can\'t upload bundles as artifact because outputPath is not defined')
 
     const artifact = new DefaultArtifactClient()
@@ -147,7 +160,7 @@ export async function runArtifactUploader(params: InputsParams, context: Context
     const { id, size } = await artifact.uploadArtifact(
       'Bundles',
       bundlesToUpload.map(bundle => bundle.path),
-      params.bundler.outputPath,
+      bundlerResult.outputPath,
       {
         retentionDays: artifactParams.retentionDays,
       },

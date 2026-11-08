@@ -1,7 +1,6 @@
 import type { context as githubContext } from '@actions/github'
 import type { PullRequestEvent } from '@octokit/webhooks-types'
 import fs from 'node:fs/promises'
-import { tmpdir } from 'node:os'
 import path from 'node:path'
 import * as core from '@actions/core'
 import { hexToBytes } from '@noble/hashes/utils.js'
@@ -41,10 +40,10 @@ export function logsParams(params: InputsParams) {
   if (cloneParam.bundler.enabled)
     cloneParam.bundler.signKeys = Array.from({ length: cloneParam.bundler.signKeys.length }).fill(Uint8Array.from([0])) as Uint8Array[]
 
-  if (cloneParam.upload.store.enabled) {
+  if (cloneParam.upload.store.url)
     cloneParam.upload.store.url = '***'
+  if (cloneParam.upload.store.token)
     cloneParam.upload.store.token = '***'
-  }
   core.info(JSON.stringify(cloneParam, null, 2))
   core.endGroup()
 }
@@ -166,8 +165,7 @@ async function getBundlerInputs(): Promise<BundlerInputs> {
     throw core.setFailed(`Invalid signature keys : ${e}`)
   }
 
-  const outputPath = (await getDirectoryInput('bundler-output-path', true, true))
-    ?? await fs.mkdtemp(path.join(tmpdir(), 'ddf-bundler'))
+  const outputPath = await getDirectoryInput('bundler-output-path', true, true)
 
   return {
     enabled,

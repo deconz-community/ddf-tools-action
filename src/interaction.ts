@@ -144,13 +144,21 @@ export async function parseTemplate<TemplateName extends keyof Templates>(
     .replace(/\n{3,}/g, '\n\n')
 }
 
-async function uploadInteractionAsArtifact(marker: string, issue_number: number, body: string) {
-  await fs.writeFile('interaction_data.json', JSON.stringify([{
+interface Interaction {
+  marker: string
+  issue_number: number
+  body: string
+}
+
+// All the interactions must be sent in a single artifact because the artifact name can be used only once per run
+async function uploadInteractionsAsArtifact(interactions: Interaction[]) {
+  if (interactions.length === 0)
+    return
+
+  await fs.writeFile('interaction_data.json', JSON.stringify(interactions.map(interaction => ({
     mode: 'upsert',
-    marker,
-    issue_number,
-    body,
-  }]), 'utf8')
+    ...interaction,
+  }))), 'utf8')
 
   const artifact = new DefaultArtifactClient()
 
@@ -213,9 +221,13 @@ export async function updateModifiedBundleInteraction(
           ? bundle.bundle.data.validation.errors.map(error => error.message)
           : [],
       })),
-    deleted_bundles: sources.getUnusedFiles().ddf.filter(path => path.startsWith(params.source.path.devices)).map(path => ({
-      path: path.replace(`${params.source.path.devices}/`, ''),
-    })),
+    deleted_bundles: sources.getRemovedFiles()
+      .filter(path => path.endsWith('.json')
+        && path.startsWith(`${params.source.path.devices}/`)
+        && !path.startsWith(`${params.source.path.generic}/`))
+      .map(path => ({
+        path: path.replace(`${params.source.path.devices}/`, ''),
+      })),
     payload,
     clock_emoji: CLOCKS[Math.floor(Math.random() * CLOCKS.length)],
     artifact: {
@@ -227,12 +239,16 @@ export async function updateModifiedBundleInteraction(
     validation: {
       enabled: params.bundler.enabled && params.bundler.validation.enabled,
       result: bundler.validationErrors.length === 0 ? 'success' : 'failure',
-      files_url: `${payload.pull_request.base.repo.html_url}/pull/${payload.pull_request.id}/files`,
+      files_url: `${payload.pull_request.base.repo.html_url}/pull/${payload.pull_request.number}/files`,
       detail_url: `${payload.pull_request.base.repo.html_url}/actions/runs/${context.runId}`,
     },
   })
 
-  await uploadInteractionAsArtifact('<!-- DDF-TOOLS-ACTION/modified-bundles -->', payload.pull_request.number, body)
+  await uploadInteractionsAsArtifact([{
+    marker: '<!-- DDF-TOOLS-ACTION/modified-bundles -->',
+    issue_number: payload.pull_request.number,
+    body,
+  }])
 
   core.info('Update modified bundle interaction done')
 }
@@ -270,9 +286,11 @@ export async function updateClosedPRInteraction(
     clock_emoji: CLOCKS[Math.floor(Math.random() * CLOCKS.length)],
   })
 
-  for (const id of params.context.related_pr) {
-    await uploadInteractionAsArtifact('<!-- DDF-TOOLS-ACTION/merged-pr -->', id, body)
-  }
+  await uploadInteractionsAsArtifact(params.context.related_pr.map(id => ({
+    marker: '<!-- DDF-TOOLS-ACTION/merged-pr -->',
+    issue_number: id,
+    body,
+  })))
 
   core.info('Update closed PR Interaction done')
 }
