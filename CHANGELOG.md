@@ -1,5 +1,15 @@
 # @deconz-community/ddf-tools-action
 
+## 1.6.0
+
+### Minor Changes
+
+- ee48782: Replace the Directus SDK with `@deconz-community/store-api-client` to talk to the new store REST API (Bearer token auth)
+
+### Patch Changes
+
+- a98ab21: Fix several bugs found during code review: error handling in the entrypoint, `added` bundle status detection, deleted bundles and files link in the PR comment, a single interactions artifact when a push matches several PRs, store upload glob pattern, bundle validation paths, store credentials masking in the logs and the in-memory bundler output
+
 ## 1.5.1
 
 ### Patch Changes
