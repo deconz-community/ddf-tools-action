@@ -5,20 +5,11 @@ import { readFile } from 'node:fs/promises'
 import { DefaultArtifactClient } from '@actions/artifact'
 import * as core from '@actions/core'
 import { encode } from '@deconz-community/ddf-bundler'
-import { createDirectus, rest, serverHealth, staticToken } from '@directus/sdk'
+import { createStoreClient, uploadBundles } from '@deconz-community/store-api-client'
 import { glob } from 'fast-glob'
 import { handleError, logsErrors } from './errors'
 
 type Context = typeof githubContext
-
-type UploadResponse = Record<string, {
-  success: true
-  createdId: string
-} | {
-  success: false
-  code: 'bundle_hash_already_exists' | 'unknown'
-  message: string
-}>
 
 export type UploaderResult = Awaited<ReturnType<typeof runUploaders>>
 
@@ -42,12 +33,12 @@ export async function runStoreUploader(params: InputsParams, context: Context, b
     throw new Error('Can\'t run store uploader because he is not enabled')
 
   // #region Packing bundles
-  const bundles: Blob[] = []
+  const bundles: { name: string, content: Blob }[] = []
 
   if (storeParams.inputPath === undefined) {
     core.info('Using memory bundles')
-    bundlerResult.memoryBundles.forEach(({ bundle }) => {
-      bundles.push(encode(bundle))
+    bundlerResult.memoryBundles.forEach(({ bundle, path }) => {
+      bundles.push({ name: path, content: encode(bundle) })
     })
     core.info(`${bundles.length} bundles packed`)
   }
@@ -57,23 +48,24 @@ export async function runStoreUploader(params: InputsParams, context: Context, b
     core.info(`Found ${fileList.length} bundles on the disk to upload`)
     for (const file of fileList) {
       const fileContent = await readFile(file)
-      bundles.push(new Blob([fileContent]))
+      bundles.push({ name: file, content: new Blob([fileContent]) })
     }
   }
   // #endregion
 
   // #region Store Upload
-  const client = createDirectus(storeParams.url)
-    .with(staticToken(storeParams.token))
-    .with(rest())
+  const client = createStoreClient({
+    url: storeParams.url,
+    token: storeParams.token,
+  })
 
   try {
-    const health = await client.request(serverHealth())
+    const response = await fetch(`${storeParams.url.replace(/\/+$/, '')}/health`)
 
-    if (health.status !== 'ok')
-      throw new Error(`Server health is not ok: ${health.status}`)
+    if (!response.ok)
+      throw new Error(`Server health check failed: ${response.status} ${response.statusText}`)
 
-    core.info(`Store status = ${health.status}`)
+    core.info('Store health check passed')
   }
   catch (error) {
     core.setFailed('Failed to check server health, please check logs for more information')
@@ -91,37 +83,22 @@ export async function runStoreUploader(params: InputsParams, context: Context, b
   core.startGroup('Upload bundles details')
   for (let i = 0; i < bundles.length; i += bulkSize) {
     const group = bundles.slice(i, i + bulkSize)
-    const formData = new FormData()
-
-    for (let j = 0; j < group.length; j++) {
-      const bundle = group[j]
-      formData.append(`bundle-#${i + j}`, bundle)
-    }
 
     try {
-      const { result } = await client.request<{ result: UploadResponse }>(() => {
-        return {
-          method: 'POST',
-          path: `/bundle/upload/${storeParams.status}`,
-          body: formData,
-          headers: { 'Content-Type': 'multipart/form-data' },
-        }
-      })
+      const { results } = await uploadBundles(client, group, storeParams.status)
 
-      Object.entries(result).forEach(([key, value]) => {
-        const bundleName = bundlerResult.memoryBundles[Number.parseInt(key.replace('bundle-#', ''))]?.path
-
-        if (value.success) {
+      results.forEach((result) => {
+        if (result.success) {
           resultCount.success++
-          core.info(`Uploaded bundle '${bundleName}' with id ${value.createdId} on the store.`)
+          core.info(`Uploaded bundle '${result.file}' with id ${result.id} on the store.`)
         }
-        else if (value.code === 'bundle_hash_already_exists') {
+        else if (result.error.code === 'bundle_hash_already_exists') {
           resultCount.alreadyExists++
-          core.info(`DDB file '${bundleName}' already exists on the store. Do nothing.`)
+          core.info(`DDB file '${result.file}' already exists on the store. Do nothing.`)
         }
         else {
           resultCount.failed++
-          core.error(`Failed to upload DDB file '${bundleName}' with code ${value.code}: ${value.message}`)
+          core.error(`Failed to upload DDB file '${result.file}' with code ${result.error.code}: ${result.error.message}`)
         }
       })
     }
