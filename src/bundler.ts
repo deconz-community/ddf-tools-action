@@ -143,6 +143,7 @@ export interface DiskBundle {
 export interface BundlerResult {
   memoryBundles: MemoryBundle[]
   diskBundles: DiskBundle[]
+  outputPath?: string
   validationErrors: ValidationError[]
 }
 
@@ -185,12 +186,13 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
           `file://${source.path.generic}`,
           `file://${ddfPath}`,
           async (filePath) => {
-            const currentSource = await sources.getSource(filePath.replace('file://', ''))
+            const sourcePath = filePath.replace('file://', '')
+            const currentSource = await sources.getSource(sourcePath)
 
             if (currentSource.metadata.status === 'unchanged' || currentSource.metadata.status === 'missing')
               return currentSource
 
-            if (filePath === ddfPath && currentSource.metadata.status === 'added')
+            if (sourcePath === ddfPath && currentSource.metadata.status === 'added')
               status = 'added'
             else if (status === 'unchanged')
               status = 'modified'
@@ -212,11 +214,14 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
           }
           else {
             const bundleValidationPaths: Map<string, string> = new Map([[ddfPath, ddfPath]])
-            const bundleRootPath = path.dirname(path.dirname(ddfPath))
+            // Generic files are stored as `generic/...` in the bundle, the others are relative to the DDF
+            const resolveBundleFilePath = (bundlePath: string) => bundlePath.startsWith('generic/')
+              ? path.join(source.path.generic, bundlePath.slice('generic/'.length))
+              : path.resolve(path.dirname(ddfPath), bundlePath)
             const errors: ValidationError[] = []
 
             bundle.data.files.forEach((file) => {
-              const absoluteFilePath = path.join(bundleRootPath, file.path)
+              const absoluteFilePath = resolveBundleFilePath(file.path)
 
               if (file.data.length === 0) {
                 errors.push({
@@ -231,7 +236,7 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
 
                 if (file.path === 'generic/constants_min.json') {
                   bundleValidationPaths.set(
-                    path.join(bundleRootPath, 'generic/constants.json'),
+                    path.join(source.path.generic, 'constants.json'),
                     absoluteFilePath,
                   )
                 }
@@ -359,6 +364,7 @@ export async function runBundler(params: InputsParams, sources: Sources): Promis
   return {
     memoryBundles,
     diskBundles,
+    outputPath: bundlerOutputPath,
     validationErrors,
   }
 }
