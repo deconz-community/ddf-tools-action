@@ -27,16 +27,12 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Install Node.js
-        uses: actions/setup-node@v7
+      - uses: voidzero-dev/setup-vp@v1.21.2
         with:
-          node-version: 24
+          run-install: false
 
       - name: Install dependencies
-        uses: pnpm/action-setup@v6
-        id: pnpm-install
-        with:
-          run_install: true
+        run: vp install --filter="!@deconz-community/ddf-tools-vscode-extension"
 
       - name: Build
         run: pnpm build
@@ -99,9 +95,12 @@ jobs:
         uses: changesets/action@v2.1.2
         with:
           # This expects you to have a script called release which does a build for your packages and calls changeset publish
-          publish: pnpm release
+          publish-script: vp run release
         env:
           GITHUB_TOKEN: ${{ github.token }}
+          # Use OIDC for npm authentication instead of NPM_TOKEN
+          NPM_TOKEN: "" # https://github.com/changesets/changesets/issues/1152#issuecomment-3190884868
+          NPM_CONFIG_PROVENANCE: true
 
       - name: Update Release tags
         uses: JasonEtco/build-and-tag-action@v2
