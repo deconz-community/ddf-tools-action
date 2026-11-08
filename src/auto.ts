@@ -2,7 +2,7 @@ import type { InputsParams } from './input'
 import type { Sources } from './source'
 import * as core from '@actions/core'
 import * as github from '@actions/github'
-import { createDirectus, rest, staticToken } from '@directus/sdk'
+import { createStoreClient, generateDdfUuids } from '@deconz-community/store-api-client'
 import { Octokit } from '@octokit/action'
 import { removeDuplicateUUIDs } from './source'
 
@@ -58,18 +58,11 @@ export async function autoCommitUuid(params: InputsParams, sources: Sources) {
   if (filesWithMissingUUID.length > 100)
     throw core.setFailed('Too many files is missing the UUID. Stopping the action.')
 
-  const client = createDirectus(params.upload.store.url)
-    .with(staticToken(params.upload.store.token))
-    .with(rest())
-  const newUUIDs = await client.request<{ expire_at: string, uuid: string[] }>(() => {
-    return {
-      method: 'GET',
-      path: 'bundle/generateUUID',
-      params: {
-        count: filesWithMissingUUID.length,
-      },
-    }
+  const client = createStoreClient({
+    url: params.upload.store.url,
+    token: params.upload.store.token,
   })
+  const newUUIDs = await generateDdfUuids(client, filesWithMissingUUID.length)
   // #endregion
 
   // #region Insert the UUID in the files
@@ -88,7 +81,7 @@ export async function autoCommitUuid(params: InputsParams, sources: Sources) {
     filePart
       .splice(schemaLineIndex + 1, 0, filePart[schemaLineIndex]
         .replace('schema', 'uuid')
-        .replace('devcap1.schema.json', newUUIDs.uuid[index]))
+        .replace('devcap1.schema.json', newUUIDs.uuids[index]))
 
     // Write the file back (in memory)
     const newContent = filePart.join(newLineCharacter)
