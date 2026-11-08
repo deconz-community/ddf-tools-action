@@ -9,22 +9,28 @@
     "vscode": {
       // Add the IDs of extensions you want installed when the container is created.
       "extensions": [
-        "dbaeumer.vscode-eslint",
+        "streetsidesoftware.code-spell-checker",
+        "Tobermory.es6-string-html",
         "mhutchie.git-graph",
         "eamodio.gitlens",
         "GitHub.copilot-chat",
+        "statelyai.stately-vscode",
         "yoavbls.pretty-ts-errors",
+        "vitest.explorer",
         "christian-kohler.npm-intellisense",
         "MylesMurphy.prettify-ts",
         "sissel.shopify-liquid",
+        "github.vscode-github-actions",
+        "VoidZero.vite-plus-extension-pack",
         "github.vscode-github-actions"
       ]
     }
   },
-  // Use 'forwardPorts' to make a list of ports inside the container available locally.
-  // "forwardPorts": [],
-  // Use 'postCreateCommand' to run commands after the container is created.
-  "postCreateCommand": "pnpm install && echo alias ll=\\'ls -al\\' >> /home/node/.bashrc",
-  // Comment out to connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
-  "remoteUser": "node"
+
+  "features": {
+    "ghcr.io/tailscale/codespace/tailscale": {}
+  },
+  "runArgs": ["--hostname=ddf-tools-action"],
+  "postCreateCommand": "vp install",
+  "remoteUser": "vp"
 }
