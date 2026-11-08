@@ -102,10 +102,16 @@ jobs:
           NPM_TOKEN: "" # https://github.com/changesets/changesets/issues/1152#issuecomment-3190884868
           NPM_CONFIG_PROVENANCE: true
 
+      # The package is private, so changesets only creates the git tag and `publishedPackages` is empty
+      - name: Get released version
+        id: version
+        if: github.event_name == 'push' && steps.changesets.outcome == 'success' && steps.changesets.outputs.published == 'true'
+        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+
       - name: Update Release tags
         uses: JasonEtco/build-and-tag-action@v2
-        if: github.event_name == 'push' && steps.changesets.outcome == 'success' && steps.changesets.outputs.published == 'true'
+        if: steps.version.outcome == 'success'
         with:
-          tag_name: ${{ format('v{0}', fromJSON(steps.changesets.outputs.publishedPackages)[0].version) }}
+          tag_name: ${{ format('v{0}', steps.version.outputs.version) }}
         env:
           GITHUB_TOKEN: ${{ github.token }}
