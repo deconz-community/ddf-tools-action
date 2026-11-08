@@ -1,4 +1,4 @@
-WORKSPACE_HOME=/workspaces/ddf-tools
+WORKSPACE_HOME=/workspaces/ddf-tools-action
 
 __git_branch() {
   local branch

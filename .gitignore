@@ -30,3 +30,4 @@ test-data
 
 *.typegen.ts
 uploads
+.t3/
