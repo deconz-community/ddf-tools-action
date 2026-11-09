@@ -1,5 +1,11 @@
 # @deconz-community/ddf-tools-action
 
+## 1.6.1
+
+### Patch Changes
+
+- f2a39e1: Trigger build
+
 ## 1.6.0
 
 ### Minor Changes
