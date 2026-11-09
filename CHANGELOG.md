@@ -1,5 +1,11 @@
 # @deconz-community/ddf-tools-action
 
+## 1.6.2
+
+### Patch Changes
+
+- 279d425: Override the transitive `glob` dependency to fix security advisories (glob, minimatch)
+
 ## 1.6.1
 
 ### Patch Changes
