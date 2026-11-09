@@ -1,7 +1,7 @@
-import { defineConfig } from 'taze'
+import { defineConfig } from "taze";
 
 export default defineConfig({
-  mode: 'major',
+  mode: "major",
   // fetch latest package info from registry without cache
   force: true,
   // write to package.json
@@ -10,8 +10,8 @@ export default defineConfig({
   install: true,
   // override with different bumping mode for each package
   packageMode: {
-    '@octokit/action': 'minor',
+    "@octokit/action": "minor",
   },
   // include locked and dev dependencies in the result
   includeLocked: true,
-})
+});

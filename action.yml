@@ -7,7 +7,7 @@ branding:
 inputs:
   mode:
     default: push
-    description: 'Mode to run the action in (manual, push, pull_request)'
+    description: "Mode to run the action in (manual, push, pull_request)"
 
   # # Common options for validate and bundle
   source-devices-path:
@@ -15,7 +15,7 @@ inputs:
     description: input path of DDF files
   source-search-pattern:
     description: input search pattern
-    default: '**/*'
+    default: "**/*"
     # default: '**/*.(json|js|md)'
   source-ignore-pattern:
     description: ignore files that match this pattern
@@ -23,44 +23,44 @@ inputs:
   # # CI options
   auto-commit-uuid:
     description: Push a new commit to add a UUID on each bundle that is missing one
-    default: 'false'
+    default: "false"
 
   # # Bundler options
   bundler-enabled:
     description: Enable bundling of DDF files
-    default: 'true'
+    default: "true"
   bundler-output-path:
     description: output path of bundled DDB files if not provided will keep them in memory before uploading if enabled
   bundler-output-directory-format:
-    description: 'Format of the output directory structure (source-tree, flat)'
+    description: "Format of the output directory structure (source-tree, flat)"
     default: flat
   bundler-output-file-format:
-    description: 'Format of the output files names (name, name-hash, hash)'
+    description: "Format of the output files names (name, name-hash, hash)"
     default: hash
   bundler-sign-keys:
     description: comma seperated list of private keys to sign the bundle with
   bundler-file-modified-method:
-    description: 'Method to use to mark the files as modified (gitlog, mtime, ctime)'
+    description: "Method to use to mark the files as modified (gitlog, mtime, ctime)"
     default: gitlog
 
   # # Bundler Validation options
   bundler-validation-enabled:
     description: Enable validation of DDB files
-    default: 'true'
+    default: "true"
   bundler-validation-strict:
     description: Validate all files even if they have the ddfvalidate option to false
-    default: 'false'
+    default: "false"
   bundler-validation-enforce-uuid:
     description: Enforce unique IDs in the DDF files
-    default: 'true'
+    default: "true"
   bundler-validation-warn-unused-files:
     description: Send a warning if a file is not used in any bundle
-    default: 'true'
+    default: "true"
 
   # # Upload options
   upload-store-enabled:
     description: Enable upload of DDB files
-    default: 'false'
+    default: "false"
   upload-store-input-path:
     description: input path of DDB files to upload if not provided will use the output bundles of the bundler
   upload-store-url:
@@ -72,18 +72,18 @@ inputs:
     default: alpha
   upload-store-toolbox-url:
     description: URL to upload the DDF toolbox to
-    default: 'https://deconz-community.github.io/ddf-tools/#/'
+    default: "https://deconz-community.github.io/ddf-tools/#/"
 
   upload-artifact-enabled:
     description: Upload the output path as an artifact
-    default: 'false'
+    default: "false"
   upload-artifact-filter:
     description: Comma seperated list of status to use for the artifact upload (added, modified, unchanged)
     default: added,modified,unchanged
   upload-artifact-retention-days:
     description: Duration of the artifact in days
-    default: '3'
+    default: "3"
 
 runs:
   using: node24
-  main: dist/index.js
+  main: dist/index.mjs
