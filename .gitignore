@@ -31,3 +31,4 @@ test-data
 *.typegen.ts
 uploads
 .t3/
+interaction_data.json

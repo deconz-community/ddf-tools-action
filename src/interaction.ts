@@ -6,6 +6,8 @@ import type { InputsParams } from './input'
 import type { Sources } from './source'
 import type { UploaderResult } from './uploader'
 import fs from 'node:fs/promises'
+import os from 'node:os'
+import path from 'node:path'
 import { DefaultArtifactClient } from '@actions/artifact'
 import * as core from '@actions/core'
 import { bytesToHex } from '@noble/hashes/utils.js'
@@ -155,7 +157,11 @@ async function uploadInteractionsAsArtifact(interactions: Interaction[]) {
   if (interactions.length === 0)
     return
 
-  await fs.writeFile('interaction_data.json', JSON.stringify(interactions.map(interaction => ({
+  // Write outside the workspace so later steps (e.g. auto commits) don't pick the file up
+  const dir = await fs.mkdtemp(path.join(process.env.RUNNER_TEMP ?? os.tmpdir(), 'interaction-'))
+  const file = path.join(dir, 'interaction_data.json')
+
+  await fs.writeFile(file, JSON.stringify(interactions.map(interaction => ({
     mode: 'upsert',
     ...interaction,
   }))), 'utf8')
@@ -164,8 +170,8 @@ async function uploadInteractionsAsArtifact(interactions: Interaction[]) {
 
   await artifact.uploadArtifact(
     'interaction_data',
-    ['interaction_data.json'],
-    '.',
+    [file],
+    dir,
     {
       retentionDays: 1,
     },
