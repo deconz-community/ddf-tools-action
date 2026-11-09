@@ -1,5 +1,13 @@
 # @deconz-community/ddf-tools-action
 
+## 1.6.1
+
+### Patch Changes
+
+- 49d4850: Update transitive dependencies to fix security advisories (undici, fast-xml-builder, brace-expansion)
+- bafd78b: Trigger build
+- e89e54c: Write `interaction_data.json` to a temporary directory instead of the workspace, so it is no longer committed by later steps
+
 ## 1.6.0
 
 ### Minor Changes
